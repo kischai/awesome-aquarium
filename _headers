@@ -1,0 +1,24 @@
+# Antwort-Köpfe für das Spiel (Format von Cloudflare Pages / Netlify; Server ohne _headers bekommen die Sicherheits-Regeln über <meta> in den Seiten, siehe tools/build-site.sh)
+# Bild-Päckchen tragen eine Prüfsumme in der Adresse (?v=…): der Browser darf sie ein Jahr lang aufheben.
+/js/pack/f-*
+  Cache-Control: public, max-age=31536000, immutable
+/js/pack/d-*
+  Cache-Control: public, max-age=31536000, immutable
+/js/pack/k-*
+  Cache-Control: public, max-age=31536000, immutable
+/js/pack/w-*
+  Cache-Control: public, max-age=31536000, immutable
+/landing/img/*
+  Cache-Control: public, max-age=604800
+/js/pack/core.js
+  Cache-Control: public, max-age=31536000, immutable
+/icons/*
+  Cache-Control: public, max-age=604800
+/assets/music/*
+  Cache-Control: public, max-age=604800
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'

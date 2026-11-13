@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Awesome Aquarium – das Aquarium für die ganze Familie</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Fische großziehen, züchten und sammeln, Becken gestalten und bei der Familie vorbeischauen – direkt im Browser, auf Handy und Rechner.">
+<meta name="theme-color" content="#0e5a7c">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="landing/landing.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./"><img src="icons/icon-192.png" alt="" width="40" height="40"><span>Awesome Aquarium</span></a>
+  <a class="btn ghost" id="top-login" href="spiel.html">Anmelden</a>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-txt">
+      <p class="kicker">🐠 Nur für die Familie</p>
+      <h1>Dein eigenes Aquarium.<br><span>Und die ganze Familie schwimmt mit.</span></h1>
+      <p class="lead">Fische großziehen, züchten und sammeln, Becken einrichten – und bei den anderen vorbeischauen, füttern, putzen und Geschenke dalassen. Direkt im Browser, auf Handy und Rechner.</p>
+      <div class="cta">
+        <a class="btn big" id="cta-play" href="spiel.html">Jetzt spielen</a>
+        <a class="btn big alt" id="cta-invite" href="spiel.html?register=1">🎟️ Mit Einladungscode registrieren</a>
+      </div>
+      <p class="invite-note" id="invite-note" hidden>Dein Einladungscode <b id="invite-code"></b> ist schon eingetragen – tipp einfach auf „Registrieren“.</p>
+    </div>
+    <figure class="hero-pic">
+      <img src="landing/img/riff.webp" srcset="landing/img/riff-800.webp 800w, landing/img/riff.webp 1600w" sizes="(max-width: 900px) 100vw, 56vw" width="1600" height="900" alt="Ein buntes Riff-Aquarium mit Clownfischen, Korallen und einem Schatz-Fass">
+    </figure>
+  </section>
+
+  <section class="features">
+    <article class="card">
+      <img src="landing/img/amazonas-800.webp" width="800" height="450" loading="lazy" alt="Amazonas-Becken mit Pflanzen, Salmlern und Welsen">
+      <h2>Züchten &amp; sammeln</h2>
+      <p>Aus Babys werden große Fische – und zwei Erwachsene bekommen Nachwuchs, mit etwas Glück in seltenen Farben. Über hundert Arten wollen ins Sammelbuch.</p>
+    </article>
+    <article class="card">
+      <img src="landing/img/korallen-800.webp" width="800" height="450" loading="lazy" alt="Pinkes Korallenbecken mit Clownfischen">
+      <h2>Becken gestalten</h2>
+      <p>Korallen, Wurzeln, Burgen und Schätze, Böden mit Hügeln und Wegen, Kulissen vom Riff bis zur Tiefsee. Mehrere Becken, Salz- und Süßwasser.</p>
+    </article>
+    <article class="card">
+      <img src="landing/img/tiefsee-800.webp" width="800" height="450" loading="lazy" alt="Leuchtende Tiefsee mit Steinköpfen und Laternenfischen">
+      <h2>Die Familie besuchen</h2>
+      <p>Schau in die Aquarien der anderen, hilf beim Füttern und Putzen, schick jeden Tag ein Geschenk – und miss dich in der Familien-Rangliste.</p>
+    </article>
+  </section>
+
+  <section class="steps">
+    <h2>So kommst du rein</h2>
+    <ol>
+      <li><b>Einladungscode holen.</b> Den bekommst du von jemandem aus der Familie, der schon spielt.</li>
+      <li><b>Mail-Adresse eingeben.</b> Ein Passwort brauchst du nicht – du bekommst einen Code per Mail.</li>
+      <li><b>Name und Foto aussuchen.</b> Wer dich eingeladen hat, ist gleich dein Freund. Los geht’s!</li>
+    </ol>
+    <a class="btn big" id="cta-invite2" href="spiel.html?register=1">Jetzt registrieren</a>
+  </section>
+
+  <section class="phone">
+    <div>
+      <h2>📱 Am Handy</h2>
+      <p>Halt das Handy <b>quer</b> – das Aquarium braucht Platz in der Breite. Als App auf dem Home-Bildschirm startet es im Vollbild: auf dem iPhone über <b>Teilen → Zum Home-Bildschirm</b>, bei Android im Browser-Menü über <b>App installieren</b>.</p>
+    </div>
+    <img src="landing/img/europa-800.webp" width="800" height="450" loading="lazy" alt="Europa-Becken mit Hechten, Barschen und einer Burg">
+  </section>
+</main>
+
+<footer class="foot">
+  <p><b>Awesome Aquarium</b> ist ein privates Familienspiel – keine Werbung, kein Tracking, keine Käufe.</p>
+  <p>Gespeichert werden nur deine Mail-Adresse (für die Anmeldung), dein Spielstand und – wenn du willst – dein Profilfoto, auf Servern in Frankfurt. Spielstand und Foto sehen nur du und die Freunde, die du angenommen hast.</p>
+</footer>
+<script src="landing/landing.js"></script>
+</body>
+</html>

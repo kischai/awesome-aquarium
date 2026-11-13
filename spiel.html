@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Awesome Aquarium</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0e5a7c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aquarium">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="wrap">
+  <div id="stage" class="tool-hand">
+    <canvas id="cv" width="1280" height="720"></canvas>
+
+    <div id="hud-top">
+      <div class="panel lvl-panel">
+        <div id="lvl-badge" title="Dein Level"><span id="lvl-num">1</span></div>
+        <div class="lvl-info">
+          <div class="lvl-title">Level</div>
+          <div class="bar xp"><i id="xp-fill"></i><span id="xp-text">0 / 105 XP</span></div>
+        </div>
+      </div>
+      <div class="panel cur-panel" title="Münzen"><img class="ic" data-ic="prop/coin" alt=""><b id="coins">0</b><span id="speed-tag" class="hidden"></span></div>
+      <div class="panel cur-panel" title="Perlen – jedes Level und jede Medaille bringt welche"><span class="pearl"></span><b id="pearls">0</b></div>
+      <button class="panel cur-panel" id="food-panel" title="Futter-Vorrat in Prisen – Klick: Futter kaufen"><img class="ic tall" data-ic="prop/foodcan" alt=""><b id="food">0</b></button>
+      <div class="panel meters">
+        <div class="meter" title="Sauberkeit – mit der Bürste putzen (10 XP pro Strich)"><span class="ico">🫧</span><div class="bar clean"><i id="clean-fill"></i></div></div>
+        <div class="meter" title="So satt sind die Fische in diesem Becken im Schnitt"><span class="ico">🍽️</span><div class="bar hunger"><i id="fed-fill"></i></div></div>
+      </div>
+      <div class="panel btns">
+        <button id="btn-login" title="Tägliches Ritual: 7 Tage am Stück – am Ende ein seltener Fisch (C)">📅<i class="dot hidden" id="login-dot"></i></button>
+        <button id="btn-rank" title="Rangliste der Familie (Z)">🏆</button>
+        <button id="btn-medals" title="Erfolge (E)">🏅<i class="dot hidden" id="medal-dot"></i></button>
+        <button id="btn-gift" title="Tagesgeschenk: 20 Prisen Futter (G)">🎁<i class="dot hidden" id="gift-dot"></i></button>
+        <button id="btn-hunt" title="Schatzsuche – zweimal pro Tag (T)">🧭<i class="badge hidden" id="hunt-badge">2</i></button>
+        <button id="btn-photo" title="Foto (F)">📷</button>
+        <button id="btn-light" title="Licht an/aus (L)">🌙</button>
+        <button id="btn-sound" title="Ton">🔊</button>
+        <button id="btn-settings" title="Einstellungen">⚙️</button>
+        <button id="btn-menu" title="Menü">☰<i class="dot hidden" id="menu-dot"></i></button>
+      </div>
+    </div>
+
+    <div id="hud-bottom">
+      <button id="btn-store" class="big" title="Shop (S)">🛒 Shop</button>
+      <div id="store-bar" class="panel hidden"><div class="sb-title">📦 Lager<small id="sb-n">0</small></div><div class="sb-track" id="sb-track"></div></div>
+      <div class="panel metas">
+        <button id="btn-quests" class="mbtn" title="Tagesaufträge und Wochenkarte (A)">📋<small>Aufträge</small><i class="badge hidden" id="quest-badge">0</i></button>
+        <button id="btn-book" class="mbtn" title="Sammelbuch: alle Arten und Farbvarianten (B)">📖<small>Buch</small><i class="badge hidden" id="book-badge">0</i></button>
+        <button id="btn-office" class="mbtn" title="Büro: Kundenaufträge, Markt, Bilanz (K)">🏢<small>Büro</small><i class="badge hidden" id="office-badge">0</i></button>
+        <button id="btn-friends" class="mbtn" title="Freunde besuchen (R)">👥<small>Freunde</small><i class="badge hidden" id="friends-badge">0</i></button>
+      </div>
+      <div class="panel tools">
+        <button data-tool="hand" class="tool active" title="Auswählen &amp; Deko verschieben (1)">✋<small>Auswahl</small></button>
+        <button data-tool="food" class="tool" title="Füttern: oben ins Becken klicken – eine Prise pro Klick (2)"><img data-ic="prop/foodcan" alt="" height="30"><small>Füttern</small><i class="count" id="food-n">0</i></button>
+        <button data-tool="sponge" class="tool" title="Putzen: klicken, klicken, klicken – 10 XP pro Strich (3)">🧽<small>Putzen</small></button>
+        <button data-tool="tap" class="tool" title="Ans Glas klopfen: trainierte Fische zeigen Tricks. Gedrückt halten: „Folge der Hand“ (4)">👆<small>Tricks</small></button>
+        <button data-tool="deco" class="tool" title="Deko-Modus: Raster, Drehen, Ebenen, Farben, Duplizieren und dein Lager (5)">✏️<small>Deko</small></button>
+      </div>
+      <div class="panel tankswitch">
+        <button id="btn-tanks" title="Alle Becken auf einen Blick (U)">🗂️<i class="badge hidden" id="tanks-badge">0</i></button>
+        <button id="tank-prev" title="Vorheriges Aquarium">◀</button>
+        <div id="tank-label"><b id="tank-name">Aquarium 1</b><small id="tank-count">0 / 10 🐟</small></div>
+        <button id="tank-next" title="Nächstes Aquarium">▶</button>
+      </div>
+    </div>
+
+    <div id="deco-head" class="panel hidden"><b class="dh-title">✏️ Deko-Modus</b><button class="dh-beauty" id="dh-beauty" data-dh="beauty" title="Schönheits-Note dieses Beckens – antippen: wie sie zustande kommt"></button><button class="btn grey" id="dh-grid" data-dh="grid" title="Raster: Stücke rasten beim Ziehen ein">▦ Raster aus</button><button class="btn green" data-dh="done">✔ Fertig</button></div>
+    <div id="visit-banner" class="panel hidden"></div>
+    <div id="friends-bar" class="panel hidden"></div>
+    <div id="toasts"></div>
+    <div id="card" class="panel hidden"></div>
+    <div id="overlay" class="hidden"><div id="modal"></div></div>
+    <div id="loading"><div class="logo">Awesome<br>Aquarium</div><div class="bar"><i id="load-fill"></i></div><div class="load-hint">Wasser wird eingelassen …</div></div>
+  </div>
+</div>
+<div id="rotate"><div><span>📱</span><b>Dreh dein Handy quer</b><small>Das Aquarium braucht Platz in der Breite.</small></div></div>
+<script src="js/config.js"></script>
+<script src="js/pack/index.js"></script>
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/rigs.js"></script>
+<script src="js/sadrig.js"></script>
+<script src="js/varmask.js"></script>
+<script src="js/snd.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/variants.js"></script>
+<script src="js/state.js"></script>
+<script src="js/meta.js"></script>
+<script src="js/biz.js"></script>
+<script src="js/farm.js"></script>
+<script src="js/eco.js"></script>
+<script src="js/life.js"></script>
+<script src="js/wild.js"></script>
+<script src="js/decor.js"></script>
+<script src="js/family.js"></script>
+<script src="js/social.js"></script>
+<script src="js/musiclist.js"></script>
+<script src="js/music.js"></script>
+<script src="js/cloud.js"></script>
+<script src="js/tankview.js"></script>
+<script src="js/fish.js"></script>
+<script src="js/mini.js"></script>
+<script src="js/train.js"></script>
+<script src="js/hunt.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/metaui.js"></script>
+<script src="js/bizui.js"></script>
+<script src="js/farmui.js"></script>
+<script src="js/ecoui.js"></script>
+<script src="js/lifeui.js"></script>
+<script src="js/wildui.js"></script>
+<script src="js/decorui.js"></script>
+<script src="js/familyui.js"></script>
+<script src="js/socialui.js"></script>
+<script src="js/touch.js"></script>
+<script src="js/cloudui.js"></script>
+<script src="js/extras.js"></script>
+<script src="js/extrasui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

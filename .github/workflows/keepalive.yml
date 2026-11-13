@@ -1,0 +1,26 @@
+# Hält das kostenlose Supabase-Projekt wach: Projekte im Free-Plan werden pausiert, wenn eine Woche lang kaum jemand die Datenbank benutzt.
+# Dreimal am Tag eine winzige, echte Datenbank-Abfrage (Funktion public.ping). Adresse und Schlüssel stehen in js/config.js (beide öffentlich).
+name: Supabase wach halten
+on:
+  schedule:
+    - cron: '17 5,13,21 * * *'      # 05:17, 13:17 und 21:17 Uhr UTC
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: js/config.js
+          sparse-checkout-cone-mode: false
+      - name: Lebenszeichen an die Datenbank
+        run: |
+          URL=$(node -e "global.window={};require('./js/config.js');process.stdout.write(window.AA_CLOUD.url||'')")
+          KEY=$(node -e "global.window={};require('./js/config.js');process.stdout.write(window.AA_CLOUD.key||'')")
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then echo "In js/config.js ist noch keine Wolke eingetragen – nichts zu tun."; exit 0; fi
+          code=$(curl -sS -m 30 -o out.json -w '%{http_code}' -X POST "$URL/rest/v1/rpc/ping" -H "apikey: $KEY" -H 'Content-Type: application/json' -d '{}')
+          cat out.json; echo
+          if [ "$code" != "200" ]; then echo "::error::Supabase antwortet mit $code – Projekt pausiert? (Dashboard öffnen und „Resume project“ wählen)"; exit 1; fi
