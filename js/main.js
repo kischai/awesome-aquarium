@@ -246,7 +246,8 @@
     const fv = V.byId[f.id];
     if (fv) V.puff('spark', fv.x, fv.y, 8);
     AA.audio.play('sparkle');
-    UI.toast('✨ ' + AA.esc(f.name) + ' ist erwachsen – jetzt ' + AA.fmt(AA.fishValue(f)) + ' Münzen wert.');
+    const xp = (AA.FISH_BY[f.sp] || {}).xp;
+    UI.toast('✨ ' + AA.esc(f.name) + ' ist erwachsen – jetzt ' + AA.fmt(AA.fishValue(f)) + ' Münzen wert' + (xp && !AA.visit ? ' · <b>+' + AA.fmt(xp) + ' XP</b>' : '') + '.');
   });
   AA.on('phase', function (f, t) {
     if (!active(t)) return;
@@ -256,7 +257,7 @@
   });
   AA.on('sick', function (f, t) { if (active(t)) { UI.toast('🤒 ' + AA.esc(f.name) + ' ist vor Hunger krank geworden.', 'warn'); AA.audio.play('error'); } });
   AA.on('recovered', function (f, t) { if (active(t)) UI.toast('💚 ' + AA.esc(f.name) + ' ist wieder gesund.'); });
-  AA.on('mateStart', function () { AA.audio.play('heart'); });
+  AA.on('mateStart', function () { if (!AA.quiet) AA.audio.play('heart'); });
   AA.on('eggLaid', function (egg, a, b, t) {         // a, b = Eltern; beim Glitzer-Ei von der Wochenkarte gibt es keine
     if (!active(t)) return;
     const pe = V.eggPos(egg), nm = AA.esc(AA.FISH_BY[egg.sp].name);

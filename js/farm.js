@@ -69,7 +69,7 @@
   AA.harvestCaviar = function (f) {
     const s = S(), st = AA.caviarStatus(f);
     if (!st || !st.ok) return st;
-    f.cav = s.clock + st.C.cd * DAY;
+    f.cav = s.clock + AA.FISH_BY[f.sp].pause;        // Runde 15: so oft wie ihre Paarungspause (vorher alle 2–3 Tage)
     AA.addCoins(st.coins);
     s.stats.caviar++; s.stats.caviarCoins += st.coins;
     AA.emit('caviar', f, st.coins);
@@ -200,7 +200,7 @@
     pool = pool.filter(function (f) { return !busy[f.id]; });
     for (let i = 0; i < K.offers && pool.length; i++) {
       const def = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-      const n = Math.max(1, Math.round(AA.rand(K.n[0], K.n[1]) * Math.min(1, 24 / def.hours)));      // langsam wachsende Arten: kleinere Mengen
+      const n = Math.max(1, Math.round(AA.rand(K.n[0], K.n[1]) * Math.min(1, 24 * 3600 / def.grow)));      // langsam wachsende Arten (über einen Tag, Runde 15: nach der neuen Reifezeit): kleinere Mengen
       c.offers.push({ id: AA.uid(), name: names[Math.floor(Math.random() * names.length)], sp: def.id, n: n, weeks: Math.round(AA.rand(K.weeks[0], K.weeks[1])),
         pay: Math.max(5, Math.round(def.sell * AA.rand(K.pay[0], K.pay[1]) * (1 + AA.ORDERS.repBonus * rl))) });
     }
@@ -283,18 +283,27 @@
         if (cand.length) { const r = AA.deliver(o.id, cand[0].f); if (r && r.pay) { AA.emit('staffWork', 'seller', r); break; } }
       }
     }
-    if (s.staff.master) {                               // Zuchtmeister: je Becken das beste Paar einer Art, die heute noch darf
-      for (let i = 0; i < s.tanks.length; i++) {
-        const t = s.tanks[i]; if (AA.count(t) + AA.matings(t).length >= AA.cap(t) - 1) continue;      // einen Platz lässt er dir frei
-        const seen = {};
-        for (let k = 0; k < t.fish.length; k++) {
-          const sp = t.fish[k].sp; if (seen[sp]) continue; seen[sp] = 1;
-          const st = AA.mateStatus(sp, t); if (!st.ok || s.coins < st.cost * 3) continue;   // nur, wenn die Kasse es locker hergibt
-          const bp = AA.bestPair(sp, t); if (!bp) continue;
-          const r = AA.startMate(sp, null, bp.a, bp.b, t);
-          if (r.ok) { AA.emit('staffWork', 'master', { a: bp.a, b: bp.b, tank: t }); break; }
+    if (s.staff.master) AA.masterWork(false);
+  };
+  /* Zuchtmeister: je Becken das beste Paar einer Art, die gerade darf – eins je Becken und Durchgang. instant (beim Nachholen, js/state.js
+     AA.catchUp): die Balz ist sofort vorbei und das Ei liegt gleich im Becken. Gibt zurück, wie viele Paare er verpaart hat. */
+  AA.masterWork = function (instant) {
+    const s = S(); let n = 0;
+    for (let i = 0; i < s.tanks.length; i++) {
+      const t = s.tanks[i]; if (AA.count(t) + AA.matings(t).length >= AA.cap(t) - 1) continue;      // einen Platz lässt er dir frei
+      const seen = {};
+      for (let k = 0; k < t.fish.length; k++) {
+        const sp = t.fish[k].sp; if (seen[sp]) continue; seen[sp] = 1;
+        const st = AA.mateStatus(sp, t); if (!st.ok || s.coins < st.cost * 3) continue;   // nur, wenn die Kasse es locker hergibt
+        const bp = AA.bestPair(sp, t); if (!bp) continue;
+        const r = AA.startMate(sp, null, bp.a, bp.b, t);
+        if (r.ok) {
+          n++;
+          if (instant) AA.finishMates(t, true); else AA.emit('staffWork', 'master', { a: bp.a, b: bp.b, tank: t });
+          break;
         }
       }
     }
+    return n;
   };
 })(window.AA);

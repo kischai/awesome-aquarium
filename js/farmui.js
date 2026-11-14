@@ -54,7 +54,7 @@
       const vs = F.vars.filter(function (x) { return x.p >= 0.001; });
       h += '<div class="p-h">' + (P.sp === 'carp' ? 'Zuchtform' : 'Farbvariante') + '</div><div class="fc-vars">' + (P.sp === 'carp' ? '<span class="fc-v"><span class="vchip sm t1" style="--vc:#c9a227">Schuppenkarpfen</span> ' + pc(F.plain) + '</span>' : '') +
         vs.map(function (x) { return '<span class="fc-v">' + UI.varChip(x.v, true) + ' ' + pc(x.p) + '</span>'; }).join('') + (P.sp === 'carp' ? '' : '<span class="fc-v plain">normale Farbe ' + pc(F.plain) + '</span>') + '</div>';
-      h += '<div class="wk-note">Jede Balz bringt ' + (F.eggs > 1 ? 'gleich ' + F.eggs + ' Eier' : 'ein Ei') + ' – danach ruhen sich die beiden einen Tag aus, alle anderen Paare dürfen weiter. Die Werte oben gelten für jedes Ei.</div>' +
+      h += '<div class="wk-note">Jede Balz bringt ' + (F.eggs > 1 ? 'gleich ' + F.eggs + ' Eier' : 'ein Ei') + ' – danach ruhen sich die beiden ' + AA.fmtDur(real(AA.mateCooldown(AA.tank(), P.sp, false))) + ' aus, alle anderen Paare dürfen weiter. Die Werte oben gelten für jedes Ei.</div>' +
         '<button class="btn green big" data-act="plan-go">❤ Paaren · ' + fmt(F.cost) + ' ' + coin() + '</button>';
     } else h += '<div class="wk-note">Wähle links einen Vater und eine Mutter – dann siehst du hier, was aus dem Ei wird.</div>';
     h += '</div></div>';
@@ -191,7 +191,7 @@
     if (cv && d.sex === 'f') {
       show = true; bc.classList.remove('hidden'); bc.disabled = !cv.ok;
       bc.innerHTML = cv.ok ? '🥄 Kaviar ernten · ' + fmt(cv.coins) : (cv.why === 'young' ? '🥄 Kaviar: erst erwachsen' : (cv.why === 'wait' ? '🥄 Kaviar in ' + AA.fmtShort(real(cv.wait)) : (cv.why === 'sick' ? '🥄 Kaviar: krank' : '🥄 Kaviar: hungrig')));
-      bc.title = cv.C.name + ': alle ' + cv.C.cd + ' Spieltage, der Fisch bleibt. Mehr Münzen bei höherer Güteklasse.';
+      bc.title = cv.C.name + ': alle ' + AA.fmtDur(real(AA.FISH_BY[d.sp].pause)) + ', der Fisch bleibt. Mehr Münzen bei höherer Güteklasse.';
     } else bc.classList.add('hidden');
     let best = null;
     AA.state.contracts.act.forEach(function (c) { if (c.got < c.n && AA.contractFits(c, d) && (!best || c.pay > best.pay)) best = c; });

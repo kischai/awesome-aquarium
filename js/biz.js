@@ -44,7 +44,6 @@
     AA.FISH.forEach(function (f) {
       const old = m.k[f.id] || 1;
       m.k[f.id] = Math.round(AA.clamp(0.5 * old + 0.5 * AA.rand(0.8, 1.2), M.kMin, M.kMax) * 100) / 100;
-      if (m.sat[f.id]) { m.sat[f.id] *= Math.pow(M.satDecay, days); if (m.sat[f.id] < 0.05) delete m.sat[f.id]; }
     });
     // Trend-Arten: bevorzugt welche, die du schon kennst – sonst bringt der Trend nichts
     const lvl = s.level, known = AA.FISH.filter(function (f) { return !f.hybrid && s.book && s.book[f.id] && f.lvl <= lvl; }), open = AA.FISH.filter(function (f) { return !f.hybrid && f.lvl <= lvl + 2; });
@@ -55,17 +54,27 @@
     AA.emit('marketNew');
     return true;
   };
+  /* Runde 15: Der Preis-Druck nach Verkäufen halbiert sich alle AA.MARKET.satHalf Spiel-Sekunden (vorher einmal über Nacht) */
+  function relax(m) {
+    const now = S().clock;
+    if (!(m.satT >= 0) || m.satT > now) { m.satT = now; return; }
+    const dt = now - m.satT; if (dt < 1) return;
+    const k = Math.pow(0.5, dt / AA.MARKET.satHalf);
+    for (const sp in m.sat) { m.sat[sp] *= k; if (m.sat[sp] < 0.05) delete m.sat[sp]; }
+    m.satT = now;
+  }
   /* Faktor auf den Verkaufspreis: Kurs × Trend × Sättigung (noSat: ohne Sättigung) */
   AA.marketFactor = function (sp, noSat) {
     const m = mkt(); if (!m) return 1;
+    if (!noSat) relax(m);
     let f = (m.k[sp] || 1) * (m.t[sp] || 1);
     if (!noSat && m.sat[sp]) f *= Math.max(AA.MARKET.satFloor, 1 / (1 + AA.MARKET.satStep * m.sat[sp]));
     return f;
   };
-  AA.marketSat = function (sp) { const m = mkt(); return m && m.sat[sp] ? Math.max(AA.MARKET.satFloor, 1 / (1 + AA.MARKET.satStep * m.sat[sp])) : 1; };
+  AA.marketSat = function (sp) { const m = mkt(); if (m) relax(m); return m && m.sat[sp] ? Math.max(AA.MARKET.satFloor, 1 / (1 + AA.MARKET.satStep * m.sat[sp])) : 1; };
   AA.marketChange = function (sp) { const m = mkt(); if (!m || !m.p || !m.p[sp]) return 0; return AA.marketFactor(sp, true) / m.p[sp] - 1; };
   AA.marketTrends = function () { const m = mkt(); return m ? Object.keys(m.t).map(function (sp) { return { sp: sp, mult: m.t[sp] }; }) : []; };
-  function saturate(sp) { const m = mkt(); if (m) m.sat[sp] = (m.sat[sp] || 0) + 1; }
+  function saturate(sp) { const m = mkt(); if (m) { relax(m); m.sat[sp] = (m.sat[sp] || 0) + 1; } }
 
   /* ---------- Kassenbuch: Einnahmen/Ausgaben je Spieltag, Verkäufe je Art (14 Tage) ---------- */
   function day() { const s = S(), d = AA.day(); s.ledger = s.ledger || {}; const L = s.ledger[d] || (s.ledger[d] = { i: 0, o: 0, sales: 0, orders: 0, sp: {} });

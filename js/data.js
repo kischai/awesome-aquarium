@@ -21,7 +21,7 @@
     shakeXpChance: 0.7,          // eine Prise bringt in 70 % der Fälle 1 XP; dazu 1 XP je Bissen
     dirtSeconds: 24 * 3600,      // bei 10 Fischen von blitzblank bis ganz veralgt
     cleanStep: 0.1, cleanXp: 10, // ein Bürstenstrich: 10 % Schmutz weg, 10 XP
-    mateChance: 1, mateCooldown: 24 * 3600,     // Runde 11: jede Balz bringt ein Ei; die Pause gilt je Fisch
+    mateChance: 1,               // Runde 11: jede Balz bringt ein Ei; die Pause gilt je Fisch – wie lang: f.pause (Runde 15, AA.TEMPO)
     mateDirtMax: 0.3, mateHungerMin: 0.5, mateDance: 5.5,
     babyValue: 0.3, sickValue: 0.7,
     gift: 20,                    // Tagesgeschenk: 20 Prisen Futter
@@ -66,7 +66,8 @@
   /* ---------- Fische ----------
      lvl/price/sell/hours stammen aus der Arten-Tabelle des Vorbilds – bei Arten, die es dort nicht gibt, aus der jeweils freien Stufe
      dieser Tabelle (Kalmar, Küssender Gurami, Riffhai und Schildkröte: eigene Werte). Genaue Zuordnung: docs/MECHANIK.md.
-     hours = Stunden bis erwachsen (4 gleich lange Wachstumsphasen). Paarung kostet den halben Kaufpreis, das Ei braucht die halbe Reifezeit.
+     hours = Stunden bis erwachsen im Vorbild – seit Runde 15 nur noch Herkunft: die echten Zeiten kommen aus AA.TEMPO (nach Level, siehe unten).
+     Paarung kostet den halben Kaufpreis.
      len   = Breite des erwachsenen Sprites im Becken in Pixeln, speed = Schwimmtempo. */
   AA.FISH = [
     { id: 'auriga', name: 'Auriga-Falterfisch', lvl: 1, price: 14, sell: 16, hours: 8, len: 108, speed: 46, egg: '#ffd23f',
@@ -379,12 +380,26 @@
       AA.FISH.push(f);
     });
   })();
+  /* ---------- Spieltempo (Runde 15, 14.11.2026) ----------
+     Wie lange ein Fisch braucht, hängt nur an seinem Level: Level 1 = 2 Min, jedes Level ca. +15 %, Blobfisch (Level 39) = 7 Std,
+     Quastenflosser (Level 55) = 72 Std – dazwischen gleichmäßig hochgerechnet (zwei Abschnitte, damit beide Ankerpunkte genau stimmen).
+     Ei = halbe Reifezeit. Paarungspause = 1,5 × Reifezeit = Ei + Großwerden: die Eltern dürfen wieder, sobald ihr letztes Junges erwachsen ist.
+     xp = Erfahrung, wenn ein Fisch erwachsen wird: wächst mit der Wartezeit, aber langsamer (6 × (Reifezeit ÷ 2 Min)^0,75) – am Anfang
+     levelt man schnell, später braucht ein Level mehr Fische. Gerundet auf 5 Sek (unter 10 Min), 30 Sek (unter 1 Std), 5 Min, 15 Min. */
+  AA.TEMPO = { base: 120, l39: 7 * 3600, l55: 72 * 3600, pause: 1.5, xp: 6, xpExp: 0.75 };
+  AA.tempoRound = function (s) { const q = s < 600 ? 5 : (s < 3600 ? 30 : (s < 36000 ? 300 : 900)); return Math.max(q, Math.round(s / q) * q); };
+  AA.growFor = function (lvl) {
+    const T = AA.TEMPO, L = AA.clamp(lvl | 0, 1, 55);
+    return AA.tempoRound(L <= 39 ? T.base * Math.pow(T.l39 / T.base, (L - 1) / 38) : T.l39 * Math.pow(T.l55 / T.l39, (L - 39) / 16));
+  };
   AA.FISH_BY = {};
   AA.FISH.forEach(function (f) {
-    f.grow = f.hours * 3600;                         // Sekunden bis erwachsen
+    f.grow = AA.growFor(f.lvl);                      // Sekunden bis erwachsen
     f.phaseLen = f.grow / 4;                         // eine Wachstumsphase
     f.mate = Math.round(f.price / 2);                // Paarungs-Gebühr
-    f.hatch = f.grow / 2;                            // Brutzeit
+    f.hatch = AA.tempoRound(f.grow / 2);             // Brutzeit
+    f.pause = AA.tempoRound(f.grow * AA.TEMPO.pause);      // Paarungspause je Fisch (AA.mateCooldown)
+    f.xp = Math.round(AA.TEMPO.xp * Math.pow(f.grow / AA.TEMPO.base, AA.TEMPO.xpExp));   // Erfahrung fürs Großziehen
     f.trainBonus = AA.clamp(Math.round(f.sell / 60), 1, 5);   // voll trainiert: 1–5 Münzen mehr
     AA.FISH_BY[f.id] = f;
   });
@@ -413,7 +428,7 @@
   /* die Varianten, die es bei dieser Art gibt (Reihenfolge = Reihenfolge im Sammelbuch) */
   AA.variantsOf = function (sp) { return sp === 'carp' ? [AA.VAR_BY.cwild, AA.VAR_BY.czeil, AA.VAR_BY.albino, AA.VAR_BY.rainbow, AA.VAR_BY.cblack] : AA.VARIANTS; };
   AA.varFits = function (sp, v) { return AA.variantsOf(sp).some(function (x) { return x.id === v; }); };
-  AA.VAR = { chance: 0.04, pity: 0.004, pityMax: 0.2, inherit1: 0.3, inherit2: 0.75 };
+  AA.VAR = { chance: 0.01, pity: 0.001, pityMax: 0.05, inherit1: 0.3, inherit2: 0.75 };      // Runde 15: vorher 4 % / 0,4 % / 20 % – beim neuen Tempo gäb’s sonst alle ~40 Min eine je Paar
   AA.speciesName = function (sp, v) { const d = AA.FISH_BY[sp]; if (sp === 'carp' && v && AA.VAR_BY[v]) return AA.CARP.names[v] || AA.VAR_BY[v].name; return (d ? d.name : sp) + (v && AA.VAR_BY[v] ? ' (' + AA.VAR_BY[v].name + ')' : ''); };
 
   /* Größe je Wachstumsphase (Anteil der Erwachsenen-Breite): Phase 1+2 Baby-Bild, Phase 3+4 schon das große Bild */
@@ -839,14 +854,14 @@
     { id: 'feeder3', name: 'Futterautomat (3 Tage)', ico: '⏲️', lvl: 4, price: 60, days: 3, info: 'Hält die Fische im aktuellen Becken 3 Tage lang satt – auch wenn du weg bist.' },
     { id: 'feeder7', name: 'Futterautomat (7 Tage)', ico: '⏲️', lvl: 10, pearls: 4, days: 7, info: 'Eine Woche Ruhe im aktuellen Becken. Kostet Perlen.' },
     /* Runde 8: Spezialfutter – wird gezielt gestreut (Futter-Werkzeug, Sorte oben wählen) */
-    { id: 'color5', name: 'Farbfutter', ico: '🌈', kind: 'color', lvl: 8, price: 90, n: 5, info: '5 Prisen. Wer davon frisst, hat einen Tag lang doppeltes Glück auf Farbvarianten bei seinen Eiern.' },
+    { id: 'color5', name: 'Farbfutter', ico: '🌈', kind: 'color', lvl: 8, price: 90, n: 5, info: '5 Prisen. Wer davon frisst, hat bei seinen nächsten 3 Eiern doppeltes Glück auf Farbvarianten.' },
     { id: 'turbo5', name: 'Turbofutter', ico: '⚡', kind: 'turbo', lvl: 5, price: 70, n: 5, info: '5 Prisen. Jungfische, die davon fressen, wachsen einen halben Tag lang 50 % schneller.' },
     { id: 'med3', name: 'Medizin', ico: '💊', kind: 'med', lvl: 3, price: 45, n: 3, info: '3 Prisen. Ein Bissen macht einen kranken Fisch sofort gesund – Kranke schwimmen gezielt hin.' },
     { id: 'live5', name: 'Lebendfutter (Futterfische)', ico: '🐟', kind: 'live', lvl: 18, price: 110, n: 5, info: '5 Portionen à 3 kleine Futterfische. Nur große Jäger (Hecht, Wels, Hai & Co.) schnappen sie – und sind danach lange satt.' }
   ];
   /* Spezialfutter: dur = Wirkdauer in Spiel-Sekunden, fill = wie satt ein Bissen macht */
   AA.FOOD2 = {
-    color: { name: 'Farbfutter', ico: '🌈', dur: 86400, luck: 2, cols: ['#ff5b5b', '#ffb13b', '#ffe44d', '#6fdc6f', '#58b8ff', '#b77cff'] },
+    color: { name: 'Farbfutter', ico: '🌈', eggs: 3, luck: 2, cols: ['#ff5b5b', '#ffb13b', '#ffe44d', '#6fdc6f', '#58b8ff', '#b77cff'] },
     turbo: { name: 'Turbofutter', ico: '⚡', dur: 43200, grow: 1.5, cols: ['#4fd8ff', '#2aa8ff', '#9af2ff'] },
     med: { name: 'Medizin', ico: '💊', cols: ['#ffffff', '#ff5a6a'] },
     live: { name: 'Lebendfutter', ico: '🐟', fill: 0.45, per: 3, life: 120 }
@@ -962,15 +977,16 @@
   AA.GENE_SHOP = [20, 40, 32, 8, 0];                   // Gewichte für 1…5 bei Fischen aus dem Shop (meist Klasse C/B)
   AA.GENE_RULE = { down: 0.2, up: 0.22, jump: 0.05 };  // Vererbung je Wert: Mittel der Eltern, dann 20 % −1, 22 % +1, extra 5 % „Sprung“ +1
   AA.VAR_VALUE = { albino: 2, gold: 3, amethyst: 3, night: 5, rainbow: 10, cwild: 1.3, czeil: 1.8, cblack: 15 };   // Preis-Faktor der Farbvarianten
-  /* Markt: Tageskurs je Art (0,75–1,25), dazu zwei Trend-Arten (×1,35–1,6). Verkauf drückt den Preis (Sättigung), über Nacht erholt er sich zur Hälfte. */
-  AA.MARKET = { kMin: 0.75, kMax: 1.25, trends: 2, tMin: 1.35, tMax: 1.6, satStep: 0.12, satFloor: 0.4, satDecay: 0.5 };
-  /* Kunden: bis zu 3 Aufträge gleichzeitig; ein freier Platz füllt sich nach 2 Spielstunden. need = Mindest-Ruf-Stufe. */
+  /* Markt: Tageskurs je Art (0,75–1,25), dazu zwei Trend-Arten (×1,35–1,6). Verkauf drückt den Preis (Sättigung); der Druck halbiert sich
+     alle satHalf Spiel-Sekunden (Runde 15: 30 Min statt über Nacht, und je Verkauf halb so stark wie vorher). */
+  AA.MARKET = { kMin: 0.75, kMax: 1.25, trends: 2, tMin: 1.35, tMax: 1.6, satStep: 0.06, satFloor: 0.4, satHalf: 1800 };
+  /* Kunden: bis zu 3 Aufträge gleichzeitig; ein freier Platz füllt sich nach 20 Spielminuten (Runde 15, vorher 2 Std). need = Mindest-Ruf-Stufe. */
   AA.CUSTOMERS = [
     { id: 'shop', ico: '🏪', kind: 'Zoohandlung', names: ['Zoohandlung Fischer', 'Aqua-Laden Brandt', 'Zoo Paradies', 'Fischstube Kovač', 'Tierwelt Huber'], need: 0, n: [2, 3], cls: ['C', 'B'], pay: 1.3, days: 2, rep: 6 },
     { id: 'hotel', ico: '🏨', kind: 'Hotel', names: ['Hotel Adria', 'Grand Hotel Vodice', 'Villa Marina', 'Hotel Krumbacher Hof', 'Resort Kornati'], need: 1, n: [4, 6], cls: ['C', 'B'], pay: 1.5, days: 3, rep: 10 },
     { id: 'collector', ico: '🎩', kind: 'Sammler', names: ['Graf Koi', 'Frau Dr. Lindqvist', 'Baron von Schuppe', 'Señor Coral', 'Madame Perle'], need: 2, n: [1, 1], cls: ['A', 'S'], pay: 2.2, days: 4, rep: 15 }
   ];
-  AA.ORDERS = { max: 3, refill: 2 * 3600, failRep: 8, declineRep: 2, repBonus: 0.06 };
+  AA.ORDERS = { max: 3, refill: 20 * 60, failRep: 8, declineRep: 2, repBonus: 0.06 };
   AA.REP_LEVELS = [                                    // Ruf = Firmenstufe
     { at: 0, name: 'Hobbyzüchter', ico: '🐣' },
     { at: 25, name: 'Kleiner Zuchtbetrieb', ico: '🐟' },
@@ -997,14 +1013,14 @@
   AA.STAFF = {
     keeper: { name: 'Pfleger', ico: '🧑‍🔧', wage: 60, rep: 1, info: 'Füttert und putzt in allen Becken: Fische bleiben mindestens zu 75 % satt, Becken höchstens zu 25 % veralgt.', keep: 0.75, dirt: 0.25 },
     seller: { name: 'Verkäufer', ico: '🧑‍💼', wage: 45, rep: 1, info: 'Liefert Aufträge der Zoohandlungen selbst aus, sobald passende Fische da sind (nie benannte Lieblinge mit Tricks, nie Farbvarianten).' },
-    master: { name: 'Zuchtmeister', ico: '🧑‍🔬', wage: 80, rep: 2, info: 'Sucht in jedem Becken einmal am Tag das beste Paar je Art aus und verpaart es (die Paarungsgebühr zahlst du).' }
+    master: { name: 'Zuchtmeister', ico: '🧑‍🔬', wage: 80, rep: 2, info: 'Verpaart in jedem Becken das beste Paar einer Art, sobald es wieder darf – auch während du weg bist (die Paarungsgebühr zahlst du, einen Platz lässt er frei).' }
   };
   /* Lieferverträge: jeden Spieltag neue Angebote, höchstens 2 laufen gleichzeitig. Eine „Woche“ = 7 Spieltage. Geliefert wird jederzeit innerhalb der Woche;
      was am Wochenende fehlt, kostet Strafe (penalty × Stückpreis je fehlendem Fisch) und Ruf. pay = Aufschlag auf den Listenpreis (fest, unabhängig vom Markt). */
   AA.CONTRACTS = { offers: 3, max: 2, week: 7, n: [3, 6], weeks: [2, 4], pay: [1.25, 1.45], penalty: 0.6, failRep: 6, weekRep: 3, doneRep: 10, lvl: 8 };
   /* Kaviar: erwachsene Stör-Weibchen. base = Münzen je Ernte bei Klasse C (× Klassen-Faktor), cd = Pause in Spieltagen. */
-  AA.CAVIAR = { sturgeon: { base: 150, cd: 2, name: 'Stör-Kaviar' }, beluga: { base: 1400, cd: 3, name: 'Beluga-Kaviar' }, bester: { base: 900, cd: 2, name: 'Bester-Kaviar' } };
-  /* Lachs: Anteil der Jugend, die er im Meerwasser verbracht haben muss, um als Meerlachs erwachsen zu werden; Wert-Faktor; Eier je Laich; Laich-Pause in Tagen. */
+  AA.CAVIAR = { sturgeon: { base: 150, name: 'Stör-Kaviar' }, beluga: { base: 1400, name: 'Beluga-Kaviar' }, bester: { base: 900, name: 'Bester-Kaviar' } };      // Runde 15: ernten so oft wie die Paarungspause des Weibchens (vorher alle 2–3 Tage)
+  /* Lachs: Anteil der Jugend, die er im Meerwasser verbracht haben muss, um als Meerlachs erwachsen zu werden; Wert-Faktor; Eier je Laich; Laich-Pause als Vielfaches der normalen Pause. */
   AA.SALMON = { sea: 0.6, mult: 1.6, size: 1.1, eggs: 3, cd: 3 };
 
   /* ================= Runde 7: Biotope, Räuber ================= */
@@ -1058,8 +1074,8 @@
      unter `lonely` sind sie unglücklich (schauen traurig, wachsen langsamer). */
   AA.SCHOOL = { min: 6, lonely: 3, grow: 1.15, lonelyGrow: 0.85, species: ['neon', 'danio', 'chromis', 'tigerbarb', 'cory', 'clownloach', 'piranha', 'banggai', 'lanternfish'] };
   AA.SCHOOL.species.forEach(function (id) { AA.FISH_BY[id].school = true; });
-  /* Kreuzen: Chance auf ein Ei, Kosten-Faktor (auf die Paarungsgebühren beider Eltern), Pause je Hybrid in Spiel-Sekunden */
-  AA.CROSS = { chance: 1, cost: 1.5, cd: 86400 };      // Runde 11: jede Kreuzung bringt ein Ei; Pause je Fisch
+  /* Kreuzen: Chance auf ein Ei, Kosten-Faktor (auf die Paarungsgebühren beider Eltern). Pause der Eltern: wie beim Hybriden (sein f.pause, Runde 15) */
+  AA.CROSS = { chance: 1, cost: 1.5 };                 // Runde 11: jede Kreuzung bringt ein Ei; Pause je Fisch
   /* Sammelbuch-Sets: alle Varianten einer Art = +10 % Wert für diese Art. Titel für komplette Gruppen (einmal Perlen). */
   AA.SETBONUS = 1.1;
   AA.TITLES = [

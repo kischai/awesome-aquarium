@@ -8,7 +8,7 @@
   const B = AA.BAL, DAY = 86400;
   const GW = AA.ALG_W = 32, GH = AA.ALG_H = 18, GN = GW * GH;
   AA.SAVE_KEY = 'awesome-aquarium-save-v2';
-  AA.SAVE_V = 12;                                    // Stand-Nummer dieses Spiels (o.v im Spielstand); die Wolke nimmt keinen Stand von einem älteren Spiel an
+  AA.SAVE_V = 13;                                    // Stand-Nummer dieses Spiels (o.v im Spielstand); die Wolke nimmt keinen Stand von einem älteren Spiel an
   AA.quiet = false;
 
   /* ---------- Algen-Muster pro Becken (weiches Rauschen, am Rand stärker) – bestimmt, wo der Schmutz zuerst wächst ---------- */
@@ -126,6 +126,32 @@
     delete o.mating;
     o.fish.forEach(function (f) { if (f.mcd !== undefined && !(+f.mcd > 0)) delete f.mcd; });
     return o;
+  }
+  /* Runde 15 (v < 13): neues Spieltempo. Was gerade läuft, behält seinen Fortschritt in Prozent: ein Baby bei 50 % ist danach bei 50 % der neuen
+     Reifezeit, ein Ei bei 30 % bei 30 % der neuen Brutzeit; eine laufende Paarungspause (vorher 24 Std) und eine Kaviar-Pause werden aufs neue
+     Maß verkürzt. Farbfutter wirkte vorher eine Zeit lang – wer es noch im Bauch hat, bekommt die neuen 3 Eier mit Glück. */
+  function migrateTempo(o) {
+    const now = o.clock || 0, OLD_PAUSE = DAY;
+    o.tanks.forEach(function (t) {
+      t.fish.forEach(function (f) {
+        const def = AA.FISH_BY[f.sp]; if (!def) return;
+        const oldGrow = (def.hours || 24) * 3600, k = def.grow / oldGrow;
+        if (!f.adult) { f.age = Math.max(0, (+f.age || 0) * k); if (f.sea) f.sea = f.sea * k; }
+        if (+f.mcd > now) {
+          const salmon = f.sp === 'salmon' && AA.SALMON ? AA.SALMON.cd : 1, rest = (+f.mcd - now) * def.pause / OLD_PAUSE;
+          f.mcd = now + Math.min(rest, def.pause * salmon);
+        }
+        if (+f.cav > now) f.cav = now + Math.min(+f.cav - now, def.pause);
+        if (+f.colorT > now) f.colorN = AA.FOOD2.color.eggs;
+        delete f.colorT;
+      });
+      t.eggs.forEach(function (e) {
+        const def = AA.FISH_BY[e.sp]; if (!def) return;
+        const oldTotal = +e.total > 0 ? +e.total : (def.hours || 24) * 1800, h = +e.hatch;
+        const left = isFinite(h) && h >= 0 ? AA.clamp(h / oldTotal, 0, 1) : 1;      // ohne Angabe: volle neue Brutzeit
+        e.total = def.hatch; e.hatch = def.hatch * left;
+      });
+    });
   }
   /* Spielstände von vor der Wasser-Trennung (v < 3): alle Becken waren Meerwasser. Süßwasser-Tiere, die dort schon leben, ziehen in ein
      geschenktes Süßwasser-Becken um (so groß wie nötig, samt laufendem Futterautomaten). Was nicht mehr hineinpasst, bleibt, wo es ist –
@@ -245,6 +271,7 @@
         o.r11 = { crawl: 1 };                          // js/social.js: zu viele Krabbler wandern ins Lager
       }
       if ((o.v | 0) < 12) { bak('-vor-runde12'); o.news = o.news || {}; o.news.v12 = true; o.v = 12; }      // Runde 12: Beine, Peitschen, Sand-Wellen, Adria, Licht, Pokale, Hilfe & Geschenke
+      if ((o.v | 0) < 13) { bak('-vor-runde15'); migrateTempo(o); o.news = o.news || {}; o.news.tempo = true; o.v = 13; }      // Runde 15: neues Spieltempo (AA.TEMPO)
       delete o.settings.speed;
       AA.ecoFix(o);
       AA.lifeFix(o);
@@ -422,7 +449,9 @@
   AA.unmate = function (t, f) { if (t.matings && AA.matingOf(t, f.id)) t.matings = t.matings.filter(function (m) { return m.a !== f.id && m.b !== f.id; }); };
   const unmate = AA.unmate;
   AA.mateCooldown = function (t, sp, cross) {        // Pause nach einer Balz (Spiel-Sekunden); Clownfisch mit Anemone ist schneller wieder bereit
-    let cd = cross ? AA.CROSS.cd : (sp === 'salmon' && AA.SALMON ? AA.SALMON.cd * DAY : B.mateCooldown);      // Lachse laichen seltener
+    const def = AA.FISH_BY[sp];                      // Runde 15: 1,5 × Reifezeit der Art (bei einer Kreuzung: des Hybriden) – siehe AA.TEMPO
+    let cd = def ? def.pause : DAY;
+    if (!cross && sp === 'salmon' && AA.SALMON) cd *= AA.SALMON.cd;      // Lachse laichen seltener (dafür 3 Eier)
     if (sp === 'clown' && AA.hostCount && AA.hostCount(t)) cd *= 0.75;
     return cd;
   };
@@ -532,6 +561,7 @@
   }
   AA.finishMate = finishMate;
   function finishAll(t, silent) { const ms = (t.matings || []).slice(); for (let i = 0; i < ms.length; i++) finishMate(t, ms[i], silent); }
+  AA.finishMates = finishAll;
 
   /* ---------- Simulation: ein Zeitschritt (Spiel-Sekunden) für ein Becken ---------- */
   AA.advance = function (t, dt, sum) {
@@ -559,6 +589,7 @@
           f.adult = true;
           if (f.sp === 'salmon' && (f.sea || 0) >= def.grow * AA.SALMON.sea) f.msea = 1;      // Meerlachs
           s.stats.raised++; s.stats.spRaised[f.sp] = 1;
+          if (def.xp && !AA.visit) { AA.addXP(def.xp); s.stats.raisedXp = (s.stats.raisedXp || 0) + def.xp; if (sum) sum.xp = (sum.xp || 0) + def.xp; }      // Runde 15: Erfahrung fürs Großziehen
           if (sum) sum.matured++;
           AA.emit('matured', f, t);
           AA.checkMedals();
@@ -610,7 +641,7 @@
   };
   /* Offline-/Hintergrundzeit nachholen */
   AA.catchUp = function (seconds) {
-    const sum = { seconds: seconds, matured: 0, hatched: 0, sick: 0, days: 0 };
+    const sum = { seconds: seconds, matured: 0, hatched: 0, sick: 0, days: 0, xp: 0, bred: 0 };
     if (!(seconds > 0)) return sum;
     seconds = Math.min(seconds, 60 * DAY);
     const s = AA.state, d0 = AA.day();
@@ -618,7 +649,11 @@
     AA.quiet = true;
     try {
       for (let i = 0; i < s.tanks.length; i++) finishAll(s.tanks[i], true);
-      for (let k = 0; k < steps; k++) { s.clock += dt; for (let i = 0; i < s.tanks.length; i++) AA.advance(s.tanks[i], dt, sum); }
+      let nextMaster = 0;                              // Runde 15: der Zuchtmeister arbeitet auch, während du weg bist (alle 3 Spielminuten = kürzeste Pause)
+      for (let k = 0; k < steps; k++) {
+        s.clock += dt; for (let i = 0; i < s.tanks.length; i++) AA.advance(s.tanks[i], dt, sum);
+        if (AA.masterWork && s.staff && s.staff.master && s.clock >= nextMaster) { nextMaster = s.clock + 180; sum.bred += AA.masterWork(true); }
+      }
       sum.days = AA.day() - d0;
       AA.rollDaily();
       const f0 = s.stats.ordersFailed || 0; AA.ordersTick(); sum.ordersFailed = (s.stats.ordersFailed || 0) - f0;

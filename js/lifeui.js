@@ -24,7 +24,7 @@
   const X_WHY = { parents: 'Beide Eltern-Arten müssen in diesem Becken leben.', busy: 'In diesem Becken wird gerade schon geturtelt.', hungry: 'Die Eltern müssen satt und gesund sein.',
     pair: 'Du brauchst ein erwachsenes ♂ der einen und ein ♀ der anderen Art.', dirty: 'Erst putzen – gekreuzt wird nur im sauberen Becken.', full: 'Kein Platz für ein Ei: Becken vergrößern oder Fische verkaufen.', coins: 'Dafür reichen die Münzen nicht.' };
   const X_SHORT = { parents: 'Eltern fehlen', busy: 'Balz läuft …', hungry: 'Eltern hungrig', pair: 'Kein gemischtes Paar', dirty: 'Becken zu schmutzig', full: 'Becken voll', coins: 'Zu wenig Münzen' };
-  function xWhy(st) { return st.why === 'cd' ? 'Jede Kreuzung geht nur einmal pro Spieltag – wieder in ' + AA.fmtShort(real(st.cd)) + '.' : (st.why === 'level' ? 'Diese Kreuzung gelingt erst ab Level ' + st.def.lvl + '.' : X_WHY[st.why] || 'Gerade nicht möglich.'); }
+  function xWhy(st) { return st.why === 'cd' ? 'Nach einer Kreuzung ruhen sich die Eltern aus – wieder in ' + AA.fmtShort(real(st.cd)) + '.' : (st.why === 'level' ? 'Diese Kreuzung gelingt erst ab Level ' + st.def.lvl + '.' : X_WHY[st.why] || 'Gerade nicht möglich.'); }
   function xShort(st) { return st.why === 'cd' ? 'wieder in ' + AA.fmtShort(real(st.cd)) : (st.why === 'level' ? '🔒 Ab Level ' + st.def.lvl : X_SHORT[st.why] || 'gerade nicht'); }
   function xName(h) { return AA.bookHas(h.id) ? esc(sp(h.id).name) : esc(sp(h.a).name) + ' × ' + esc(sp(h.b).name); }
   function xRow(f, sel, act, dim) {
@@ -63,7 +63,7 @@
       s += '<div class="fc-genes">' + ['c', 's', 'v'].map(function (k) { return '<span title="' + AA.GENE_NAMES[k][0] + '">' + AA.GENE_NAMES[k][1] + ' ⌀ ' + F.genes[k].mean.toFixed(1).replace('.', ',') + ' <small>(bis ' + F.genes[k].max + ')</small></span>'; }).join('') + '</div>';
       const vs = F.vars.filter(function (x) { return x.p >= 0.001; });
       s += '<div class="p-h">Farbvariante</div><div class="fc-vars">' + vs.map(function (x) { return '<span class="fc-v">' + UI.varChip(x.v, true) + ' ' + pc(x.p) + '</span>'; }).join('') + '<span class="fc-v plain">normale Farbe ' + pc(F.plain) + '</span></div>';
-      s += '<div class="wk-note">Jede Kreuzung bringt ein Ei – danach ruhen sich beide Eltern einen Tag aus. Eine Farbvariante vererbt sich nur, wenn beide Eltern dieselbe tragen. Hybride sind unfruchtbar – jeder muss neu gekreuzt werden.</div>' +
+      s += '<div class="wk-note">Jede Kreuzung bringt ein Ei – danach ruhen sich beide Eltern so lange aus, wie das Junge zum Großwerden braucht. Eine Farbvariante vererbt sich nur, wenn beide Eltern dieselbe tragen. Hybride sind unfruchtbar – jeder muss neu gekreuzt werden.</div>' +
         (st.ok ? '<button class="btn violet big" data-act="x-go">🧬 Kreuzen · ' + fmt(st.cost) + ' ' + coin() + '</button>' : '<button class="btn big" disabled>' + xShort(st) + '</button><div class="wk-note">' + xWhy(st) + '</div>');
     } else s += '<div class="wk-note">Wähle ein ♂ der einen und ein ♀ der anderen Art – dann siehst du hier, was aus dem Ei wird. ' + (st.ok ? '' : xWhy(st)) + '</div>';
     return s + '</div></div>';
@@ -114,7 +114,7 @@
     }).join('');
     return '<div class="sec">🧬 Kreuzungen – Hybride gibt es nur so</div>' + rows +
       '<div class="wk-note">Ein ♂ der einen und ein ♀ der anderen Art, beide erwachsen und satt, im selben Becken. Die Kreuzung kostet das ' + String(AA.CROSS.cost).replace('.', ',') + '-Fache beider Paarungs-Gebühren, bringt immer ein Ei, ' +
-      'danach ruhen sich beide Eltern einen Tag aus. Hybride sind mehr wert als beide Eltern zusammen, aber unfruchtbar.</div>';
+      'danach ruhen sich beide Eltern so lange aus, wie das Junge zum Großwerden braucht. Hybride sind mehr wert als beide Eltern zusammen, aber unfruchtbar.</div>';
   };
   UI.lifeZuchtSig = function () { const t = AA.tank(); return AA.HYBRIDS.map(function (h) { const st = AA.crossStatus(h.id, t); return (st.ok ? 1 : st.why) + (AA.bookHas(h.id) ? 'k' : ''); }).join(','); };
 
@@ -137,7 +137,7 @@
     if (def.hab === 'lurk') chip('🕳️ Höhlenbewohner', 'Wohnt in einem Versteck (Deko mit 🏠) und schaut nur mit dem Kopf heraus. Kommt zum Fressen und nachts hervor.');
     else if (def.hab === 'bottom') chip('⬇️ Grundfisch', 'Bleibt am Boden, ruht und wühlt im Kies und wartet, bis das Futter zu ihm sinkt.');
     if (AA.RIG && AA.RIG[d.sp + '_m'] && AA.RIG[d.sp + '_m'].kind === 'up') chip('🌿 Klammerer', 'Hält sich gern mit dem Schwanz an Pflanzen fest.');
-    if (d.colorT > s.clock) chip('🌈 ' + AA.fmtShort(real(d.colorT - s.clock)), 'Farbfutter wirkt: doppeltes Glück auf Farbvarianten bei den Eiern dieses Fisches.', 'ok');
+    if (d.colorN > 0) chip('🌈 ' + d.colorN + (d.colorN === 1 ? ' Ei' : ' Eier'), 'Farbfutter wirkt: doppeltes Glück auf Farbvarianten bei den nächsten ' + (d.colorN === 1 ? 'Ei' : d.colorN + ' Eiern') + ' dieses Fisches.', 'ok');
     if (d.turboT > s.clock) chip('⚡ ' + AA.fmtShort(real(d.turboT - s.clock)), 'Turbofutter wirkt: wächst ' + pct(AA.FOOD2.turbo.grow) + ' % schneller.', 'ok');
     if (AA.setComplete(d.sp)) chip('👑 Set +' + pct(AA.SETBONUS) + ' %', 'Alle Farbvarianten dieser Art stehen im Sammelbuch: Jeder ' + esc(def.name) + ' ist ' + pct(AA.SETBONUS) + ' % mehr wert.', 'ok');
     if (UI.wildChips) UI.wildChips(d, def, t, chip);      // Saugwels, Rückenschwimmer, Putzerfisch … (js/wildui.js)

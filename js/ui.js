@@ -447,6 +447,13 @@
       li.push('🌿 <b>Umzug:</b> ' + (w.fish ? w.fish + (w.fish === 1 ? ' Süßwasser-Bewohner' : ' Süßwasser-Bewohner') : '') + (w.fish && w.crawl ? ' und ' : '') + (w.crawl ? w.crawl + ' Krabbler' : '') +
         (w.fish + w.crawl === 1 ? ' ist' : ' sind') + ' nach „' + esc(tk ? tk.name : 'Süßwasser') + '“ gezogen' + (w.gift ? ' – das Süßwasser-Becken ist geschenkt' : '') + '.' + (w.left ? ' ' + w.left + ' hatten keinen Platz mehr und bleiben, wo sie sind.' : ''));
     }
+    if (n.tempo) {                                     // Runde 15: neues Spieltempo
+      li.push('⏱️ <b>Neues Tempo:</b> Fische wachsen jetzt in Minuten statt Stunden – Clownfisch ' + AA.fmtDur(AA.FISH_BY.clown.grow) + ', Skalar ' + AA.fmtDur(AA.FISH_BY.skalar.grow) +
+        ', Blobfisch ' + AA.fmtDur(AA.FISH_BY.blobfish.grow) + ', Quastenflosser ' + AA.fmtDur(AA.FISH_BY.coelacanth.grow) + '. Was gerade wächst, behält seinen Fortschritt.');
+      li.push('❤️ <b>Paaren:</b> Die Eltern dürfen wieder, sobald ihr Junges erwachsen wäre – beim Clownfisch nach ' + AA.fmtDur(AA.FISH_BY.clown.pause) + '. Der Zuchtmeister arbeitet jetzt auch, während du weg bist.');
+      li.push('⭐ <b>Neu: XP fürs Großziehen</b> – jeder Fisch, der bei dir erwachsen wird, bringt Erfahrung (Clownfisch ' + AA.FISH_BY.clown.xp + ', Blobfisch ' + AA.FISH_BY.blobfish.xp + ').');
+      li.push('🌈 Farbvarianten sind seltener geworden (1 % je Ei), Farbfutter wirkt für die nächsten 3 Eier, der Markt erholt sich schon nach einer halben Stunde.');
+    }
     if (n.bonus && UI.r14News) UI.r14News(li, n.bonus);            // Runde 14: Extra-Geschenk (js/socialui.js)
     if (n.v12 && UI.r12News) UI.r12News(li);           // Runde 12 (js/extrasui.js)
     if (UI.r11News) UI.r11News(li, n);                 // Runde 11 + Geschenk (js/socialui.js)
@@ -500,7 +507,8 @@
   };
   UI.welcomeBack = function (sum) {
     const lines = [], t = AA.tank(), s = AA.state;
-    if (sum.matured) lines.push('✨ ' + sum.matured + (sum.matured === 1 ? ' Fisch ist' : ' Fische sind') + ' erwachsen geworden');
+    if (sum.matured) lines.push('✨ ' + sum.matured + (sum.matured === 1 ? ' Fisch ist' : ' Fische sind') + ' erwachsen geworden' + (sum.xp ? ' – +' + AA.fmt(sum.xp) + ' XP' : ''));
+    if (sum.bred) lines.push('🧑‍🔬 Der Zuchtmeister hat ' + sum.bred + (sum.bred === 1 ? ' Paar' : ' Paare') + ' gepaart');
     if (sum.hatched) lines.push('🐣 ' + sum.hatched + (sum.hatched === 1 ? ' Baby ist' : ' Babys sind') + ' geschlüpft');
     (sum.variants || []).slice(0, 4).forEach(function (x) {      // Farbvarianten, die in der Zwischenzeit geschlüpft sind
       lines.push('✨ <b>' + esc(AA.speciesName(x.sp, x.v)) + '</b> geschlüpft – ' + AA.VAR_BY[x.v].rare + (x.fresh ? ', neu im Sammelbuch!' : ''));
@@ -583,7 +591,7 @@
   };
   const MATE_TXT = { busyme: 'Balzt gerade …', hungryme: 'Erst satt werden', busy: 'Partner balzt …', nomale: 'Kein ♂ da', nofemale: 'Kein ♀ da', hungry: 'Paar ist hungrig', dirty: 'Becken zu schmutzig', full: 'Becken voll', coins: 'Zu wenig Münzen', spawn: 'Laicht nur im Süßwasser', sterile: '🧬 Unfruchtbar' };
   const MATE_HINT = { nomale: 'Zum Paaren fehlt ein erwachsenes ♂ Männchen dieser Art.', nofemale: 'Zum Paaren fehlt ein erwachsenes ♀ Weibchen dieser Art.',
-    hungryme: 'Zum Balzen muss dieser Fisch satt und gesund sein.', busyme: 'Dieser Fisch balzt gerade – gleich liegt das Ei im Becken.', cdme: 'Nach der Balz ruht sich jeder Fisch einen Tag aus. Andere Paare dürfen in der Zeit trotzdem.',
+    hungryme: 'Zum Balzen muss dieser Fisch satt und gesund sein.', busyme: 'Dieser Fisch balzt gerade – gleich liegt das Ei im Becken.', cdme: 'Nach der Balz ruht sich jeder Fisch so lange aus, bis sein Junges erwachsen wäre (Ei + Großwerden). Andere Paare dürfen in der Zeit trotzdem.',
     hungry: 'Beide Eltern müssen satt und gesund sein.', dirty: 'Erst putzen – gepaart wird nur im sauberen Becken.', full: 'Kein Platz für ein Ei: Becken vergrößern oder Fische verkaufen.',
     coins: 'Die Paarung kostet den halben Kaufpreis.', cd: 'Alle passenden Partner ruhen sich gerade nach ihrer Balz aus.', busy: 'Alle passenden Partner balzen gerade schon.', spawn: 'Lachse laichen nur im Süßwasser – setz das Paar in ein Süßwasser-Becken um.', pair: 'Dieses Paar kann gerade nicht.',
     sterile: 'Hybride sind unfruchtbar – einen neuen gibt es nur, wenn du die beiden Eltern-Arten wieder kreuzt.' };
@@ -629,7 +637,7 @@
       else if (!d.adult) hint = 'Erwachsen ist ' + (d.sex === 'm' ? 'er' : 'sie') + ' mehr wert – und erst dann können Kunden ' + (d.sex === 'm' ? 'ihn' : 'sie') + ' kaufen. Nächstes Training in der nächsten Wachstumsphase.';
       else if (!ms.ok) hint = MATE_HINT[ms.why] || '';
       else {
-        hint = 'Jede Balz bringt ein Ei – danach ruhen sich die beiden einen Tag aus. ';
+        hint = 'Jede Balz bringt ein Ei – danach ruhen sich die beiden ' + AA.fmtDur(real(AA.mateCooldown(AA.tank(), d.sp, false))) + ' aus. ';
         if (d.v) hint += '✨ ' + AA.VAR_BY[d.v].name + ' vererbt sich an ' + Math.round(AA.VAR.inherit1 * 100) + ' % der Eier – mit gleichfarbigem Partner an ' + Math.round(AA.VAR.inherit2 * 100) + ' %.';
         else hint += '✨ Chance auf eine Farbvariante im nächsten Ei: ' + String(Math.round(AA.variantChance() * 1000) / 10).replace('.', ',') + ' %.';
       }

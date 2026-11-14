@@ -68,7 +68,8 @@
     if (sum.cDone) money.push('🏆 ' + sum.cDone + (sum.cDone === 1 ? ' Vertrag' : ' Verträge') + ' erfüllt');
     if (sum.coins) money.unshift('Kasse unterm Strich: <b class="' + (sum.coins < 0 ? 'dn' : 'up') + '">' + (sum.coins > 0 ? '+' : '−') + fmt(Math.abs(sum.coins)) + '</b> Münzen' + (sum.rep ? ' · Ruf ' + (sum.rep > 0 ? '+' : '') + sum.rep : ''));
     if (sum.hatched) breed.push('🐣 ' + sum.hatched + (sum.hatched === 1 ? ' Baby ist' : ' Babys sind') + ' geschlüpft');
-    if (sum.matured) breed.push('✨ ' + sum.matured + (sum.matured === 1 ? ' Fisch ist' : ' Fische sind') + ' erwachsen geworden');
+    if (sum.matured) breed.push('✨ ' + sum.matured + (sum.matured === 1 ? ' Fisch ist' : ' Fische sind') + ' erwachsen geworden' + (sum.xp ? ' – <b>+' + fmt(sum.xp) + ' XP</b>' : ''));
+    if (sum.bred) breed.push('🧑‍🔬 Der Zuchtmeister hat ' + sum.bred + (sum.bred === 1 ? ' Paar' : ' Paare') + ' gepaart');
     (sum.variants || []).slice(0, 4).forEach(function (x) { breed.push('🌈 <b>' + esc(AA.speciesName(x.sp, x.v)) + '</b> geschlüpft – ' + AA.VAR_BY[x.v].rare + (x.fresh ? ', neu im Sammelbuch!' : '')); });
     if (sum.variants && sum.variants.length > 4) breed.push('🌈 … und ' + (sum.variants.length - 4) + ' weitere Farbvarianten');
     if (sum.eggs) breed.push('🥚 ' + sum.eggs + (sum.eggs === 1 ? ' Ei wartet' : ' Eier warten') + ' noch');

@@ -18,7 +18,11 @@
     if (o.title && !o.titles[o.title]) delete o.title;
     o.templates = (Array.isArray(o.templates) ? o.templates : []).filter(function (x) { return x && x.name && Array.isArray(x.deco); }).slice(0, 12);
     ['cleaned', 'crosses', 'hybrids', 'specialFed', 'rotted', 'fedAll'].forEach(function (k) { o.stats[k] = Math.max(0, o.stats[k] | 0); });
-    o.tanks.forEach(function (t) { t.fish.forEach(function (f) { if (!(f.colorT > 0)) delete f.colorT; if (!(f.turboT > 0)) delete f.turboT; }); });
+    o.tanks.forEach(function (t) { t.fish.forEach(function (f) {
+      if (+f.colorT > (o.clock || 0)) f.colorN = Math.max(f.colorN | 0, AA.FOOD2.color.eggs);      // Runde 15: Farbfutter wirkt jetzt für Eier, nicht für eine Zeit
+      delete f.colorT; if (!(f.colorN > 0)) delete f.colorN; else f.colorN = Math.min(f.colorN | 0, AA.FOOD2.color.eggs);
+      if (!(f.turboT > 0)) delete f.turboT;
+    }); });
     return o;
   };
 
@@ -192,7 +196,7 @@
   AA.foodEffect = function (f, kind) {
     const s = S(), F = AA.FOOD2[kind];
     if (!F) return null;
-    if (kind === 'color') { f.colorT = s.clock + F.dur; return 'color'; }
+    if (kind === 'color') { f.colorN = F.eggs; return 'color'; }
     if (kind === 'turbo') { if (!f.adult) { f.turboT = s.clock + F.dur; return 'turbo'; } return null; }
     if (kind === 'med') { if (f.sick) { f.sick = false; f.starve = 0; f.hunger = Math.max(f.hunger, 0.6); return 'healed'; } return null; }
     if (kind === 'live') { f.hunger = Math.min(1, f.hunger + F.fill); f.starve = 0; return 'live'; }
@@ -205,8 +209,12 @@
   const roll0 = AA.rollVariant;
   AA.rollVariant = function (a, b, t) {
     const now = S().clock;
-    luckBoost = (a && a.colorT > now) || (b && b.colorT > now) ? AA.FOOD2.color.luck : 1;
-    try { return roll0(a, b, t); } finally { luckBoost = 1; }
+    const boosted = [a, b].filter(function (x) { return x && x.colorN > 0; });
+    luckBoost = boosted.length ? AA.FOOD2.color.luck : 1;
+    try { return roll0(a, b, t); } finally {
+      luckBoost = 1;
+      boosted.forEach(function (x) { x.colorN--; if (x.colorN <= 0) delete x.colorN; });      // ein Ei mit Glück verbraucht
+    }
   };
   const buy0 = AA.buyFood;
   AA.buyFood = function (id) {
