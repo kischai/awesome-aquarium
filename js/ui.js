@@ -55,6 +55,27 @@
     if (UI.farmRefresh) UI.farmRefresh();
     if (UI.ecoRefresh) UI.ecoRefresh();                // Marke am „Büro“ (js/bizui.js)
     if (UI.lifeRefresh) UI.lifeRefresh();              // Futter-Leiste, Titel, Schwarm-Meldungen (js/lifeui.js)
+    UI.fitTop();
+  };
+  /* 14.11.2026: Die obere Leiste passt sich an, statt dass sich Balken und Knöpfe überlappen (große Zahlen wie 3.005.959 Münzen,
+     schmale Fenster). Stufe für Stufe, bis alles passt: t1 seltene Knöpfe (📷 🌙 🔊 ⚙️) wandern ins Menü ☰ · t2 die zwei Balken
+     stehen übereinander · t3 Level nur als Plakette · t4 auch 📅 und 🧭 ins Menü. Gemessen wird nur, wenn sich Zahlen oder Größe ändern. */
+  const TIGHT = ['t1', 't2', 't3', 't4'];
+  let tightKey = '';
+  function topOverflows(top) {
+    const m = top.querySelector('.meters');
+    return top.scrollWidth > top.clientWidth + 1 || (m && m.scrollWidth > m.clientWidth + 1);
+  }
+  UI.fitTop = function (force) {
+    const top = $('#hud-top'), st = $('#stage');
+    if (!top || !st) return;
+    const key = [$('#coins').textContent, $('#pearls').textContent, $('#food').textContent, $('#xp-text').textContent, $('#speed-tag').className,
+      st.style.getPropertyValue('--ui'), st.classList.contains('compact'), document.body.classList.contains('visiting')].join('|');
+    if (!force && key === tightKey) return;
+    tightKey = key;
+    TIGHT.forEach(function (c) { top.classList.remove(c); });
+    if (st.classList.contains('compact')) return;      // die schlanke Fassung (Handy) hat ihr eigenes Layout
+    for (let i = 0; i < TIGHT.length && topOverflows(top); i++) top.classList.add(TIGHT[i]);
   };
   const warn = { hunger: 0, dirt: 0, sick: 0, food: 0 };
   UI.tick = function () {

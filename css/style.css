@@ -679,6 +679,15 @@ html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-tap-
 #stage { --ui: 1; }
 #hud-top, #hud-bottom, #card, #toasts, #modal, #friends-bar, #visit-banner, #foodbar { zoom: var(--ui); }
 #btn-menu { display: none; }
+/* 14.11.2026: obere Leiste in Stufen enger (UI.fitTop in js/ui.js), statt dass sich Balken und Knöpfe überlappen */
+#hud-top.t1 .btns > #btn-photo, #hud-top.t1 .btns > #btn-light, #hud-top.t1 .btns > #btn-sound, #hud-top.t1 .btns > #btn-settings { display: none; }
+#hud-top.t1 .btns > #btn-menu { display: grid; }
+#hud-top.t2 .meters { flex-direction: column; align-items: stretch; justify-content: center; gap: 6px; padding: 6px 12px; flex: none; }
+#hud-top.t2 .meter { gap: 5px; } #hud-top.t2 .meter .ico { font-size: 13px; width: 16px; text-align: center; }
+#hud-top.t2 .meter .bar { height: 9px; width: 72px; min-width: 72px; flex: none; }
+#hud-top.t3 .lvl-info { display: none; }
+#hud-top.t3 .lvl-panel { padding: 3px; border-radius: 50%; }
+#hud-top.t4 .btns > #btn-login, #hud-top.t4 .btns > #btn-hunt { display: none; }
 #rotate { display: none; position: fixed; inset: 0; z-index: 1000; background: radial-gradient(ellipse at 50% 30%, #0e5a7c 0%, #06293d 70%, #031826 100%); color: #fff; place-items: center; text-align: center; font-family: var(--font); padding: 24px; }
 #rotate span { display: block; font-size: 64px; animation: rotHint 2.2s ease-in-out infinite; }
 #rotate b { display: block; font-size: 26px; font-weight: 900; margin: 14px 0 6px; } #rotate small { font-size: 16px; opacity: .8; }

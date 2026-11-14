@@ -515,15 +515,17 @@
     if (m.classList.contains('todo')) return '';         // graue Zahl = nichts abzuholen
     return m.classList.contains('dot') ? '<i class="dot"></i>' : '<i class="badge">' + esc(m.textContent) + '</i>';
   }
+  /* Im Menü steht nur, was gerade nicht als Knopf zu sehen ist (Handy: fast alles; Rechner mit enger Leiste: die seltenen Knöpfe) */
+  function hiddenNow(id) { const b = $('#' + id); return !!b && (!b.offsetParent || getComputedStyle(b).display === 'none'); }
   UI.openMenu = function () {
     const vis = AA.visit ? { 'btn-photo': 1, 'btn-light': 1, 'btn-sound': 1 } : null;
-    UI.open('menu', head('☰ Menü') + '<div class="menu-grid">' + MENU.filter(function (m) { return (!vis || vis[m[0]]) && $('#' + m[0]); }).map(function (m) {
+    UI.open('menu', head('☰ Menü') + '<div class="menu-grid">' + MENU.filter(function (m) { return vis ? vis[m[0]] && $('#' + m[0]) : hiddenNow(m[0]); }).map(function (m) {
       return '<button class="menu-tile" data-act="menu-go" data-id="' + m[0] + '"><span>' + (m[0] === 'btn-sound' ? $('#btn-sound').textContent : m[1]) + '</span>' + m[2] + mark(m[3]) + '</button>';
     }).join('') + '</div>', 'mid');
   };
   function menuDot() {
     const d = $('#menu-dot'); if (!d) return;
-    d.classList.toggle('hidden', AA.visit || !MENU.some(function (m) { return mark(m[3]); }));
+    d.classList.toggle('hidden', AA.visit || !MENU.some(function (m) { return hiddenNow(m[0]) && mark(m[3]); }));
   }
 
   /* ---------- Verdrahten ---------- */

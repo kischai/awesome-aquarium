@@ -23,6 +23,7 @@
     st.style.setProperty('--ui', ui.toFixed(3));
     st.classList.toggle('compact', ui > 1.2);
     V.ui = ui;
+    if (UI.fitTop) UI.fitTop(true);                    // obere Leiste: passt sie noch in eine Zeile? (js/ui.js)
     R = AA.clamp((window.devicePixelRatio || 1) * sc, 1, maxR);
     canvas.width = Math.round(W * R); canvas.height = Math.round(H * R);
     V.res = R;                                          // Zeichen-Pixel je Spiel-Pixel (für die Wahl zwischen normalem und großem Deko-Bild)
