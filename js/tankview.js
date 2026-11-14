@@ -30,6 +30,7 @@
   function lruPut(m, k, v, max) { m.set(k, v); while (m.size > max) m.delete(m.keys().next().value); return v; }
   function bgFor(wallId, T) { const bk = wallId + '|' + T; return lruGet(bgCache, bk) || lruPut(bgCache, bk, buildBg(wallId, T), BG_MAX); }
   let sceneCv = null, sceneKey = '', glassCv = null;
+  let sceneTank = null, fadeCv = null, fadeT0 = -9;      // 14.11.2026: beim Ausbau blendet der alte (gröbere) Boden kurz aus, während die Kamera „rausfährt“
   let groundCv = null, groundKey = '', curGround = null;      // Runde 13: Szene + flach liegende Wege (Deko mit def.path) – siehe groundCanvas; curGround = das im aktuellen Bild
 
   /* ---------- statische Ebenen ---------- */
@@ -811,14 +812,16 @@
       }
     }
   };
-  /* ---------- Becken-Größe im Raum (Runde 6) ----------
-     Ein Becken steht als Ausschnitt k (AA.ZOOM je Ausbaustufe) auf der Bühne und wächst mit jedem Ausbau; das Meeresbecken füllt alles.
-     Die Spielwelt bleibt 1280 × 720 – sie wird nur kleiner gezeichnet. Damit ein großes Becken wirklich mehr Platz bietet, sind Fische, Deko und Eier
-     in kleinen Becken um sprK = 1/√k größer (bezogen auf die Welt): im kleinsten Becken nimmt ein Fisch also gut die Hälfte mehr Fläche ein. */
-  V.kCur = 1; V.sprK = 1; V.txtK = 1; V.ox = 0; V.oy = 0; V.kTank = null;      // txtK: Maßstab für Schrift und Anzeigen (ohne die Verkleinerung des Meeresbeckens)
+  /* ---------- Becken-Größe (Runde 6; seit 14.11.2026 immer bildschirmfüllend) ----------
+     Jedes Becken füllt die ganze Bühne, die Spielwelt bleibt 1280 × 720. Wie groß ein Becken ist, zeigt der Maßstab: Fische, Deko und Eier
+     sind in kleinen Becken größer gezeichnet – sprK = 1/√k mit k = AA.ZOOM je Ausbaustufe (50 Gallonen × 1,23 · 75 × 1,13 · 100 × 1,06 ·
+     125 × 1), das Meeresbecken noch kleiner (OCEAN_SPR). Beim Ausbau wandert k weich auf den neuen Wert: die Kamera „fährt raus“.
+     Das Verhältnis von Fisch zu Becken ist dasselbe wie vorher; bis 13.11. stand ein kleines Becken dafür verkleinert in einem Raum
+     (Wand, Unterschrank, Namensschild). V.ox/V.oy/V.txtK bleiben für Erweiterungen stehen (0, 0, 1). */
+  V.kCur = 1; V.sprK = 1; V.txtK = 1; V.ox = 0; V.oy = 0; V.kTank = null;
   V.zoomTarget = function () { const t = AA.tank(); return AA.wide(t) || window.AA_NOZOOM ? 1 : (AA.ZOOM[t.size] || 1); };      // AA_NOZOOM: Schalter für die alten automatischen Tests
-  V.setZoom = function (k) { V.kCur = k; V.txtK = 1 / Math.sqrt(k); V.sprK = V.txtK * (AA.wide(AA.tank()) && !window.AA_NOZOOM ? AA.OCEAN_SPR : 1); V.ox = (W - W * k) / 2; V.oy = (H - H * k) * 0.5; };   // Meeresbecken: alles kleiner = riesig
-  V.toWorld = function (x, y) { return { x: (x - V.ox) / V.kCur, y: (y - V.oy) / V.kCur }; };
+  V.setZoom = function (k) { V.kCur = k; V.sprK = (AA.wide(AA.tank()) && !window.AA_NOZOOM ? AA.OCEAN_SPR : 1) / Math.sqrt(k); };   // Meeresbecken: alles kleiner = riesig
+  V.toWorld = function (x, y) { return { x: x, y: y }; };
   /* Runde 13: Wie weit nach vorn sieht man den Boden noch ganz? Unten liegt die Leiste (#hud-bottom) über dem Becken. Gibt [z0, z1] zurück:
      den vordersten Streifen, in dem ein Grundfisch noch komplett zu sehen ist (alle 3 Sekunden neu – Fenstergröße, Handy, Becken-Zoom). */
   V.frontBand = function () {
@@ -849,7 +852,7 @@
     }
     return Math.min(1, cov);
   };
-  V.toStage = function (x, y) { return { x: V.ox + x * V.kCur, y: V.oy + y * V.kCur }; };
+  V.toStage = function (x, y) { return { x: x, y: y }; };
   V.rebuild = function () {
     V.fish = []; V.byId = {}; V.food = []; V.parts = []; V.texts = []; V.bubbles = []; V.rips = []; V.decoT = {}; V.crawl = {};
     V.live = []; V.service = {}; V.nestle = {}; V.schools = {}; V.wipe = null; V.shine = {};
@@ -1759,6 +1762,11 @@
     if (!glassCv) glassCv = buildGlass();
     const T = V.texScale(), key = tank.wall + '|' + tank.floor + '|' + (tank.shape || '') + '|' + T;
     if (sceneKey !== key) {                          // Hintergrund + Kies einmal zusammensetzen (spart pro Bild große Blits)
+      if (sceneKey && curGround && sceneTank === tank.id && !V.photoMode && sceneKey.slice(0, sceneKey.lastIndexOf('|')) === key.slice(0, key.lastIndexOf('|'))) {
+        if (!fadeCv) fadeCv = mk(W * SS, H * SS);       // dasselbe Becken, nur ein anderer Maßstab (Ausbau): altes Bild merken und ausblenden
+        const fg = fadeCv.getContext('2d'); fg.setTransform(1, 0, 0, 1, 0, 0); fg.clearRect(0, 0, W * SS, H * SS); fg.drawImage(curGround, 0, 0); fadeT0 = V.time;
+      }
+      sceneTank = tank.id;
       if (!sceneCv) sceneCv = mk(W * SS, H * SS);
       const bg = bgFor(tank.wall, T), sg = sceneCv.getContext('2d');
       sg.setTransform(1, 0, 0, 1, 0, 0); sg.drawImage(bg, 0, 0);
@@ -1769,6 +1777,11 @@
     const flats = flatList(tank);
     curGround = groundCanvas(tank, flats);
     ctx.drawImage(curGround, 0, 0, W, H);              // Runde 13: Szene + Wege
+    if (fadeCv) {
+      const fa = 1 - (V.time - fadeT0) / 0.9;
+      if (fa > 0 && fa <= 1) { ctx.save(); ctx.globalAlpha = fa; ctx.drawImage(fadeCv, 0, 0, W, H); ctx.restore(); }
+      else if (V.time - fadeT0 > 2 || V.time < fadeT0) fadeCv = null;       // Speicher wieder frei
+    }
     for (let i = 0; i < flats.length; i++) {
       const o = flats[i];
       if (o === V.dragDeco) { ctx.save(); ctx.globalAlpha = 0.85; drawFlat(ctx, o, AA.DECO_BY[o.type], V.decoBox(o)); ctx.restore(); }
@@ -1851,47 +1864,7 @@
       }
     }
   }
-  /* der Raum um das Becken: Wand, Dielen, Unterschrank mit Namensschild */
-  function drawRoom(ctx, k, tank) {
-    const x0 = V.ox, y0 = V.oy, w = W * k, h = H * k, yb = y0 + h, fy = Math.min(H - 8, yb + 30 + 60 * (1 - k));
-    const wg = ctx.createLinearGradient(0, 0, 0, fy);
-    wg.addColorStop(0, '#31465f'); wg.addColorStop(1, '#263852');
-    ctx.fillStyle = wg; ctx.fillRect(0, 0, W, fy);
-    ctx.fillStyle = 'rgba(255,255,255,0.035)';
-    for (let x = 40; x < W; x += 80) ctx.fillRect(x, 0, 2, fy);                 // Tapeten-Streifen
-    const lg = ctx.createRadialGradient(W / 2, y0 + h * 0.4, h * 0.3, W / 2, y0 + h * 0.4, h * 1.25);
-    lg.addColorStop(0, 'rgba(120,220,255,0.20)'); lg.addColorStop(1, 'rgba(120,220,255,0)');
-    ctx.fillStyle = lg; ctx.fillRect(0, 0, W, fy);                                // das Becken leuchtet in den Raum
-    const fg = ctx.createLinearGradient(0, fy, 0, H);
-    fg.addColorStop(0, '#5a4130'); fg.addColorStop(1, '#3b2a1f');
-    ctx.fillStyle = fg; ctx.fillRect(0, fy, W, H - fy);
-    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, fy, W, 3);
-    ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); ctx.ellipse(W / 2, fy + 5, w * 0.56, 9, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#7a5539'; rr(ctx, x0 - 16, yb - 2, w + 32, fy - yb + 4, 7); ctx.fill();          // Unterschrank
-    ctx.fillStyle = '#93694a'; rr(ctx, x0 - 22, yb - 4, w + 44, 12, 5); ctx.fill();
-    ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.fillRect(x0 - 16, yb + 8, w + 32, 4);
-    ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(W / 2, yb + 14); ctx.lineTo(W / 2, fy); ctx.stroke();
-    const role = tank.role && AA.ROLES[tank.role], label = (role ? role.ico + ' ' : '') + tank.name;
-    if (fy - yb > 34) {                                                         // Namensschild
-      ctx.font = '700 15px ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const tw = Math.min(w * 0.6, ctx.measureText(label).width + 26), py = yb + 25;
-      ctx.fillStyle = '#e9d8a6'; rr(ctx, W / 2 - tw / 2, py - 12, tw, 24, 6); ctx.fill();
-      ctx.strokeStyle = '#8a6a3a'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.fillStyle = '#4a3520'; ctx.fillText(label, W / 2, py + 1, tw - 12);
-      V.plate = { x: W / 2 - tw / 2, y: py - 12, w: tw, h: 24 };
-    } else V.plate = null;
-    ctx.fillStyle = '#18222f'; rr(ctx, x0 - 7, y0 - 7, w + 14, h + 14, 12); ctx.fill();                // Rahmen
-  }
-  V.render = function (ctx) {
-    const k = V.kCur;
-    if (V.photoMode || k > 0.999) { V.plate = null; renderWorld(ctx); return; }
-    drawRoom(ctx, k, AA.tank());
-    ctx.save();
-    ctx.translate(V.ox, V.oy); ctx.scale(k, k);
-    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
-    renderWorld(ctx);
-    ctx.restore();
-  };
+  V.render = function (ctx) { renderWorld(ctx); };      // seit 14.11.2026 ohne Raum drumherum: das Becken füllt immer alles
 
   /* Foto: Becken ohne Bedienelemente als PNG */
   V.photo = function (canvas, done) {

@@ -96,7 +96,7 @@
   }
   function ghostSize(it) {
     const def = AA.DECO_BY[it.type], cv = $('#cv'), r = cv.getBoundingClientRect();
-    return Math.max(36, def.w * AA.depthScale(0.6) * (it.s || 1) * (V.kCur || 1) * r.width / AA.W);
+    return Math.max(36, def.w * AA.depthScale(0.6) * (it.s || 1) * r.width / AA.W);
   }
   function onDown(e) {
     const it = e.target.closest('.st-item'); if (!it || (e.button !== undefined && e.button !== 0)) return;

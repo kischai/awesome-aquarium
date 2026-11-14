@@ -74,10 +74,7 @@
     if (e.button !== undefined && e.button !== 0) return;
     AA.audio.unlock();
     const p = pos(e), P = V.pointer;
-    if (outside(p)) {                               // neben dem Becken: nur das Namensschild am Schrank reagiert
-      const q = V.plate; if (!AA.visit && q && p.sx >= q.x && p.sx <= q.x + q.w && p.sy >= q.y && p.sy <= q.y + q.h && UI.renameTank) UI.renameTank();
-      return;
-    }
+    if (outside(p)) return;                         // neben der Bühne (das Becken füllt sie seit 14.11.2026 ganz)
     if (AA.visit) {                                  // zu Besuch bei Freunden: Fische ansehen ja, anfassen nein
       const fv = fishAt(p);
       V.select(fv || null); if (fv) AA.audio.play('pop');

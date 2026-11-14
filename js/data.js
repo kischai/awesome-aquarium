@@ -980,7 +980,8 @@
   ];
 
   /* ================= Runde 6: Zuchtbetrieb, Teil 2 ================= */
-  /* So groß steht ein Becken im Raum (Anteil der Bühne) – es wächst mit jeder Ausbaustufe sichtbar. Das Meeresbecken füllt immer alles. */
+  /* Maßstab je Ausbaustufe (50 / 75 / 100 / 125 Gallonen): Fische, Deko und Eier werden um 1/√k größer gezeichnet – je größer das Becken,
+     desto kleiner wirkt alles darin (siehe V.setZoom). Bis 13.11.2026 stand ein kleines Becken auf k verkleinert in einem Raum. */
   AA.ZOOM = [0.66, 0.78, 0.89, 1];
   /* Meeresbecken: ein einziges, riesiges Meerwasser-Becken. Level 40 = kurz bevor der Adlerrochen (41) freigeschaltet wird.
      Meeresriesen (ocean: true an der Art) lassen sich nur dort kaufen oder hineinsetzen; wer schon in einem normalen Becken lebt, darf bleiben. */
