@@ -261,7 +261,17 @@
     const u = c.toDataURL('image/png'); if (AA.assets.get('floor/' + t.floor)) thumbs[key] = u;
     return u;
   };
-  AA.on('assets', function (g) { if (g.charAt(1) === '-' && (g.charAt(0) === 'k' || g.charAt(0) === 'w')) { sceneKey = null; bgCache.clear(); floorCache.clear(); } });
+  /* Kommt ein Boden- oder Kulissen-Päckchen an, nur verwerfen, was davon abhängt (14.11.2026). Vorher wurde bei jedem der rund 80 Päckchen,
+     die im Hintergrund nachkommen, die ganze Szene neu gemalt (samt Boden mit Form) und alle Merkspeicher geleert – das war das Ruckeln
+     in den ersten 20 Sekunden. Im Boden-Speicher liegen ohnehin nur fertige Böden (nie der Ersatz-Sand); bei den Kulissen kann die
+     Wasserfarbe als Platzhalter liegen, solange das Bild fehlt. */
+  AA.on('assets', function (g) {
+    const kind = g.charAt(0); if (g.charAt(1) !== '-' || (kind !== 'k' && kind !== 'w')) return;
+    const As = AA.assets, imgOf = function (wallId) { return (AA.WALL_BY[wallId] || {}).img; };
+    if (kind === 'w') bgCache.forEach(function (c, k) { if (As.groupOf(imgOf(k.slice(0, k.indexOf('|')))) === g) bgCache.delete(k); });
+    const t = AA.state && AA.tank();
+    if (t && (kind === 'k' ? As.groupOf('floor/' + t.floor) : As.groupOf(imgOf(t.wall))) === g) sceneKey = null;
+  });
   V.clearThumbs = function () { for (const k in thumbs) if (k[0] === 'f') delete thumbs[k]; };
 
   /* ---------- Zeichen-Helfer: verformte Sprites ---------- */

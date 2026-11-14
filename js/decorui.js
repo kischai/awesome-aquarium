@@ -215,7 +215,8 @@
     AA.on('storage', function () { if (V.tool === 'deco') bar(); });
     AA.on('tankChanged', function () { if (AA.clampTankDeco) AA.clampTankDeco(); if (V.tool === 'deco') { lastBeauty = -1; head(); bar(); } });
     AA.on('decoChanged', function () { lastBeauty = -1; });
-    AA.on('assets', function () { if (V.tool === 'deco') bar(); });
+    let barT = 0;      // Deko-Päckchen kommen oft dicht hintereinander an: das Lager dann nur einmal kurz danach neu zeichnen
+    AA.on('assets', function (g) { if (V.tool !== 'deco' || g.indexOf('d-') !== 0 || barT) return; barT = setTimeout(function () { barT = 0; if (V.tool === 'deco') bar(); }, 200); });
     setInterval(function () { if (V.tool === 'deco' && !document.hidden) head(); }, 700);
     if (AA.clampTankDeco) AA.clampTankDeco();
   };

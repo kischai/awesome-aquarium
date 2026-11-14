@@ -315,8 +315,17 @@
   AA.on('decoRemoved', function (o) { if (V.selDeco === o) V.selectDeco(null); });
 
   /* ---------- Spielschleife ---------- */
+  /* Höchstens ~60 Bilder pro Sekunde auf schnellen Bildschirmen (14.11.2026): Bei 120 Hz und mehr (MacBook Pro, iPad Pro, viele Handys,
+     Spiele-Monitore) halbiert das die Arbeit für Prozessor, Grafik und Akku – bei gemächlich schwimmenden Fischen sieht man keinen Unterschied.
+     rafMs = geglätteter Takt des Bildschirms; erst unter 10 ms (über 100 Hz) wird gedrosselt, 60/75/90 Hz laufen unverändert (kein Stottern). */
+  const FRAME_MS = 1000 / 60;
+  let nextAt = 0, prevTs = 0, rafMs = 16.7;
   function frame(ts) {
     requestAnimationFrame(frame);
+    const d = ts - prevTs; prevTs = ts;
+    if (d > 0 && d < 50) rafMs += (d - rafMs) * 0.05;
+    if (rafMs < 10 && ts < nextAt - 2) return;
+    nextAt += FRAME_MS; if (nextAt < ts) nextAt = ts + FRAME_MS;
     const now = Date.now();
     let dt = (ts - last) / 1000; last = ts;
     const wall = (now - lastWall) / 1000; lastWall = now;

@@ -2,11 +2,12 @@
 /* Awesome Aquarium – Bilder laden.
    Die Bilder liegen als Data-URLs in vielen kleinen Päckchen unter js/pack/ (erzeugt von tools/bundle.py; dadurch läuft alles per Doppelklick,
    inkl. Foto-Modus). Seit Runde 7 wird beim Start nur geladen, was in deinen Becken wirklich vorkommt (plus Grundausstattung) – der Rest kommt
-   danach still im Hintergrund, Päckchen für Päckchen. Braucht das Spiel etwas früher (z. B. ein eben gekaufter Fisch), wird dieses Päckchen vorgezogen.
+   danach still im Hintergrund, Päckchen für Päckchen (am Rechner; auf Handy/Tablet, bei wenig Speicher oder langsamem Netz erst, wenn es gebraucht
+   wird – s. As.lean). Braucht das Spiel etwas früher (z. B. ein eben gekaufter Fisch), wird dieses Päckchen vorgezogen.
      js/pack/index.js   Inhaltsverzeichnis: window.AA_PACK = { "<päckchen>": ["<bild>", …] }
      f-<art>            ♂, ♀, Baby und die „traurig“-Pflaster einer Fischart
      d-<deko>           ein Deko-Stück (mit Scheiben-Ansicht und großer Fassung), w-<id> Hintergrundbild, k-<id> Boden, core = Münze, Futterdose, Minispiel-Dinge
-   Schalter für Tests: window.AA_EAGER = 1 lädt wie früher alles vor dem Start. Ohne Päckchen (kein js/pack) kommen die Bilder direkt aus assets/. */
+   Schalter für Tests: window.AA_EAGER = 1 lädt wie früher alles vor dem Start, window.AA_LEAN = 1 / 0 erzwingt sparsam / auf Vorrat. Ohne Päckchen (kein js/pack) kommen die Bilder direkt aus assets/. */
 (function (AA) {
   const As = AA.assets = { img: {}, tint: {}, done: {}, wait: {}, complete: false, stats: { first: 0, firstMs: 0, allMs: 0 } };
   const PACK = window.AA_PACK || null, GROUP = {};
@@ -17,6 +18,13 @@
      Per Doppelklick (file://) bleibt es beim direkten Griff nach assets/<bild>.png. */
   const HOSTED = location.protocol !== 'file:', BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', PV = window.AA_PACK_V || {};
   As.hosted = HOSTED;
+  /* Sparsam laden (14.11.2026): Auf Handy und Tablet, mit wenig Arbeitsspeicher, langsamem Netz oder im Datensparmodus kommt nicht mehr alles
+     (gut 50 MB) auf Vorrat, sondern jedes Päckchen erst, wenn es gebraucht wird – Shop, Sammelbuch oder ein neuer Fisch holen es sich selbst.
+     Das spart Datenvolumen, Speicher und Akku (Safari auf dem iPhone lädt Seiten neu, die zu viel Speicher belegen).
+     Schalter für Tests: window.AA_LEAN = 1 (sparsam) bzw. 0 (alles auf Vorrat). */
+  const NET = navigator.connection || {};
+  As.lean = window.AA_LEAN !== undefined ? !!window.AA_LEAN : HOSTED && !window.AA_EAGER && !!(NET.saveData || /2g|3g/.test(NET.effectiveType || '') ||
+    (navigator.deviceMemory && navigator.deviceMemory < 4) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
   As.src = function (key) {
     const u = window.AA_BUNDLE && window.AA_BUNDLE[key];
     if (u) return u;
@@ -92,14 +100,15 @@
     return As.loadGroups(first, onProgress).then(function () {
       As.stats.firstMs = Math.round(performance.now() - t0);
       const rest = all.filter(function (g) { return !As.wait[g]; });
-      const nav = navigator.connection || {};
-      if (HOSTED && nav.saveData && !window.AA_EAGER) return;      // Datensparmodus: nichts auf Vorrat laden – jedes Päckchen kommt erst, wenn es gebraucht wird
+      if (As.lean) return;                             // sparsam (s. oben): nichts auf Vorrat – jedes Päckchen kommt, wenn es gebraucht wird
+      const idle = window.requestIdleCallback && !window.AA_EAGER ? function (f) { requestIdleCallback(f, { timeout: 2000 }); } : function (f) { setTimeout(f, 30); };
       let i = 0;
-      const next = function () {                       // der Rest: nacheinander, mit kleinen Pausen, damit das Spiel flüssig bleibt
+      const next = function () {                       // der Rest: je drei, dann warten, bis der Browser Luft hat – und Pause, solange der Tab versteckt ist
+        if (document.hidden && !window.AA_EAGER) { setTimeout(next, 2000); return; }
         while (i < rest.length && As.wait[rest[i]]) i++;
         if (i >= rest.length) { Promise.all(all.map(As.loadGroup)).then(function () { As.complete = true; As.stats.allMs = Math.round(performance.now() - t0); if (AA.emit) AA.emit('assetsDone'); }); return; }
         const batch = rest.slice(i, i + 3); i += 3;
-        As.loadGroups(batch).then(function () { setTimeout(next, 30); });
+        As.loadGroups(batch).then(function () { idle(next); });
       };
       setTimeout(next, window.AA_EAGER ? 0 : (HOSTED ? 5000 : 400));      // im Netz erst das Spiel in Ruhe starten lassen
     });
