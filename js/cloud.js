@@ -253,19 +253,38 @@
     }).catch(function (e) { setStatus('offline', e); });
   };
 
-  /* ---------- Anmelden ---------- */
-  C.sendCode = function (email, invite) {
-    return lib().then(function () {
-      const o = { shouldCreateUser: true };
-      if (invite) o.data = { invite: invite };                 // Launch: neues Konto nur mit Einladungscode (prüft der Auth-Hook in der Datenbank)
-      if (location.protocol !== 'file:') o.emailRedirectTo = location.origin + location.pathname;
-      return timeout(sb.auth.signInWithOtp({ email: email, options: o }), 20000);
-    }).then(function (r) { if (r.error) throw r.error; return true; });
+  /* ---------- Anmelden mit Benutzername + Passwort (seit 14.11.2026) ----------
+     Supabase braucht intern eine Mail-Adresse; wir bauen sie aus dem Benutzernamen: aq.<name>@venariai.com. An diese Adressen wird
+     nie etwas geschickt („Confirm email“ ist im Projekt aus). Erlaubt: 3–20 Zeichen a–z, 0–9, - und _ (ä→ae, ö→oe, ü→ue, ß→ss,
+     Leerzeichen→-). Neue Konten nur mit Einladungs- oder Familien-Code (prüft der Auth-Hook in der Datenbank). */
+  const USER_DOMAIN = (window.AA_CLOUD && window.AA_CLOUD.userDomain) || 'venariai.com';
+  C.normUser = function (s) {
+    return String(s || '').trim().toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/\s+/g, '-');
   };
-  C.verify = function (email, code) {
-    return lib().then(function () { return timeout(sb.auth.verifyOtp({ email: email, token: code, type: 'email' }), 20000); })
+  C.validUser = function (u) { return /^[a-z0-9][a-z0-9_-]{2,19}$/.test(u); };
+  function userMail(u) { return 'aq.' + u + '@' + USER_DOMAIN; }
+  C.userName = function () {
+    const m = /^aq\.([^@]+)@/.exec(String((C.user && C.user.email) || ''));
+    return m ? m[1] : String((C.user && C.user.email) || '');
+  };
+  C.signIn = function (user, pass) {
+    return lib().then(function () { return timeout(sb.auth.signInWithPassword({ email: userMail(C.normUser(user)), password: String(pass || '') }), 20000); })
       .then(function (r) { if (r.error) throw r.error; C.skip(false); return r.data && r.data.session; });
   };
+  C.signUp = function (user, pass, invite) {
+    const u = C.normUser(user);
+    return lib().then(function () { return timeout(sb.auth.signUp({ email: userMail(u), password: String(pass || ''), options: { data: { invite: invite || null, username: u } } }), 20000); })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        if (!(r.data && r.data.session)) { const e = new Error('Konto angelegt, aber nicht freigeschaltet'); e.code = 'no_session'; throw e; }
+        C.skip(false); return r.data.session;
+      });
+  };
+  C.changePassword = function (pass) {
+    return lib().then(function () { return timeout(sb.auth.updateUser({ password: String(pass || '') }), 20000); })
+      .then(function (r) { if (r.error) throw r.error; return true; });
+  };
+
   C.logout = function () {
     return C.push().catch(function () { return false; }).then(function () { return lib(); }).then(function () { return sb.auth.signOut({ scope: 'local' }); })
       .then(function () { C.user = null; C.profile = null; C.friends = []; Object.keys(photoCache).forEach(function (k) { delete photoCache[k]; }); setStatus('out'); emit('friends'); return true; });

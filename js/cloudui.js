@@ -1,11 +1,11 @@
 'use strict';
-/* Awesome Aquarium – Wolke, Oberfläche: Anmelden (Code per Mail), Name und Avatar, Profil, Freundes-Leiste, Besuch bei Freunden,
+/* Awesome Aquarium – Wolke, Oberfläche: Anmelden (Benutzername + Passwort), Name und Avatar, Profil, Freundes-Leiste, Besuch bei Freunden,
    Nachfragen beim Abgleich, Spielstand als Datei. Die Regeln dazu stehen in js/cloud.js.
    Ohne eingetragene Wolke (js/config.js leer) bleibt davon nur „Spielstand als Datei sichern / laden“ in den Einstellungen. */
 (function (AA) {
   const UI = AA.ui, C = AA.cloud, $ = AA.$, esc = AA.esc;
   const AVATARS = ['clown', 'guppy', 'goldfish', 'koi', 'neon', 'skalar', 'betta', 'discus', 'puffer', 'seahorse', 'axolotl', 'bluetang'];
-  let after = null, gate = { mail: '', sentAt: 0, busy: false, invite: '', showInv: false }, pick = null, barOpen = false, tickT = 0;
+  let after = null, gate = { user: '', busy: false, invite: '', showInv: false, seenReg: false }, pick = null, barOpen = false, tickT = 0;
 
   function head(title) { return '<div class="m-head"><div class="m-title">' + title + '</div><button class="x" data-act="close" title="Schließen">✕</button></div>'; }
   function av(id, cls) {
@@ -40,10 +40,13 @@
   function authMsg(e) {
     const c = (e && (e.code || e.error_code)) || '', m = String((e && e.message) || '');
     if (c === 'over_email_send_rate_limit' || c === 'over_request_rate_limit' || (e && e.status === 429)) return 'Das war zu schnell hintereinander. Warte eine Minute und versuch es dann nochmal.';
-    if (c === 'otp_expired' || /expired|invalid/i.test(m) && /token|otp/i.test(m)) return 'Der Code stimmt nicht oder ist abgelaufen. Schau nochmal in die Mail – oder lass dir einen neuen schicken.';
-    if (c === 'otp_disabled' || c === 'signup_disabled' || /signups? not allowed/i.test(m)) return 'Diese Adresse ist nicht eingeladen. Frag Damian, ob er dich einträgt.';
-    if (c === 'email_address_not_authorized') return 'An diese Adresse kann gerade keine Mail geschickt werden (der Mail-Versand ist noch nicht fertig eingerichtet).';
-    if (c === 'validation_failed' || c === 'email_address_invalid' || /invalid format|validate email/i.test(m)) return 'Das sieht nicht nach einer Mail-Adresse aus.';
+    if (c === 'invalid_credentials' || /invalid login credentials/i.test(m)) return 'Benutzername oder Passwort stimmt nicht.';
+    if (c === 'user_already_exists' || /already registered/i.test(m)) return 'Den Benutzernamen gibt es schon – such dir einen anderen aus. (Ist es deiner? Dann tipp auf „Ich habe schon ein Konto“.)';
+    if (c === 'same_password' || /different from the old/i.test(m)) return 'Das ist schon dein Passwort.';
+    if (c === 'weak_password' || /password should (be at least|contain)|weak password/i.test(m)) return 'Das Passwort ist zu schwach – nimm mindestens 8 Zeichen.';
+    if (c === 'no_session' || c === 'email_not_confirmed') return 'Das Konto ist angelegt, aber noch nicht freigeschaltet. Sag Damian Bescheid.';
+    if (c === 'signup_disabled' || /signups? not allowed/i.test(m)) return 'Neue Konten sind gerade gesperrt. Frag Damian.';
+    if (c === 'validation_failed' || c === 'email_address_invalid' || /invalid format|validate email/i.test(m)) return 'Diesen Benutzernamen kann ich so nicht nehmen – nur Buchstaben, Zahlen, - und _.';
     if (c === 'timeout' || /fetch|network|load failed/i.test(m) || (e && e.status === 0)) return 'Keine Verbindung. Bist du online?';
     if (e && e.status === 403 && m) return esc(m);                 // z. B. die Absage vom Einladungs-Hook (steht schon auf Deutsch drin)
     return 'Das hat nicht geklappt' + (m ? ' (' + esc(m) + ')' : '') + '. Versuch es gleich nochmal.';
@@ -66,59 +69,61 @@
     } else proceed();
   };
 
-  /* ---------- Anmelden ---------- */
+  /* ---------- Anmelden: Benutzername + Passwort (seit 14.11.2026; vorher Code per Mail) ----------
+     Ein echtes <form>, damit Handy und Browser anbieten, das Passwort zu speichern. Abgeschickt wird über das submit-Ereignis
+     (Enter oder Knopf), die Seite lädt dabei nie neu. Neue Konten brauchen einmal einen Familien- oder Einladungscode. */
   UI.openLogin = function () {
     gate.busy = false;
-    if (!gate.invite && C.inviteFromUrl) { gate.invite = C.inviteFromUrl(); if (gate.invite) gate.showInv = true; }      // Launch: Code aus dem Einladungs-Link
-    if (/[?&]register\b/.test(location.search)) gate.showInv = true;                                                     // Startseite: „Mit Einladungscode registrieren“
+    if (!gate.invite && C.inviteFromUrl) { gate.invite = C.inviteFromUrl(); if (gate.invite) gate.showInv = true; }      // Code aus dem Einladungs-Link
+    if (/[?&]register\b/.test(location.search) && !gate.seenReg) { gate.showInv = true; gate.seenReg = true; }           // Startseite: „Mit Code registrieren“
+    const reg = !!gate.showInv;
     UI.open('login', '<div class="hero cl-hero"><div class="logo">Awesome <br>Aquarium</div>' +
-      '<div class="cl-box"><b>' + (gate.showInv ? 'Willkommen! Registrier dich mit deiner Mail-Adresse.' : 'Melde dich mit deiner Mail-Adresse an.') + '</b>' +
-      '<small>Dann ist dein Aquarium gesichert, läuft auf Handy und Rechner – und du kannst deine Familie besuchen. Ein Passwort brauchst du nicht: Du bekommst einen Code per Mail.</small>' +
-      '<input id="cl-mail" class="cl-in" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="deine@mail.de" value="' + esc(gate.mail) + '">' +
-      '<div class="cl-invbox' + (gate.showInv ? '' : ' hidden') + '" id="cl-invbox"><small>🎟️ Dein Einladungscode <i>(nur beim allerersten Mal nötig)</i></small>' +
-      '<input id="cl-inv" class="cl-in code inv" type="text" maxlength="9" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH" value="' + esc(gate.invite ? C.fmtCode(gate.invite) : '') + '"></div>' +
+      '<form class="cl-box" id="cl-form" novalidate><b>' + (reg ? 'Willkommen! Leg dein Konto an.' : 'Melde dich an.') + '</b>' +
+      '<small>' + (reg ? 'Such dir einen Benutzernamen und ein Passwort aus. Den Code brauchst du nur dieses eine Mal.'
+        : 'Dann ist dein Aquarium gesichert, läuft auf Handy und Rechner – und du kannst deine Familie besuchen.') + '</small>' +
+      '<input id="cl-user" class="cl-in" type="text" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="24" placeholder="Benutzername" value="' + esc(gate.user || '') + '">' +
+      '<input id="cl-pass" class="cl-in" type="password" name="password" autocomplete="' + (reg ? 'new-password' : 'current-password') + '" maxlength="72" placeholder="' + (reg ? 'Passwort (mindestens 8 Zeichen)' : 'Passwort') + '">' +
+      (reg ? '<div class="cl-invbox" id="cl-invbox"><small>🎟️ Familien- oder Einladungscode</small>' +
+        '<input id="cl-inv" class="cl-in code inv" type="text" name="code" maxlength="9" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH" value="' + esc(gate.invite ? C.fmtCode(gate.invite) : '') + '"></div>' : '') +
       '<div class="note warn hidden" id="cl-err"></div>' +
-      '<button class="btn green lg" data-act="lg-send">Code schicken</button>' +
-      '<button class="lnk' + (gate.showInv ? ' hidden' : '') + '" data-act="lg-inv" id="cl-invlink">Neu hier? Ich habe einen Einladungscode</button></div>' +
-      '<button class="lnk light" data-act="lg-skip">Erstmal ohne Konto spielen</button></div>', 'small hero-m', !!after);
-    const i = $('#cl-mail'); if (i && !UI.touch) i.focus();
+      '<button type="submit" class="btn green lg" id="cl-go">' + (reg ? 'Konto anlegen' : 'Anmelden') + '</button>' +
+      '<div class="cl-links">' + (reg ? '<button type="button" class="lnk" data-act="lg-have">Ich habe schon ein Konto</button>'
+        : '<button type="button" class="lnk" data-act="lg-inv" id="cl-invlink">Neu hier? Ich habe einen Code</button><button type="button" class="lnk" data-act="lg-forgot">Passwort vergessen?</button>') + '</div></form>' +
+      '<button type="button" class="lnk light" data-act="lg-skip">Erstmal ohne Konto spielen</button></div>', 'small hero-m', !!after);
+    const i = $(gate.user && !reg ? '#cl-pass' : '#cl-user'); if (i && !UI.touch) i.focus();
   };
-  function showInvite() {
-    gate.showInv = true;
-    const bx = $('#cl-invbox'), l = $('#cl-invlink'); if (bx) bx.classList.remove('hidden'); if (l) l.classList.add('hidden');
-    const i = $('#cl-inv'); if (i && !UI.touch) i.focus();
-  }
-  function openCode() {
-    UI.open('login', '<div class="hero cl-hero"><div class="logo">Awesome <br>Aquarium</div>' +
-      '<div class="cl-box"><b>📬 Schau in dein Postfach.</b>' +
-      '<small>Wir haben dir einen Code an <b>' + esc(gate.mail) + '</b> geschickt. Tipp alle Ziffern hier ein. (Nichts da? Schau im Spam-Ordner nach.)</small>' +
-      '<input id="cl-code" class="cl-in code" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="10" placeholder="Code">' +
-      '<div class="note warn hidden" id="cl-err"></div>' +
-      '<button class="btn green lg" data-act="lg-verify">Anmelden</button>' +
-      '<div class="cl-links"><button class="lnk" data-act="lg-back">Andere Adresse</button><button class="lnk" data-act="lg-again" id="cl-again">Code nochmal schicken</button></div></div></div>', 'small hero-m', !!after);
-    const i = $('#cl-code'); if (i && !UI.touch) i.focus();
-  }
-  function sendCode(again) {
+  function keepUser() { const i = $('#cl-user'); if (i && i.value) gate.user = i.value; }
+  function switchLogin(reg) { keepUser(); gate.showInv = reg; UI.openLogin(); }
+  function note(msg) { const e = $('#cl-err'); if (e) { e.innerHTML = msg; e.classList.remove('hidden'); } }
+  function readForm() { return { u: C.normUser(($('#cl-user') || {}).value), p: String(($('#cl-pass') || {}).value || '') }; }
+  function login() {
     if (gate.busy) return;
-    const i = $('#cl-mail'), mail = again ? gate.mail : String(i ? i.value : '').trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(mail)) { err('Das sieht nicht nach einer Mail-Adresse aus.'); return; }
-    if (again && Date.now() - gate.sentAt < 60000) { err('Einen Moment noch – ein neuer Code geht frühestens nach einer Minute raus.'); return; }
-    const ii = $('#cl-inv'), inv = again ? gate.invite : (gate.showInv && ii ? String(ii.value).replace(/[^A-Za-z0-9]/g, '').toUpperCase() : '');
-    if (inv && inv.length !== 8) { err('Der Einladungscode hat 8 Zeichen, zum Beispiel ABCD-EFGH.'); return; }
-    gate.mail = mail; gate.invite = inv; err(''); busy(true);
-    C.sendCode(mail, inv || null).then(function () { gate.sentAt = Date.now(); gate.busy = false; openCode(); if (again) UI.toast('📬 Neuer Code ist unterwegs.'); },
-      function (e) { busy(false); err(authMsg(e)); if (/Einladungscode/.test(String((e && e.message) || ''))) showInvite(); });
+    const f = readForm();
+    if (!C.validUser(f.u)) { err('Den Benutzernamen gibt es so nicht. Er hat 3 bis 20 Zeichen: Buchstaben, Zahlen, - und _.'); return; }
+    if (!f.p) { err('Gib dein Passwort ein.'); return; }
+    gate.user = f.u; err(''); busy(true);
+    C.signIn(f.u, f.p).then(function () { gate.busy = false; waiting('Angemeldet – dein Aquarium wird gesucht …'); },
+      function (e) { busy(false); err(authMsg(e)); });
   }
-  function otpLen() { let n = +((window.AA_CLOUD || {}).otp) || 0; if (!n) { try { n = +localStorage.getItem('aa-otp-len') || 0; } catch (e) { n = 0; } } return n >= 6 && n <= 10 ? n : 0; }
-  function verify() {
+  function register() {
     if (gate.busy) return;
-    const i = $('#cl-code'), code = String(i ? i.value : '').replace(/\D/g, '');
-    if (code.length < 6) { err('Der Code ist zu kurz – tipp alle Ziffern aus der Mail ein.'); return; }
-    err(''); busy(true);
-    C.verify(gate.mail, code).then(function () { gate.busy = false; try { localStorage.setItem('aa-otp-len', String(code.length)); } catch (e) { /* egal */ } waiting('Angemeldet – dein Aquarium wird gesucht …'); },
+    const f = readForm(), ii = $('#cl-inv'), inv = ii ? String(ii.value).replace(/[^A-Za-z0-9]/g, '').toUpperCase() : '';
+    if (!C.validUser(f.u)) { err('Benutzername: 3 bis 20 Zeichen – nur Buchstaben, Zahlen, - und _ (zum Beispiel oma-gerda).'); return; }
+    if (f.p.length < 8) { err('Das Passwort braucht mindestens 8 Zeichen.'); return; }
+    if (inv && inv.length !== 8) { err('Der Code hat 8 Zeichen, zum Beispiel ABCD-EFGH.'); return; }      // leer: entscheidet der Server (Hook)
+    gate.user = f.u; gate.invite = inv; err(''); busy(true);
+    C.signUp(f.u, f.p, inv || null).then(function () { gate.busy = false; waiting('Konto angelegt – gleich geht’s los …'); },
       function (e) { busy(false); err(authMsg(e)); });
   }
   function waiting(txt) { UI.open('cwait', '<div class="hero cl-hero"><div class="logo">Awesome <br>Aquarium</div><div class="cl-box"><b>' + txt + '</b><div class="cl-spin"></div></div></div>', 'small hero-m', true); }
+
+  function savePassword() {
+    const i = $('#cl-newpass'), p = String(i ? i.value : '');
+    if (p.length < 8) { UI.toast('🔑 Das Passwort braucht mindestens 8 Zeichen.', 'warn'); return; }
+    if (gate.busy) return; gate.busy = true;
+    C.changePassword(p).then(function () { gate.busy = false; if (i) i.value = ''; UI.toast('🔑 Neues Passwort gespeichert.'); },
+      function (e) { gate.busy = false; UI.toast('⚠️ ' + authMsg(e).replace(/<[^>]+>/g, ''), 'warn'); });
+  }
 
   /* ---------- Name und Avatar ---------- */
   function avatarGrid(cur) {
@@ -202,14 +207,16 @@
       avatarGrid(p.avatar) + '<div class="note warn hidden" id="cl-err"></div></div>' +
       '<div class="set"><div><b>Dein Freundes-Code</b><small>Gib ihn deiner Familie – wer ihn eintippt, schickt dir eine Anfrage.</small></div>' +
       '<div class="row"><span class="cl-code" id="cl-mycode">' + esc(C.fmtCode(p.code)) + '</span><button class="btn sm" data-act="pf-copy">Kopieren</button>' + (share ? '<button class="btn sm" data-act="pf-share">Teilen</button>' : '') + '</div></div>' +
-      '<div class="set col"><div><b>🎟️ Familie einladen</b><small>Neue Spieler brauchen einen Einladungscode. Wer sich mit deinem Code anmeldet, ist danach automatisch dein Freund.</small></div>' +
+      '<div class="set col"><div><b>🎟️ Familie einladen</b><small>Neue Spieler brauchen einen Einladungscode. Wer sich mit deinem Code registriert, ist danach automatisch dein Freund.</small></div>' +
       '<div class="cl-invites" id="cl-invites"><div class="cl-empty">Einen Moment …</div></div>' +
       '<div class="row"><input id="cl-invnote" class="cl-in sm" type="text" maxlength="40" placeholder="Für wen? (z. B. Oma)"><button class="btn sm green" data-act="inv-new">Code erstellen</button></div></div>' +
       '<div class="set"><div><b>Freund hinzufügen</b><small>Code von jemand anderem eintippen.</small></div>' +
       '<div class="row"><input id="cl-fcode" class="cl-in sm code" type="text" maxlength="9" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH"><button class="btn sm green" data-act="fr-add">Anfragen</button></div></div>' +
       '<div class="set col"><div><b>Freunde</b></div><div class="cl-friends" id="cl-friends">' + friendRows() + '</div></div>' +
-      '<div class="set"><div><b>Wolke</b><small id="cl-sync">' + syncLine() + '</small><small>Angemeldet als ' + esc(C.user.email || '') + '</small></div>' +
+      '<div class="set"><div><b>Wolke</b><small id="cl-sync">' + syncLine() + '</small><small>Angemeldet als <b>' + esc(C.userName()) + '</b></small></div>' +
       '<div class="row"><button class="btn sm" data-act="pf-push">Jetzt sichern</button><button class="btn sm grey" data-act="pf-logout">Abmelden</button></div></div>' +
+      '<div class="set"><div><b>🔑 Passwort ändern</b><small>Mindestens 8 Zeichen. Das alte brauchst du dafür nicht.</small></div><div class="row">' +
+      '<input id="cl-newpass" class="cl-in sm" type="password" autocomplete="new-password" maxlength="72" placeholder="Neues Passwort"><button class="btn sm" data-act="pw-save">Ändern</button></div></div>' +
       fileRow() + '</div>', 'mid');
     C.loadFriends().catch(function () { /* die Liste von eben reicht */ });
     loadInvites();
@@ -457,11 +464,10 @@
     if (AA.visit && !VISIT_OK[act]) return true;                 // zu Besuch: Fenster dürfen nichts verändern
     switch (act) {
       case 'menu-go': UI.close(); { const t = $('#' + id); if (t && (!AA.visit || id === 'btn-photo' || id === 'btn-light' || id === 'btn-sound')) t.click(); } return true;
-      case 'lg-send': sendCode(false); return true;
-      case 'lg-again': sendCode(true); return true;
-      case 'lg-verify': verify(); return true;
-      case 'lg-back': UI.openLogin(); return true;
-      case 'lg-inv': showInvite(); return true;
+      case 'lg-inv': switchLogin(true); return true;
+      case 'lg-have': switchLogin(false); return true;
+      case 'lg-forgot': note('Kein Problem: Sag Damian Bescheid, er setzt dir ein neues Passwort. Danach kannst du es unter 👥 → Profil selbst ändern.'); return true;
+      case 'pw-save': savePassword(); return true;
       case 'inv-new': newInvite(); return true;
       case 'inv-copy': copy(inviteText(id)); return true;
       case 'inv-share': try { navigator.share({ title: 'Awesome Aquarium', text: inviteText(id) }).catch(function () { /* abgebrochen */ }); } catch (e) { copy(inviteText(id)); } return true;
@@ -530,16 +536,21 @@
     $('#modal').addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       const k = UI.modalKind, id = e.target && e.target.id;
-      const act = k === 'login' ? (id === 'cl-code' ? 'lg-verify' : 'lg-send') : (k === 'onboard' ? 'ob-save' : (k === 'profile' ? (id === 'cl-fcode' ? 'fr-add' : (id === 'cl-name' ? 'pf-save' : (id === 'cl-invnote' ? 'inv-new' : null))) : null));
+      if (k === 'login') {
+        const nx = id === 'cl-user' ? $('#cl-pass') : (id === 'cl-pass' ? $('#cl-inv') : null);
+        if (nx && !nx.value) { e.preventDefault(); nx.focus(); }
+        return;
+      }
+      const act = (k === 'onboard' ? 'ob-save' : (k === 'profile' ? (id === 'cl-fcode' ? 'fr-add' : (id === 'cl-name' ? 'pf-save' : (id === 'cl-invnote' ? 'inv-new' : (id === 'cl-newpass' ? 'pw-save' : null)))) : null));
       if (act) { e.preventDefault(); UI.cloudClick(act); }
     });
+    $('#modal').addEventListener('submit', function (e) {   // Anmelde-Formular: Enter oder Knopf – nie die Seite neu laden
+      e.preventDefault();
+      if (e.target && e.target.id === 'cl-form' && UI.modalKind === 'login') { AA.audio.play('click'); if (gate.showInv) register(); else login(); }
+    });
     $('#modal').addEventListener('input', function (e) {
-      if (e.target.id === 'cl-code') {               // Supabase schickt je nach Projekt 6 bis 10 Ziffern (neuere Projekte: 8)
-        const was = e.target.dataset.n | 0, v = e.target.value.replace(/\D/g, '').slice(0, 10); e.target.value = v; e.target.dataset.n = v.length; if (v.length !== was) err('');
-        const pasted = /^insertFrom(Paste|Drop)|^insertReplacementText/.test(e.inputType || '');      // eingefügt oder vom Handy ausgefüllt
-        if (UI.modalKind === 'login' && v.length >= 6 && (v.length === otpLen() || v.length - was >= 6 || pasted)) verify();   // … oder bekannte Länge erreicht
-      }
-      else if (e.target.id === 'cl-fcode' || e.target.id === 'cl-inv') { const v = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8); e.target.value = v.length > 4 ? v.slice(0, 4) + '-' + v.slice(4) : v; }
+      if (e.target.id === 'cl-user' || e.target.id === 'cl-pass') { const er = $('#cl-err'); if (er && !er.classList.contains('hidden')) err(''); }
+      if (e.target.id === 'cl-fcode' || e.target.id === 'cl-inv') { const v = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8); e.target.value = v.length > 4 ? v.slice(0, 4) + '-' + v.slice(4) : v; }
     });
     AA.on('assets', function () { document.querySelectorAll('img.av[data-av]').forEach(function (im) { const s = AA.assets.src(im.dataset.av); if (im.getAttribute('src') !== s) im.src = s; }); });
     if (!C.on) return;
