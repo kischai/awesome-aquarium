@@ -153,6 +153,18 @@
       });
     });
   }
+  /* Runde 16: Paarungspause höchstens 24 Std (AA.TEMPO.pauseMax). Was noch nach der alten Regel läuft (Quastenflosser bis 108 Std), wird
+     gekürzt; Kaviar genauso. Läuft bei jedem Laden und ändert nichts, wenn schon alles passt – deshalb ohne neue Spielstand-Version. */
+  function capPauses(o) {
+    const now = o.clock || 0, max = AA.TEMPO.pauseMax;
+    o.tanks.forEach(function (t) {
+      t.fish.forEach(function (f) {
+        if (+f.mcd > now + max) f.mcd = now + max;
+        const def = AA.FISH_BY[f.sp];
+        if (def && +f.cav > now + def.pause) f.cav = now + def.pause;
+      });
+    });
+  }
   /* Spielstände von vor der Wasser-Trennung (v < 3): alle Becken waren Meerwasser. Süßwasser-Tiere, die dort schon leben, ziehen in ein
      geschenktes Süßwasser-Becken um (so groß wie nötig, samt laufendem Futterautomaten). Was nicht mehr hineinpasst, bleibt, wo es ist –
      Bestandsschutz, ohne Nachteil. */
@@ -240,7 +252,12 @@
       o.active = AA.clamp(o.active | 0, 0, o.tanks.length - 1);
       o.coins = Math.max(0, Math.round(+o.coins || 0)); o.pearls = Math.max(0, Math.round(+o.pearls || 0));
       o.food = Math.max(0, Math.round(+o.food || 0)); o.xp = Math.max(0, Math.round(+o.xp || 0));
+      const was = Math.max(0, Math.round(+o.level || 0));
       o.level = AA.levelFor(o.xp);
+      if (!guest && !o.r16) {                          // Runde 16, einmalig: flachere Level-Kurve ab Level 31 – wer dadurch aufsteigt, bekommt je Level eine Perle wie sonst auch.
+        o.r16 = 1;                                     // Merker: ein noch offenes altes Spiel (alte Kurve) kann das Level wieder zurückrechnen – dann gibt es die Perlen nicht ein zweites Mal
+        if (was >= 31 && o.level > was) { o.pearls += o.level - was; o.news = o.news || {}; o.news.curve = { from: was, to: o.level }; }
+      }
       o.clock = Math.max(0, +o.clock || 0);
       o.daily = o.daily || { day: Math.floor(o.clock / DAY), chest: false, hunts: 0, gift: false };
       o.clam = !!o.clam;
@@ -272,6 +289,7 @@
       }
       if ((o.v | 0) < 12) { bak('-vor-runde12'); o.news = o.news || {}; o.news.v12 = true; o.v = 12; }      // Runde 12: Beine, Peitschen, Sand-Wellen, Adria, Licht, Pokale, Hilfe & Geschenke
       if ((o.v | 0) < 13) { bak('-vor-runde15'); migrateTempo(o); o.news = o.news || {}; o.news.tempo = true; o.v = 13; }      // Runde 15: neues Spieltempo (AA.TEMPO)
+      capPauses(o);                                    // Runde 16: Pausen höchstens 24 Std
       delete o.settings.speed;
       AA.ecoFix(o);
       AA.lifeFix(o);
@@ -453,7 +471,7 @@
     let cd = def ? def.pause : DAY;
     if (!cross && sp === 'salmon' && AA.SALMON) cd *= AA.SALMON.cd;      // Lachse laichen seltener (dafür 3 Eier)
     if (sp === 'clown' && AA.hostCount && AA.hostCount(t)) cd *= 0.75;
-    return cd;
+    return Math.min(cd, AA.TEMPO.pauseMax);          // Runde 16: nie länger als 24 Std
   };
   /* Fische einer Art, die jetzt balzen könnten. why (Reihenfolge = was du tun kannst): nomale/nofemale · hungry · cd (cd = Wartezeit) · busy · dirty · full · coins */
   AA.pairPool = function (t, test) {                 // test(g) = gehört der Fisch zur gesuchten Art/Gruppe?

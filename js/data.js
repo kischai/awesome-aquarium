@@ -3,11 +3,14 @@
    Alles hier ist bewusst als Daten gehalten: neue Fische, Deko, Böden oder Balance-Werte
    lassen sich einfach in diesen Listen ergänzen. Woher welche Regel kommt, steht in docs/MECHANIK.md. */
 (function (AA) {
-  /* ---------- Level: Start-XP je Level (Index 0 = Level 1) ---------- */
+  /* ---------- Level: Start-XP je Level (Index 0 = Level 1) ----------
+     Bis Level 31 wie im Vorbild (jedes Level ca. 15 % mehr XP als das vorige). Runde 16: danach nur noch +5 % je Level – mit +15 % lief
+     der XP-Bedarf den Fischen davon, ab Level 35 dauerte jedes Level einen halben Tag und mehr (gemessen mit dem Test-Spieler).
+     Vorher: Level 39 bei 147.915 XP, Level 55 bei 1.429.000 XP. */
   AA.LEVELS = [0, 105, 225, 360, 520, 700, 915, 1160, 1435, 1760, 2130, 2560, 3050, 3620, 4275, 5030, 5895, 6895, 8050, 9380,
-    10910, 12675, 14710, 17055, 19755, 22865, 26450, 30580, 35340, 40825, 47140, 54425, 62815, 72480, 83620, 96455,
-    111240, 128280, 147915, 170540, 196605, 226645, 261255, 301135, 347085,
-    399900, 460700, 530700, 611400, 704300, 811400, 934700, 1076800, 1240500, 1429000];   // ab Level 46 hochgerechnet
+    10910, 12675, 14710, 17055, 19755, 22865, 26450, 30580, 35340, 40825, 47140,
+    53770, 60730, 68040, 75715, 83775, 92240, 101125, 110455, 120250, 130535, 141335, 152675, 164585, 177090, 190220,
+    204005, 218480, 233680, 249640, 266395, 283990, 302465, 321860, 342225];
   AA.MAX_LEVEL = AA.LEVELS.length;
   AA.levelFor = function (xp) { let l = 1; while (l < AA.MAX_LEVEL && xp >= AA.LEVELS[l]) l++; return l; };
 
@@ -383,10 +386,11 @@
   /* ---------- Spieltempo (Runde 15, 14.11.2026) ----------
      Wie lange ein Fisch braucht, hängt nur an seinem Level: Level 1 = 2 Min, jedes Level ca. +15 %, Blobfisch (Level 39) = 7 Std,
      Quastenflosser (Level 55) = 72 Std – dazwischen gleichmäßig hochgerechnet (zwei Abschnitte, damit beide Ankerpunkte genau stimmen).
-     Ei = halbe Reifezeit. Paarungspause = 1,5 × Reifezeit = Ei + Großwerden: die Eltern dürfen wieder, sobald ihr letztes Junges erwachsen ist.
+     Ei = halbe Reifezeit. Paarungspause = 1,5 × Reifezeit = Ei + Großwerden: die Eltern dürfen wieder, sobald ihr letztes Junges erwachsen ist –
+     Runde 16: aber nie länger als pauseMax (24 Std). Das betrifft die Fische ab Level 45 (vorher bis zu 108 Std beim Quastenflosser).
      xp = Erfahrung, wenn ein Fisch erwachsen wird: wächst mit der Wartezeit, aber langsamer (6 × (Reifezeit ÷ 2 Min)^0,75) – am Anfang
      levelt man schnell, später braucht ein Level mehr Fische. Gerundet auf 5 Sek (unter 10 Min), 30 Sek (unter 1 Std), 5 Min, 15 Min. */
-  AA.TEMPO = { base: 120, l39: 7 * 3600, l55: 72 * 3600, pause: 1.5, xp: 6, xpExp: 0.75 };
+  AA.TEMPO = { base: 120, l39: 7 * 3600, l55: 72 * 3600, pause: 1.5, pauseMax: 24 * 3600, xp: 6, xpExp: 0.75 };
   AA.tempoRound = function (s) { const q = s < 600 ? 5 : (s < 3600 ? 30 : (s < 36000 ? 300 : 900)); return Math.max(q, Math.round(s / q) * q); };
   AA.growFor = function (lvl) {
     const T = AA.TEMPO, L = AA.clamp(lvl | 0, 1, 55);
@@ -398,7 +402,7 @@
     f.phaseLen = f.grow / 4;                         // eine Wachstumsphase
     f.mate = Math.round(f.price / 2);                // Paarungs-Gebühr
     f.hatch = AA.tempoRound(f.grow / 2);             // Brutzeit
-    f.pause = AA.tempoRound(f.grow * AA.TEMPO.pause);      // Paarungspause je Fisch (AA.mateCooldown)
+    f.pause = Math.min(AA.TEMPO.pauseMax, AA.tempoRound(f.grow * AA.TEMPO.pause));      // Paarungspause je Fisch (AA.mateCooldown), höchstens 24 Std
     f.xp = Math.round(AA.TEMPO.xp * Math.pow(f.grow / AA.TEMPO.base, AA.TEMPO.xpExp));   // Erfahrung fürs Großziehen
     f.trainBonus = AA.clamp(Math.round(f.sell / 60), 1, 5);   // voll trainiert: 1–5 Münzen mehr
     AA.FISH_BY[f.id] = f;

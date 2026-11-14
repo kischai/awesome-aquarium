@@ -450,9 +450,13 @@
     if (n.tempo) {                                     // Runde 15: neues Spieltempo
       li.push('⏱️ <b>Neues Tempo:</b> Fische wachsen jetzt in Minuten statt Stunden – Clownfisch ' + AA.fmtDur(AA.FISH_BY.clown.grow) + ', Skalar ' + AA.fmtDur(AA.FISH_BY.skalar.grow) +
         ', Blobfisch ' + AA.fmtDur(AA.FISH_BY.blobfish.grow) + ', Quastenflosser ' + AA.fmtDur(AA.FISH_BY.coelacanth.grow) + '. Was gerade wächst, behält seinen Fortschritt.');
-      li.push('❤️ <b>Paaren:</b> Die Eltern dürfen wieder, sobald ihr Junges erwachsen wäre – beim Clownfisch nach ' + AA.fmtDur(AA.FISH_BY.clown.pause) + '. Der Zuchtmeister arbeitet jetzt auch, während du weg bist.');
+      li.push('❤️ <b>Paaren:</b> Die Eltern dürfen wieder, sobald ihr Junges erwachsen wäre (höchstens nach ' + AA.fmtDur(AA.TEMPO.pauseMax) + ') – beim Clownfisch nach ' + AA.fmtDur(AA.FISH_BY.clown.pause) + '. Der Zuchtmeister arbeitet jetzt auch, während du weg bist.');
       li.push('⭐ <b>Neu: XP fürs Großziehen</b> – jeder Fisch, der bei dir erwachsen wird, bringt Erfahrung (Clownfisch ' + AA.FISH_BY.clown.xp + ', Blobfisch ' + AA.FISH_BY.blobfish.xp + ').');
       li.push('🌈 Farbvarianten sind seltener geworden (1 % je Ei), Farbfutter wirkt für die nächsten 3 Eier, der Markt erholt sich schon nach einer halben Stunde.');
+    }
+    if (n.curve) {                                     // Runde 16: flachere Level-Kurve hat jemanden direkt aufsteigen lassen (state.js)
+      const k = n.curve.to - n.curve.from;
+      li.push('📈 <b>Schneller leveln:</b> Ab Level 31 braucht jedes Level jetzt viel weniger XP. Du bist direkt auf Level ' + n.curve.to + ' gestiegen – +' + k + (k === 1 ? ' Perle' : ' Perlen') + '.');
     }
     if (n.bonus && UI.r14News) UI.r14News(li, n.bonus);            // Runde 14: Extra-Geschenk (js/socialui.js)
     if (n.v12 && UI.r12News) UI.r12News(li);           // Runde 12 (js/extrasui.js)
