@@ -10,15 +10,13 @@
   function head(title) { return '<div class="m-head"><div class="m-title">' + title + '</div><button class="x" data-act="close" title="Schließen">✕</button></div>'; }
   function av(id, cls) {
     const k = 'fish/' + (AA.FISH_BY[id] ? id : 'clown') + '_b';
-    AA.assets.want(k);
-    return '<img class="av' + (cls ? ' ' + cls : '') + '" data-av="' + k + '" src="' + AA.assets.src(k) + '" alt="">';
+    return '<img class="av' + (cls ? ' ' + cls : '') + '" data-av="' + k + '" src="' + AA.assets.thumb(k) + '" alt="">';      // Vorschaubild (js/assets.js) – lädt sein kleines Päckchen selbst
   }
   /* Launch: Gesicht eines Spielers – sein Profilfoto (nur für ihn selbst und Freunde ladbar), sonst sein Fisch */
   function face(p, cls) {
     if (!p || !(p.photo > 0) || !p.user || !C.on) return av(p && p.avatar, cls);
     const url = C.photoUrl(p.user, p.photo), fk = 'fish/' + (AA.FISH_BY[p.avatar] ? p.avatar : 'clown') + '_b';
-    if (!url) AA.assets.want(fk);
-    return '<img class="av photo' + (url ? ' ready' : '') + (cls ? ' ' + cls : '') + '" data-ph="' + esc(p.user + ':' + p.photo) + '" src="' + (url || AA.assets.src(fk)) + '" alt="">';
+    return '<img class="av photo' + (url ? ' ready' : '') + (cls ? ' ' + cls : '') + '" data-ph="' + esc(p.user + ':' + p.photo) + '" src="' + (url || AA.assets.thumb(fk)) + '" alt="">';
   }
   UI.face = face;
   function fillPhotos() {
@@ -554,7 +552,7 @@
       if (e.target.id === 'cl-user' || e.target.id === 'cl-pass') { const er = $('#cl-err'); if (er && !er.classList.contains('hidden')) err(''); }
       if (e.target.id === 'cl-fcode' || e.target.id === 'cl-inv') { const v = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8); e.target.value = v.length > 4 ? v.slice(0, 4) + '-' + v.slice(4) : v; }
     });
-    AA.on('assets', function () { document.querySelectorAll('img.av[data-av]').forEach(function (im) { const s = AA.assets.src(im.dataset.av); if (im.getAttribute('src') !== s) im.src = s; }); });
+    AA.on('assets', function () { document.querySelectorAll('img.av[data-av]').forEach(function (im) { const s = AA.assets.thumb(im.dataset.av); if (im.getAttribute('src') !== s) im.src = s; }); });
     if (!C.on) return;
     AA.on('friends', function () { refreshBar(); const l = $('#cl-friends'); if (l && UI.modalKind === 'profile') { l.innerHTML = friendRows(); UI.fillPhotos(); } });
     AA.on('photos', applyPhotos);

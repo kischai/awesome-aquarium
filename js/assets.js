@@ -32,6 +32,17 @@
     As.want(key);
     return BLANK + '#' + key;
   };
+  /* Vorschaubild für Listen (15.11.2026): Shop, Sammelbuch, Markt, Aufträge, Bilder der Mitspieler. Im Netz kommt es aus den kleinen
+     Päckchen t-… (tools/bundle.py, ein paar KB je Bild) statt aus dem großen Päckchen der Art – vorher holte schon der Fisch-Reiter des
+     Shops alle 141 Fisch-Päckchen (entpackt rund 170 MB), und beim zweiten Öffnen kamen alle 269 Bilder in voller Größe auf einmal:
+     Safari auf dem iPhone hat die Seite dann neu geladen („Absturz“). Per Doppelklick (file://) und ohne Vorschau: das große Bild. */
+  As.hasThumb = function (key) { return HOSTED && !!GROUP['th/' + key]; };
+  As.thumb = function (key, lazy) {
+    if (!As.hasThumb(key)) return As.src(key);
+    const tk = 'th/' + key;
+    if (lazy) { As.want(tk); return BLANK + '#' + tk; }      // lazy: Platzhalter ins HTML, das Bild setzt As.refreshImgs danach – so bleibt das HTML klein (Shop: 0,1 statt 3 MB)
+    return As.src(tk);
+  };
   As.refreshImgs = function () {
     if (!HOSTED || !window.AA_BUNDLE) return;
     document.querySelectorAll('img[src^="' + BLANK + '#"]').forEach(function (im) { const u = window.AA_BUNDLE[im.getAttribute('src').slice(BLANK.length + 1)]; if (u) im.src = u; });

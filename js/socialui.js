@@ -7,8 +7,7 @@
 
   function av(id, cls) {
     const k = 'fish/' + (AA.FISH_BY[id] ? id : 'clown') + '_b';
-    AA.assets.want(k);
-    return '<img class="av' + (cls ? ' ' + cls : '') + '" data-av="' + k + '" src="' + AA.assets.src(k) + '" alt="">';
+    return '<img class="av' + (cls ? ' ' + cls : '') + '" data-av="' + k + '" src="' + AA.assets.thumb(k) + '" alt="">';      // Vorschaubild (js/assets.js) – lädt sein kleines Päckchen selbst
   }
 
   /* ---------- Profil ---------- */
@@ -69,7 +68,7 @@
 
   /* ---------- Klicks ---------- */
   UI.socialClick = function (act, id) {
-    if (act === 'pf11-av') { pick = id; document.querySelectorAll('#modal .pf11-avs .cl-av').forEach(function (b) { b.classList.toggle('active', b.dataset.id === id); }); const im = $('#modal .pf11-pic'); if (im) { const k = 'fish/' + id + '_b'; AA.assets.want(k); im.src = AA.assets.src(k); im.dataset.av = k; } AA.audio.play('click'); return true; }
+    if (act === 'pf11-av') { pick = id; document.querySelectorAll('#modal .pf11-avs .cl-av').forEach(function (b) { b.classList.toggle('active', b.dataset.id === id); }); const im = $('#modal .pf11-pic'); if (im) { const k = 'fish/' + id + '_b'; im.src = AA.assets.thumb(k); im.dataset.av = k; } AA.audio.play('click'); return true; }
     if (act === 'pf11-save') { saveProfile(); return true; }
     if (act === 'mus-set') { M.set(id === '1'); AA.audio.play('click'); if (UI.modalKind === 'settings') UI.openSettings(); return true; }
     if (act === 'mus-skip') { M.skip(); if (UI.modalKind === 'settings') setTimeout(function () { if (UI.modalKind === 'settings') UI.openSettings(); }, 120); return true; }

@@ -84,7 +84,7 @@
     else body = '<p>Welche Art soll schlüpfen? Das Ei kommt nach „' + esc(t.name) + '“ (' + AA.WATER[t.water].ico + ' ' + AA.WATER[t.water].name + ') und braucht so lange wie ein normales Ei der Art.' +
       (big ? ' <b>Großes Glitzer-Ei:</b> mindestens „Sehr selten“.' : '') + '</p><div class="pick sp">' + sp.map(function (f) {
         const have = (AA.state.book[f.id] || { v: {} }).v, cand = AA.variantsOf(f.id).filter(function (v) { return v.tier >= minTier; }), miss = cand.filter(function (v) { return !have[v.id]; }).length;
-        return '<button class="pickfish" data-act="glitpick" data-id="' + f.id + '" data-big="' + (big ? 1 : 0) + '"><img src="' + AA.assets.src('fish/' + f.id + '_b') + '" alt=""><span>' + esc(f.name) + '</span><small>' + (miss ? miss + ' fehl' + (miss === 1 ? 't' : 'en') + ' noch' : 'alle entdeckt') + '</small></button>';
+        return '<button class="pickfish" data-act="glitpick" data-id="' + f.id + '" data-big="' + (big ? 1 : 0) + '"><img src="' + AA.assets.thumb('fish/' + f.id + '_b') + '" alt=""><span>' + esc(f.name) + '</span><small>' + (miss ? miss + ' fehl' + (miss === 1 ? 't' : 'en') + ' noch' : 'alle entdeckt') + '</small></button>';
       }).join('') + '</div>';
     return head(big ? '🥚✨✨ Großes Glitzer-Ei' : '🥚✨ Glitzer-Ei') + '<div class="confirm">' + body + '</div>';
   }
@@ -102,7 +102,7 @@
       const b = s.book[f.id], open = b ? (b.n === 1 ? 1 : 0) + Object.keys(b.v).filter(function (k) { return b.v[k] === 1; }).length : 0, full = AA.setComplete ? AA.setComplete(f.id) : (b && AA.keys(b.v) === AA.VARIANTS.length);
       return '<button class="bcard' + (b ? '' : ' unknown') + (open ? ' hasnew' : '') + (full ? ' full' : '') + '" data-act="booksp" data-id="' + f.id + '">' +
         (open ? '<i class="ribbon">' + (open > 1 ? open + ' neu' : 'Neu') + '</i>' : '') + (full ? '<i class="crown" title="Set komplett: alle Farbvarianten entdeckt – jeder Fisch dieser Art ist ' + Math.round(((AA.SETBONUS || 1.1) - 1) * 100) + ' % mehr wert">👑</i>' : '') +
-        '<div class="bpic' + (f.inv ? ' inv' : '') + '"><img src="' + AA.assets.src('fish/' + f.id + '_m') + '" alt=""></div><div class="bnm">' + (b ? esc(f.name) : '???') + '</div>' +
+        '<div class="bpic' + (f.inv ? ' inv' : '') + '"><img src="' + AA.assets.thumb('fish/' + f.id + '_m', true) + '" alt=""></div><div class="bnm">' + (b ? esc(f.name) : '???') + '</div>' +
         (b ? dots(f.id) : '<div class="blvl">' + (f.hybrid ? '🧬 ' + esc(AA.FISH_BY[f.hybrid[0]].name) + ' × ' + esc(AA.FISH_BY[f.hybrid[1]].name) : AA.WATER[AA.waterOf(f)].ico + ' ab Level ' + f.lvl) + '</div>') + '</button>';
     }).join('');
     const TABS = [['all', 'Alle'], ['salt', '🌊 Meerwasser'], ['fresh', '🌿 Süßwasser'], ['var', '✨ Mit Varianten'], ['hyb', '🧬 Hybride'], ['titel', '🏅 Titel']];
@@ -149,6 +149,7 @@
     const g = $('#modal .grid.g-book'), sc = UI.modalKind === 'book' && g ? g.scrollTop : (UI.bookScroll || 0);
     if (g) UI.bookScroll = g.scrollTop;
     UI.open('book', UI.bookSp ? bookDetail(UI.bookSp) : bookGrid(), 'store book');
+    AA.assets.refreshImgs();                           // Vorschaubilder einsetzen (js/assets.js: As.thumb mit lazy)
     const g2 = $('#modal .grid.g-book'); if (g2) g2.scrollTop = UI.bookSp ? 0 : sc;
   };
 

@@ -32,7 +32,7 @@
     const s = AA.state;
     const rows = s.orders.map(function (o) {
       const C = custOf(o), cand = AA.orderCandidates(o), left = o.due - s.clock, hot = left < 86400 * 0.5;
-      const key = 'fish/' + o.sp + '_m', src = o.v ? AA.assets.variantSrc(key, o.v, 120) : AA.assets.src(key);
+      const key = 'fish/' + o.sp + '_m', src = o.v ? AA.assets.variantSrc(key, o.v, 120) : AA.assets.thumb(key);
       return '<div class="quest order' + (cand.length ? ' ready' : '') + '"><div class="o-pic"><img src="' + src + '" alt=""></div><div class="q-main">' +
         '<div class="q-title">' + C.ico + ' ' + esc(o.name) + ' <small class="o-kind">' + C.kind + '</small></div>' +
         '<div class="q-desc">möchte ' + orderWhat(o) + ' – erwachsen und gesund</div>' +
@@ -54,10 +54,10 @@
     if (!own) list = AA.FISH.filter(function (f) { return f.lvl <= s.level; });
     list = list.map(function (f) { return { f: f, k: AA.marketFactor(f.id), raw: AA.marketFactor(f.id, true), ch: AA.marketChange(f.id), sat: AA.marketSat(f.id) }; }).sort(function (a, b) { return b.k - a.k; });
     const trends = tr.length ? '<div class="trends">' + tr.map(function (t) { const f = AA.FISH_BY[t.sp];
-      return '<div class="trend"><img src="' + AA.assets.src('fish/' + t.sp + '_m') + '" alt=""><div><b>' + esc(f.name) + '</b><small>Trend heute: ' + pct(t.mult - 1) + '</small></div></div>'; }).join('') + '</div>' : '';
+      return '<div class="trend"><img src="' + AA.assets.thumb('fish/' + t.sp + '_m') + '" alt=""><div><b>' + esc(f.name) + '</b><small>Trend heute: ' + pct(t.mult - 1) + '</small></div></div>'; }).join('') + '</div>' : '';
     const rows = list.map(function (x) {
       const f = x.f, b = Math.round(f.sell * AA.CLASSES[1].mult * x.k), up = x.ch > 0.005, dn = x.ch < -0.005, tr2 = AA.state.market.t[f.id];
-      return '<div class="mrow' + (tr2 ? ' hot' : '') + '"><img src="' + AA.assets.src('fish/' + f.id + '_m') + '" alt=""><span class="m-nm">' + esc(f.name) + (tr2 ? ' <i class="tag">📈 Trend</i>' : '') + '</span>' +
+      return '<div class="mrow' + (tr2 ? ' hot' : '') + '"><img src="' + AA.assets.thumb('fish/' + f.id + '_m') + '" alt=""><span class="m-nm">' + esc(f.name) + (tr2 ? ' <i class="tag">📈 Trend</i>' : '') + '</span>' +
         '<span class="m-k"><span class="mbar"><i style="width:' + Math.round(AA.clamp((x.k - 0.3) / 1.7, 0, 1) * 100) + '%"></i></span>' + Math.round(x.k * 100) + ' %</span>' +
         '<span class="m-ch ' + (up ? 'up' : (dn ? 'dn' : '')) + '">' + (up ? '▲ ' : (dn ? '▼ ' : '')) + (up || dn ? pct(x.ch) : '–') + '</span>' +
         '<span class="m-sat">' + (x.sat < 0.98 ? '📉 gesättigt ' + pct(x.sat - 1) : '') + '</span>' +

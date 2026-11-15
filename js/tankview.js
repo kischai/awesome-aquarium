@@ -238,17 +238,18 @@
     const c = mk(240, 130), g = c.getContext('2d');
     AA.paintWater(g, AA.WALL_BY[AA.tank().wall] || AA.WALLS[0], 240, 130, 400, 3);
     AA.paintFloor(g, id, -120, 52, 560);
-    const u = c.toDataURL('image/png'); if (AA.assets.get('floor/' + id)) thumbs['f' + id] = u;
+    const u = c.toDataURL('image/jpeg', 0.86); if (AA.assets.get('floor/' + id)) thumbs['f' + id] = u;      // deckend gemalt: JPEG statt PNG (~10 statt ~50 KB je Karte)
     return u;
   };
   V.wallThumb = function (id) {
     if (thumbs['w' + id]) return thumbs['w' + id];
-    const wim = (AA.WALL_BY[id] || {}).img && AA.assets.get(AA.WALL_BY[id].img);
+    const wk = (AA.WALL_BY[id] || {}).img;            // 15.11.2026: im Netz das kleine Vorschaubild (t-bg) statt der ganzen Kulisse (bis 1600 × 900, alle zusammen entpackt 236 MB)
+    const wim = wk && (AA.assets.hasThumb(wk) ? AA.assets.get('th/' + wk) : AA.assets.get(wk));
     if (wim) { const c2 = mk(240, 130), g2 = c2.getContext('2d'); g2.drawImage(wim, 0, 0, 240, 135); AA.paintFloor(g2, AA.tank().floor, -120, 96, 560); return (thumbs['w' + id] = c2.toDataURL('image/jpeg', 0.86)); }
     const c = mk(240, 130), g = c.getContext('2d');
     AA.paintWater(g, AA.WALL_BY[id], 240, 130, 96, 5);
     AA.paintFloor(g, 'sand', -10, 90, 260);
-    const u = c.toDataURL('image/png'); if (!(AA.WALL_BY[id] || {}).img) thumbs['w' + id] = u;      // gemalte Kulisse noch nicht geladen: vorerst die Wasserfarbe, nicht merken
+    const u = c.toDataURL('image/jpeg', 0.86); if (!(AA.WALL_BY[id] || {}).img) thumbs['w' + id] = u;      // gemalte Kulisse noch nicht geladen: vorerst die Wasserfarbe, nicht merken
     return u;
   };
   /* Vorschau einer Boden-Form mit dem Boden des aktuellen Beckens */
@@ -258,7 +259,7 @@
     const c = mk(240, 130), g = c.getContext('2d');
     AA.paintWater(g, AA.WALL_BY[t.wall] || AA.WALLS[0], 240, 130, 400, 3);
     AA.paintFloor(g, t.floor, -1, 74, 242, id);
-    const u = c.toDataURL('image/png'); if (AA.assets.get('floor/' + t.floor)) thumbs[key] = u;
+    const u = c.toDataURL('image/jpeg', 0.86); if (AA.assets.get('floor/' + t.floor)) thumbs[key] = u;
     return u;
   };
   /* Kommt ein Boden- oder Kulissen-Päckchen an, nur verwerfen, was davon abhängt (14.11.2026). Vorher wurde bei jedem der rund 80 Päckchen,

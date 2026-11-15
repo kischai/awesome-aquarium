@@ -89,7 +89,7 @@
     if (s.level < K.lvl) return '<div class="wk-note">📜 Lieferverträge gibt es ab <b>Level ' + K.lvl + '</b>: jede Woche eine feste Menge an einen Stammkunden, zum festen Preis.</div>';
     const act = c.act.map(function (x) {
       const cand = AA.contractCandidates(x), left = x.due - s.clock, open = x.n - x.got, hot = open > 0 && left < 86400 * 2;
-      return '<div class="quest order' + (open > 0 && cand.length ? ' ready' : '') + '"><div class="o-pic"><img src="' + AA.assets.src('fish/' + x.sp + '_m') + '" alt=""></div><div class="q-main">' +
+      return '<div class="quest order' + (open > 0 && cand.length ? ' ready' : '') + '"><div class="o-pic"><img src="' + AA.assets.thumb('fish/' + x.sp + '_m') + '" alt=""></div><div class="q-main">' +
         '<div class="q-title">📜 ' + esc(x.name) + ' <small class="o-kind">Woche ' + (x.week + 1) + ' von ' + x.weeks + '</small></div>' +
         '<div class="q-desc">' + contractWhat(x) + ' – erwachsen und gesund, Klasse egal' + (x.miss ? ' · <b class="dn">' + x.miss + '× zu spät</b>' : '') + '</div>' +
         '<div class="o-prog"><div class="bar q"><i style="width:' + Math.round(x.got / x.n * 100) + '%"></i><span>' + x.got + ' / ' + x.n + ' diese Woche</span></div>' +
@@ -100,7 +100,7 @@
     }).join('');
     const offers = c.offers.map(function (x) {
       const def = AA.FISH_BY[x.sp], total = x.pay * x.n * x.weeks;
-      return '<div class="quest order offer"><div class="o-pic"><img src="' + AA.assets.src('fish/' + x.sp + '_m') + '" alt=""></div><div class="q-main">' +
+      return '<div class="quest order offer"><div class="o-pic"><img src="' + AA.assets.thumb('fish/' + x.sp + '_m') + '" alt=""></div><div class="q-main">' +
         '<div class="q-title">🤝 ' + esc(x.name) + ' <small class="o-kind">Angebot</small></div>' +
         '<div class="q-desc">' + contractWhat(x) + '</div><div class="q-desc"><small>Festpreis ' + fmt(x.pay) + ' statt Liste ' + fmt(def.sell) + ' · zusammen ' + fmt(total) + ' Münzen + 10 % Bonus, wenn du nie zu spät bist</small></div></div>' +
         '<div class="q-act"><div class="o-pay">je <b>' + fmt(x.pay) + '</b> ' + coin() + '</div><button class="btn violet" data-act="csign" data-id="' + x.id + '"' + (c.act.length >= K.max ? ' disabled' : '') + '>✍️ Unterschreiben</button></div></div>';

@@ -120,6 +120,7 @@
   };
   function head(title, extra) { return '<div class="m-head"><div class="m-title">' + title + '</div>' + (extra || '') + '<button class="x" data-act="close" title="Schließen">✕</button></div>'; }
   function pic(key, cls) { return '<img' + (cls ? ' class="' + cls + '"' : '') + ' src="' + AA.assets.src(key) + '" alt="">'; }
+  function tpic(key, cls) { return '<img' + (cls ? ' class="' + cls + '"' : '') + ' src="' + AA.assets.thumb(key, true) + '" alt="">'; }      // kleines Vorschaubild für die Shop-Karten (js/assets.js), echtes Bild setzt UI.openStore danach
 
   /* ---------- Shop ---------- */
   const TABS = [['fish', '🐠 Fische'], ['crawl', '🦀 Krabbler'], ['food', '🥫 Futter'], ['deco', '🪸 Deko'], ['look', '🎨 Kies & Hintergrund'], ['tank', '🏠 Aquarien'], ['perk', '⚡ Perks']];
@@ -146,7 +147,7 @@
     const card = function (f) {
       const locked = s.level < f.lvl, w = AA.waterOf(f), why = AA.whyNot(f, t), wrong = !!why;
       return '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '">' +
-        '<div class="pic' + (f.inv ? ' inv' : '') + '">' + pic('fish/' + f.id + '_m') + pic('fish/' + f.id + '_b', 'baby') + '</div>' +
+        '<div class="pic' + (f.inv ? ' inv' : '') + '">' + tpic('fish/' + f.id + '_m') + tpic('fish/' + f.id + '_b', 'baby') + '</div>' +
         '<div class="nm">' + esc(f.name) + '</div><div class="info">' + esc(f.info) + '</div>' +
         '<div class="stats"><span title="' + W[w].name + '">' + W[w].ico + '</span>' + 
         (f.school ? '<span class="tag-job" title="Schwarmfisch: ab ' + AA.SCHOOL.min + ' Tieren schwimmen sie im Schwarm und wachsen schneller – unter ' + AA.SCHOOL.lonely + ' sind sie einsam">🐟 Schwarm</span>' : '') +
@@ -205,7 +206,7 @@
         (d.home ? '<span title="In der Natur zu Hause im ' + AA.WATER[d.home].name + ' – passt trotzdem in jedes Becken">' + AA.WATER[d.home].ico + ' ' + AA.WATER[d.home].name + '-Typ</span>' : '') +
         (rg ? '<span title="So klein und so groß lässt es sich im Becken ziehen">📐 ' + pct(rg[0]) + '–' + pct(rg[1]) + ' %</span>' : '<span title="Lässt sich nicht größer oder kleiner ziehen">🔒 Feste Größe</span>');
       return '<div class="card' + (locked ? ' is-locked' : '') + '">' +
-        '<div class="pic deco">' + pic('deco/' + d.id) + '</div>' +
+        '<div class="pic deco">' + tpic('deco/' + d.id) + '</div>' +
         '<div class="nm">' + esc(d.name) + '</div>' + (d.info ? '<div class="info">' + esc(d.info) + '</div>' : '') +
         '<div class="stats">' + tags + '</div>' +
         (d.trophy ? '<button class="buy locked" disabled>🏆 Nur zu gewinnen' + (AA.trophyCount ? ' · ' + AA.trophyCount(d.id) + '× im Besitz' : '') + '</button>' : buyBtn('buydeco', d.id, d.price, locked, d.lvl, d.unique && s.clam ? '✓ Gekauft' : '')) + '</div>';
@@ -227,7 +228,7 @@
         (d.glass ? '<span title="Klettert auch an die Scheibe und die Seitenwände – dort sieht man die Unterseite">🪟 Klettert ans Glas</span>' : '') +
         (!d.clean && !d.eats && !d.glass && !job ? '<span>✨ Einfach hübsch</span>' : '');
       return pre + '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '">' +
-        '<div class="pic deco">' + pic('deco/' + d.id) + '</div>' +
+        '<div class="pic deco">' + tpic('deco/' + d.id) + '</div>' +
         '<div class="nm">' + esc(d.name) + '</div><div class="info">' + esc(d.info || '') + '</div>' +
         '<div class="stats"><span title="' + AA.WATER[w].name + '">' + AA.WATER[w].ico + '</span>' + tags + '</div>' +
         buyBtn('buydeco', d.id, d.price, locked, d.lvl, wrong ? AA.WATER[w].ico + ' ' + AA.WATER[w].only : (full ? 'Becken voll' : '')) + '</div>';
@@ -322,11 +323,13 @@
     const id = g.slice(2);
     if (g.indexOf('k-') === 0) { const im = $('#modal img[data-fl="' + id + '"]'); if (im) im.src = V.floorThumb(id); }
     else if (g.indexOf('w-') === 0) AA.WALLS.forEach(function (w) { if (w.img === 'bg/' + id) { const im = $('#modal img[data-wl="' + w.id + '"]'); if (im) im.src = V.wallThumb(w.id); } });
+    else if (g.indexOf('t-bg') === 0) document.querySelectorAll('#modal img[data-wl]').forEach(function (im) { im.src = V.wallThumb(im.dataset.wl); });      // Vorschaubilder der Kulissen
   });
   UI.openStore = function (tab) {
     if (tab) UI.storeTab = tab;
     const g = $('#modal .grid'), sc = (UI.modalKind === 'store' && g && !tab) ? g.scrollTop : 0;
     UI.open('store', storeHtml(), 'store');
+    AA.assets.refreshImgs();                           // Vorschaubilder einsetzen, die schon da sind (der Rest kommt mit seinem Päckchen)
     const g2 = $('#modal .grid'); if (g2) g2.scrollTop = sc;
   };
 

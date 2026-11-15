@@ -8,8 +8,7 @@
 
   function av(id) {
     const k = 'fish/' + (AA.FISH_BY[id] ? id : 'clown') + '_b';
-    AA.assets.want(k);
-    return '<img class="av" data-av="' + k + '" src="' + AA.assets.src(k) + '" alt="">';
+    return '<img class="av" data-av="' + k + '" src="' + AA.assets.thumb(k) + '" alt="">';      // Vorschaubild (js/assets.js)
   }
   function head(title) { return '<div class="m-head"><div class="m-title">' + title + '</div><button class="x" data-act="close" title="Schließen">✕</button></div>'; }
 

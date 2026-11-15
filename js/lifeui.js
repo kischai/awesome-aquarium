@@ -51,7 +51,7 @@
     let s = head('🧬 Kreuzung · ' + esc(A.name) + ' × ' + esc(B.name), '<div class="m-coins"><span title="Münzen">' + coin() + ' <b>' + fmt(AA.state.coins) + '</b></span></div>') + modeRow(null, X.hid);
     s += '<div class="planner xp"><div class="p-col"><div class="p-h">♂ Vater wählen</div>' + (st.males.slice().sort(byG).map(function (f) { return xRow(f, a === f, 'x-m', !!(b && b.sp === f.sp)); }).join('') || none('♂')) + '</div>' +
       '<div class="p-col"><div class="p-h">♀ Mutter wählen</div>' + (st.females.slice().sort(byG).map(function (f) { return xRow(f, b === f, 'x-f', !!(a && a.sp === f.sp)); }).join('') || none('♀')) + '</div><div class="p-fc">';
-    s += '<div class="x-kid"><div class="x-pic"><img' + (known ? '' : ' class="sil"') + ' src="' + AA.assets.src('fish/' + X.hid + '_m') + '" alt=""></div><div class="x-txt"><b>' + (known ? esc(def.name) : '??? – noch nie gezüchtet') + '</b>' +
+    s += '<div class="x-kid"><div class="x-pic"><img' + (known ? '' : ' class="sil"') + ' src="' + AA.assets.thumb('fish/' + X.hid + '_m') + '" alt=""></div><div class="x-txt"><b>' + (known ? esc(def.name) : '??? – noch nie gezüchtet') + '</b>' +
       '<small>' + (known ? esc(def.info) : 'Ein Hybrid aus ' + esc(A.name) + ' und ' + esc(B.name) + '. Wie er aussieht, zeigt sich erst, wenn er schlüpft.') + '</small>' +
       '<small>Erwachsen <b>' + fmt(def.sell) + '</b> Münzen wert · wächst ' + AA.fmtDur(real(def.grow)) + ' · ' + AA.WATER[AA.waterOf(def)].ico + ' ' + AA.WATER[AA.waterOf(def)].name + ' · unfruchtbar</small></div></div>';
     if (a && b && a.sp !== b.sp) {
@@ -108,7 +108,7 @@
       if (st.why === 'level') act = '<button class="btn" disabled>🔒 Ab Level ' + st.def.lvl + '</button>';
       else if (st.why === 'parents') act = '<small class="o-fine">Beide Arten müssen im selben Becken leben</small>';
       else act = '<button class="btn ' + (st.ok ? 'violet' : 'blue') + '" data-act="x-open" data-id="' + h.id + '">🧬 ' + (st.ok ? 'Planen' : 'Ansehen') + '</button>' + (st.ok ? '' : '<small class="o-fine">' + xShort(st) + '</small>');
-      return '<div class="quest order' + (st.ok ? ' ready' : '') + '"><div class="o-pic"><img' + (known ? '' : ' class="sil"') + ' src="' + AA.assets.src('fish/' + h.id + '_m') + '" alt=""></div><div class="q-main">' +
+      return '<div class="quest order' + (st.ok ? ' ready' : '') + '"><div class="o-pic"><img' + (known ? '' : ' class="sil"') + ' src="' + AA.assets.thumb('fish/' + h.id + '_m') + '" alt=""></div><div class="q-main">' +
         '<div class="q-title">' + (known ? esc(st.def.name) : '???') + ' <small class="o-kind">Hybrid</small></div><div class="q-desc">' + esc(sp(h.a).name) + ' × ' + esc(sp(h.b).name) + ' · ' + w.ico + ' ' + w.name + ' · erwachsen ' + fmt(st.def.sell) + ' Münzen wert</div></div>' +
         '<div class="q-act">' + act + '</div></div>';
     }).join('');
