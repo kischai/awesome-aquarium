@@ -88,13 +88,13 @@
     const k = u * 4, i = Math.floor(k), f = k - i;
     return sign * 58 * (i % 2 === 0 ? f : 1 - f);
   }
-  Fish.prototype.startTrick = function (id) {
+  Fish.prototype.startTrick = function (id, free) {      // free (Runde 18): von selbst, z. B. der Purzelbaum des Eisbären – zählt nicht als Trick
     if (!TRICK_DUR[id]) return false;
     // genug Platz schaffen: Startpunkt in die Beckenmitte der Höhe ziehen
     const y0 = AA.clamp(this.y, G.top + 150, AA.floorY(this.z) - 150);
-    this.tr = { id: id, t: 0, dur: TRICK_DUR[id], x0: this.x, y0: y0, ys: this.y, dir: this.dir };
+    this.tr = { id: id, t: 0, dur: TRICK_DUR[id], x0: this.x, y0: y0, ys: this.y, dir: this.dir, free: !!free };
     this.state = 'trick'; this.vx = this.vy = 0;
-    this.say('⭐', 0.8);
+    if (!free) this.say('⭐', 0.8);
     return true;
   };
   Fish.prototype.runTrick = function (dt) {
@@ -130,6 +130,7 @@
     this.face += (this.dir - this.face) * Math.min(1, dt * 12);
     if (u >= 1) {
       this.spin = 0; this.tr = null; this.state = 'wander'; this.wait = 0.6; this.tx = this.x; this.ty = this.y;
+      if (tr.free) { AA.view.addBubble(this.x, this.y - s * 0.2, 4); return; }
       AA.trickDone(this.d);
       AA.view.puff('star', this.x, this.y - s * 0.3, 3);
       AA.view.floatText(this.x, this.y - s * this.ar() * 0.5 - 22, AA.TRICK_BY[tr.id].name + '!', '#fff3a6');
@@ -352,7 +353,8 @@
     if (this.rig().kind === 'up' && V.plants && V.plants.length && !d.sick) {
       if (this.state !== 'hitch') {
         this.hitchT -= dt;
-        if (this.hitchT <= 0 && !this.busy() && this.state !== 'food' && this.state !== 'flee') { this.hitchO = AA.pick(V.plants); this.hitchTime = AA.rand(10, 24); this.hitchSide = Math.random() < 0.5 ? -1 : 1; this.state = 'hitch'; }
+        if (this.hitchT <= 0 && !this.busy() && this.state !== 'food' && this.state !== 'flee') { const mist = this.d.sp === 'xmashorse' ? V.plants.filter(function (o) { const pd = AA.DECO_BY[o.type]; return pd && pd.mistle; }) : [];
+          this.hitchO = mist.length && Math.random() < 0.75 ? AA.pick(mist) : AA.pick(V.plants); /* Runde 18: am liebsten an der Mistelzweig-Alge */ this.hitchTime = AA.rand(10, 24); this.hitchSide = Math.random() < 0.5 ? -1 : 1; this.state = 'hitch'; }
       }
       if (this.state === 'hitch') {
         const o = this.hitchO; this.hitchTime -= dt;
@@ -503,6 +505,10 @@
       return;
     }
     if (this.state === 'trick' && this.tr) { this.runTrick(dt); return; }
+    if (def.somersault && d.adult && !night && this.state === 'wander' && !this.ghost && !V.photoMode) {      // Runde 18: Eisbär – ab und zu ein Purzelbaum, ganz von allein
+      this.sumT = (this.sumT === undefined ? AA.rand(15, 45) : this.sumT) - dt;
+      if (this.sumT <= 0) { this.sumT = AA.rand(35, 80); if (!d.sick && d.hunger > 0.3 && this.startTrick('loop', true)) return; }
+    }
 
     const hungry = d.hunger < B.hungryBelow, starving = d.hunger <= 0.001;
     const s = this.size(), h = s * this.ar();
@@ -757,8 +763,37 @@
     }
     if (this.sad()) AA.drawSad(ctx, this.key(), w, h, this.d.sick, t + this.seed, this.d.hunger <= 0.02 || this.d.sick, this.d.v);   // Schmollmund, hängendes Lid, Tränen
     if (this.eyeShut || this.d.sick) AA.drawBlink(ctx, rig, w, h, this.d.v);       // Babys haben keine Augen-Daten: ihr Lach-Auge ist schon zu
+    if (this.def.halo) drawHalo(ctx, this.key(), w, h, t + this.seed);              // Runde 18: Engel-Kaiserfisch
+    if (this.d.sp === 'clown' && AA.seasonNow().hats) drawHat(ctx, this.key(), w, h);      // Runde 18: Weihnachtsmütze (1. Dezember bis 6. Januar)
     ctx.restore();
   };
+  /* Runde 18: Weihnachtsmütze und Heiligenschein sind eigene Bilder (prop/santahat, prop/halo) über dem Kopf – darum passen sie zu jeder Farbvariante.
+     HAT: [x, y] = Mitte der Krempen-Unterkante im Fischbild (Anteil von Breite/Höhe), Breite (Anteil der Fischbreite), Neigung in Grad (im Uhrzeigersinn).
+     HALO: [x, y] = Mitte des Rings, Breite; der Ring schwebt langsam auf und ab (etwa 3,2 Sekunden) und leuchtet nachts stärker. */
+  const HAT = { 'fish/clown_m': [0.835, 0.339, 0.33, 14], 'fish/clown_f': [0.835, 0.339, 0.33, 14], 'fish/clown_b': [0.585, 0.089, 0.37, 8] };
+  const HALO = { 'fish/halofish_m': [0.76, -0.07, 0.33], 'fish/halofish_f': [0.76, -0.07, 0.33], 'fish/halofish_b': [0.62, -0.11, 0.45] };
+  AA.HAT = HAT; AA.HALO = HALO;
+  function drawHat(ctx, key, w, h) {
+    const p = HAT[key], im = p && AA.assets.get('prop/santahat');
+    if (!im) return;
+    const hw = p[2] * w, hh = hw * im.height / im.width;
+    ctx.save(); ctx.translate(-w / 2 + p[0] * w, -h / 2 + p[1] * h); ctx.rotate(p[3] * Math.PI / 180);
+    ctx.drawImage(im, -0.64 * hw, -0.93 * hh, hw, hh);
+    ctx.restore();
+  }
+  function drawHalo(ctx, key, w, h, t) {
+    const p = HALO[key], im = p && AA.assets.get('prop/halo');
+    if (!im) return;
+    const hw = p[2] * w, hh = hw * im.height / im.width, x = -w / 2 + p[0] * w, y = -h / 2 + p[1] * h + Math.sin(t * TAU / 3.2) * h * 0.035;
+    const night = !!(AA.state && AA.state.settings.night), k = (night ? 0.7 : 0.35) * (0.8 + 0.2 * Math.sin(t * 2.1));
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(x, y, hw * 0.1, x, y, hw * 0.75);
+    g.addColorStop(0, 'rgba(255,236,150,' + k.toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,220,120,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, hw * 0.75, hw * 0.42, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+    ctx.drawImage(im, x - hw / 2, y - hh / 2, hw, hh);
+  }
   /* traurig schaut ein Fisch, wenn er hungrig (unter einem Viertel) oder krank ist – oder das Becken völlig veralgt */
   Fish.prototype.sad = function () { const d = this.d; if (this.def.grim) return false; return d.sick || d.hunger < 0.25 || AA.tank().dirt > 0.75 || this.lonely; };      // grim: Steinfisch und Blobfisch schauen immer gleich   // lonely: Schwarmfisch ohne Schwarm
 

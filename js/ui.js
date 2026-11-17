@@ -5,7 +5,7 @@
   const UI = AA.ui = { storeTab: 'fish', modalKind: null, buy: null, lockModal: false, pending: null };
   let COIN = '🪙', FOODI = '🥫';
   const PEARL = '<span class="pearl" title="Perlen"></span>';
-  const ERR = { coins: 'Nicht genug Münzen.', pearls: 'Nicht genug Perlen.', full: 'Das Becken ist voll.', level: 'Dafür brauchst du ein höheres Level.', max: 'Mehr geht nicht.',
+  const ERR = { season: 'Gibt es nur in der Weihnachtszeit (bis 6. Januar).', coins: 'Nicht genug Münzen.', pearls: 'Nicht genug Perlen.', full: 'Das Becken ist voll.', level: 'Dafür brauchst du ein höheres Level.', max: 'Mehr geht nicht.',
     unknown: 'Das gibt es nicht.', water: 'Das passt nicht zum Wasser in diesem Becken.', decofull: 'In dieses Becken passt keine Deko mehr.', nofish: 'Kein passender Fisch da (erwachsen, gesund, Klasse/Farbe wie gewünscht).', crawlfull: 'Mehr Krabbler passen nicht in dieses Becken.', owned: 'Die hast du schon.',
     ocean: 'Diese Art lebt nur im Meeresbecken.', deep: 'Diese Art lebt nur im Tiefsee-Becken.', nodeep: 'Ins Tiefsee-Becken dürfen nur Tiefsee-Tiere.', big: 'Diese Art braucht das größte Becken (125 Gallonen) oder das Meeresbecken.' };
   function real(sec) { return sec / AA.speed(); }       // Spiel-Sekunden -> echte Sekunden beim aktuellen Tempo
@@ -141,10 +141,9 @@
     else way = 'Ein ' + W.name + '-Becken gibt es im Reiter <button class="lnk" data-act="tab" data-id="tank">🏠 Aquarien</button>.';
     return '<div class="sec other">' + W.ico + ' <b>' + W.name + '-' + what + '</b> – leben nur im ' + W.name + '-Becken. ' + way + '</div>';
   }
-  function fishCards() {
-    const s = AA.state, t = AA.tank(), full = AA.count(t) >= AA.cap(t), W = AA.WATER;
-    const LOCK = { ocean: '🦈 Nur Meeresbecken', deep: '🌌 Nur Tiefsee-Becken', nodeep: '🌌 Kein Tiefsee-Tier', big: '📐 Nur großes Becken' };
-    const card = function (f) {
+  const LOCK = { ocean: '🦈 Nur Meeresbecken', deep: '🌌 Nur Tiefsee-Becken', nodeep: '🌌 Kein Tiefsee-Tier', big: '📐 Nur großes Becken' };
+  function fishCard(f) {                               // Runde 18: eigene Funktion – auch der Reiter „Weihnachten“ baut damit seine Karten
+      const s = AA.state, t = AA.tank(), full = AA.count(t) >= AA.cap(t), W = AA.WATER;
       const locked = s.level < f.lvl, w = AA.waterOf(f), why = AA.whyNot(f, t), wrong = !!why;
       return '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '">' +
         '<div class="pic' + (f.inv ? ' inv' : '') + '">' + tpic('fish/' + f.id + '_m') + tpic('fish/' + f.id + '_b', 'baby') + '</div>' +
@@ -156,9 +155,11 @@
         (f.id === 'clown' ? '<span title="Wohnt in einer Anemone (Shop → Deko): nach der Balz schneller wieder bereit">🏠 Anemone</span>' : '') + '<span title="Zeit bis erwachsen">⏱ ' + AA.fmtDur(real(f.grow)) + '</span><span title="Verkaufswert (erwachsen)">💰 ' + fmt(f.sell) + '</span><span title="Paarung kostet">❤ ' + fmt(f.mate) + '</span></div>' +
         (f.special ? '<div class="stats"><span class="tag-special" title="Besonderes Tier: gibt es nur für Perlen">⭐ Besonderes Tier</span></div>' : '') +
         buyBtn('buyfish', f.id, f.pearlOnly ? f.pearls : f.price, locked, f.lvl, why ? (LOCK[why] || W[w].ico + ' ' + W[w].only) : (full ? 'Becken voll' : ''), !!f.pearlOnly) + '</div>';
-    };
+  }
+  function fishCards() {
+    const s = AA.state, t = AA.tank(), W = AA.WATER, card = fishCard;
     const fits = function (f) { const w = AA.waterOf(f); return w === 'both' || w === t.water; };
-    const base = AA.FISH.filter(function (f) { return !f.hybrid; }).sort(function (a, b) { return a.lvl - b.lvl; });      // Hybride gibt es nur durch Kreuzen
+    const base = AA.FISH.filter(function (f) { return !f.hybrid && !f.season; }).sort(function (a, b) { return a.lvl - b.lvl; });      // Hybride gibt es nur durch Kreuzen, Weihnachts-Arten im Reiter „Weihnachten“
     const spec = base.filter(function (f) { return f.special && fits(f) && !AA.whyNot(f, t); });      // Runde 12: besondere Tiere (nur für Perlen) stehen oben
     const mine = base.filter(function (f) { return !f.special && fits(f) && !AA.whyNot(f, t); }), rest = base.filter(function (f) { return !fits(f); });
     /* Arten mit passendem Wasser, die trotzdem ein anderes Becken brauchen, stehen in eigenen Gruppen darunter – mit Weg dorthin */
@@ -197,11 +198,13 @@
   function decoCards() {
     const s = AA.state;
     return '<div class="sec">Einrichten: Stück im Becken antippen, dann <b>ziehen</b> zum Verschieben (nach oben = weiter hinten), <b>↔ spiegeln</b> und die <b>Größe</b> ändern – am runden Anfasser, mit dem Regler oder den Tasten + und −. Wie weit, hängt vom Stück ab (📐). Stücke mit <b>🧱 Stellfläche</b> sind oben flach: Zieh andere Deko darauf, sie bleibt dort stehen.' + (UI.wildDecoTop ? UI.wildDecoTop() : '') + '</div>' + (UI.decorShopTop ? UI.decorShopTop() : '') +
-    AA.DECO.filter(function (d) { return !d.fixed && !d.crawl; }).sort(function (a, b) { return (a.trophy ? 1 : 0) - (b.trophy ? 1 : 0) || a.lvl - b.lvl; }).map(function (d) {
-      const locked = s.level < d.lvl && !d.trophy, rg = AA.decoRange(d);
+    AA.DECO.filter(function (d) { return !d.fixed && !d.crawl && !d.season; }).sort(function (a, b) { return (a.trophy ? 1 : 0) - (b.trophy ? 1 : 0) || a.lvl - b.lvl; }).map(decoCard).join('');
+  }
+  function decoCard(d) {                               // Runde 18: eigene Funktion (auch für den Reiter „Weihnachten“)
+      const s = AA.state, locked = s.level < d.lvl && !d.trophy, rg = AA.decoRange(d);
       const tags = '<span>' + AA.DECO_CAT[d.cat] + '</span>' + (d.tops ? '<span class="tag-plat" title="Oben flach: Andere Deko lässt sich daraufstellen und wandert mit">🧱 Stellfläche' + (d.tops.length > 1 ? ' ×' + d.tops.length : '') + '</span>' : '') +
         (d.hide ? '<span title="Fische verstecken sich hier">🏠 Versteck</span>' : '') + (d.sway ? '<span title="Wiegt sich im Wasser">🌿 Wiegt sich</span>' : '') + (d.alive ? '<span>🫀 Lebendig</span>' : '') + (d.bubbles ? '<span>🫧 Blubbert</span>' : '') +
-        (d.path ? '<span title="Liegt flach im Kies – Fische schwimmen darüber, andere Deko stellst du einfach darauf">🛤️ Weg</span>' : '') + (d.stairs ? '<span title="Jede Stufe ist eine Stellfläche">🪜 Treppe</span>' : '') +
+        (d.path ? '<span title="Liegt flach im Kies – Fische schwimmen darüber, andere Deko stellst du einfach darauf">🛤️ Weg</span>' : '') + (d.mistle ? '<span class="tag-special" title="Wirkt im Becken, in dem sie steht – nicht im Brutbecken">💕 Brut −10 % · Pause −10 %</span>' : '') + (d.globe ? '<span>❄️ Schnee rieselt</span>' : '') + (d.lights ? '<span>✨ Lichterkette</span>' : '') + (d.shine ? '<span>✨ Glänzt</span>' : '') + (d.stairs ? '<span title="Jede Stufe ist eine Stellfläche">🪜 Treppe</span>' : '') +
         (UI.wildDecoTags ? UI.wildDecoTags(d) : '') + (UI.decorTags ? UI.decorTags(d) : '') +
         (d.home ? '<span title="In der Natur zu Hause im ' + AA.WATER[d.home].name + ' – passt trotzdem in jedes Becken">' + AA.WATER[d.home].ico + ' ' + AA.WATER[d.home].name + '-Typ</span>' : '') +
         (rg ? '<span title="So klein und so groß lässt es sich im Becken ziehen">📐 ' + pct(rg[0]) + '–' + pct(rg[1]) + ' %</span>' : '<span title="Lässt sich nicht größer oder kleiner ziehen">🔒 Feste Größe</span>');
@@ -209,31 +212,34 @@
         '<div class="pic deco">' + tpic('deco/' + d.id) + '</div>' +
         '<div class="nm">' + esc(d.name) + '</div>' + (d.info ? '<div class="info">' + esc(d.info) + '</div>' : '') +
         '<div class="stats">' + tags + '</div>' +
-        (d.trophy ? '<button class="buy locked" disabled>🏆 Nur zu gewinnen' + (AA.trophyCount ? ' · ' + AA.trophyCount(d.id) + '× im Besitz' : '') + '</button>' : buyBtn('buydeco', d.id, d.price, locked, d.lvl, d.unique && s.clam ? '✓ Gekauft' : '')) + '</div>';
-    }).join('');
+        (d.trophy ? '<button class="buy locked" disabled>🏆 Nur zu gewinnen' + (AA.trophyCount ? ' · ' + AA.trophyCount(d.id) + '× im Besitz' : '') + '</button>' : buyBtn('buydeco', d.id, d.pearls || d.price, locked, d.lvl, d.unique && s.clam ? '✓ Gekauft' : '', !!d.pearls)) + '</div>';
   }
   /* Krabbler: Schnecken, Seesterne, Seeigel & Co. – sie wandern von allein über den Kies */
   function crawlCards() {
     const s = AA.state, t = AA.tank(), have = AA.decoCount(t, true), cmax = AA.crawlMax(t), full = have >= cmax, cp = AA.cleanPower(t);
     let h = '<div class="sec">Krabbler wuseln von allein über den Kies und brauchen kein Futter – Schnecken, Seesterne und Seeigel klettern auch an die Scheibe 🪟. In „' + esc(t.name) + '“ leben <b>' + have + ' von ' + cmax + '</b>' + (t.ocean || t.deep ? '' : ' (im Meeres- und Tiefsee-Becken passen ' + AA.BAL.maxCrawlBig + ')') + '.' +
       (UI.lifeCrewTop ? UI.lifeCrewTop(t) : ' Algenfresser 🧽 bremsen das Veralgen' + (cp > 0 ? ' – im Moment um <b>' + Math.round(cp * 100) + ' %</b>' : '') + ' (zusammen höchstens ' + Math.round(B.cleanMax * 100) + ' %).') + (UI.wildCrewNote ? UI.wildCrewNote(t) : '') + '</div>';
-    const cr = AA.DECO.filter(function (d) { return d.crawl; }).sort(function (a, b) { return (AA.decoFits(b, t) ? 1 : 0) - (AA.decoFits(a, t) ? 1 : 0) || a.lvl - b.lvl; });
+    const cr = AA.DECO.filter(function (d) { return d.crawl && !d.season; }).sort(function (a, b) { return (AA.decoFits(b, t) ? 1 : 0) - (AA.decoFits(a, t) ? 1 : 0) || a.lvl - b.lvl; });
     let sep = false;
     h += cr.map(function (d) {
-      const locked = s.level < d.lvl, w = AA.waterOf(d), wrong = !AA.decoFits(d, t);
+      const wrong = !AA.decoFits(d, t);
       let pre = '';
       if (wrong && !sep) { sep = true; pre = otherWaterSec('Krabbler'); }
+      return pre + crawlCard(d);
+    }).join('');
+    return h;
+  }
+  function crawlCard(d) {                              // Runde 18: eigene Funktion (auch für den Reiter „Weihnachten“)
+      const s = AA.state, t = AA.tank(), full = AA.decoCount(t, true) >= AA.crawlMax(t), locked = s.level < d.lvl, w = AA.waterOf(d), wrong = !AA.decoFits(d, t);
       const job = d.job && AA.JOBS ? AA.JOBS[d.job] : null;
       const tags = (job ? '<span class="tag-job" title="Job in der Putzkolonne">' + job.ico + ' ' + job.name + '</span>' : '') + (d.clean ? '<span title="Bremst das Veralgen">🧽 −' + Math.round(d.clean * 100) + ' % Schmutz</span>' : '') + (d.eats && d.job !== 'food' ? '<span title="Frisst Futter, das am Boden liegen bleibt">🍽️ Räumt Futterreste weg</span>' : '') +
         (d.glass ? '<span title="Klettert auch an die Scheibe und die Seitenwände – dort sieht man die Unterseite">🪟 Klettert ans Glas</span>' : '') +
         (!d.clean && !d.eats && !d.glass && !job ? '<span>✨ Einfach hübsch</span>' : '');
-      return pre + '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '">' +
+      return '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '">' +
         '<div class="pic deco">' + tpic('deco/' + d.id) + '</div>' +
         '<div class="nm">' + esc(d.name) + '</div><div class="info">' + esc(d.info || '') + '</div>' +
         '<div class="stats"><span title="' + AA.WATER[w].name + '">' + AA.WATER[w].ico + '</span>' + tags + '</div>' +
         buyBtn('buydeco', d.id, d.price, locked, d.lvl, wrong ? AA.WATER[w].ico + ' ' + AA.WATER[w].only : (full ? 'Becken voll' : '')) + '</div>';
-    }).join('');
-    return h;
   }
   function lookCards() {
     const s = AA.state, t = AA.tank();
@@ -309,11 +315,22 @@
       return '<div class="card is-soon"><div class="pic emoji">' + p.ico + '</div><div class="nm">' + esc(p.name) + '</div><div class="info">' + esc(p.desc) + '</div><button class="buy locked" disabled>Kommt später</button></div>';
     }).join('');
   }
+  /* Runde 18: Weihnachten – alle Weihnachts-Arten, der Schneemann und die Weihnachts-Deko auf einem Reiter, solange Weihnachtszeit ist (AA.season) */
+  function xmasCards() {
+    const S = AA.season(), lv = function (a, b) { return a.lvl - b.lvl; }, x = function (d) { return d.season === 'xmas'; };
+    return '<div class="sec xmas">🎄 <b>Weihnachten</b> – alles hier gibt es nur bis 6. Januar. Was du kaufst, bleibt dir für immer.' +
+      (S.hats ? ' Gerade tragen alle Clownfische Weihnachtsmützen.' : ' Ab 1. Dezember tragen alle Clownfische Weihnachtsmützen.') + '</div>' +
+      '<div class="sec">🐠 Fische & Tiere</div>' + AA.FISH.filter(x).sort(lv).map(fishCard).join('') +
+      '<div class="sec">🦀 Krabbler</div>' + AA.DECO.filter(function (d) { return x(d) && d.crawl; }).map(crawlCard).join('') +
+      '<div class="sec">🪸 Deko</div>' + AA.DECO.filter(function (d) { return x(d) && !d.crawl; }).sort(lv).map(decoCard).join('');
+  }
+  UI.storeTabs = function () { return (AA.season().xmas ? [['xmas', '🎄 Weihnachten']] : []).concat(TABS); };
   function storeHtml() {
-    const s = AA.state, t = AA.tank();
-    const body = { fish: fishCards, crawl: crawlCards, food: foodCards, deco: decoCards, look: lookCards, tank: tankCards, perk: perkCards }[UI.storeTab]();
+    const s = AA.state, t = AA.tank(), tabs = UI.storeTabs();
+    if (!tabs.some(function (tb) { return tb[0] === UI.storeTab; })) UI.storeTab = 'fish';      // Weihnachtszeit vorbei: zurück zu den Fischen
+    const body = { xmas: xmasCards, fish: fishCards, crawl: crawlCards, food: foodCards, deco: decoCards, look: lookCards, tank: tankCards, perk: perkCards }[UI.storeTab]();
     return head('🛒 Shop', '<div class="m-coins"><span id="m-coins">' + COIN + ' <b>' + fmt(s.coins) + '</b></span><span id="m-pearls">' + PEARL + ' <b>' + fmt(s.pearls) + '</b></span><small>Level ' + s.level + ' · ' + AA.count(t) + '/' + AA.cap(t) + ' 🐟</small></div>') +
-      '<div class="tabs">' + TABS.map(function (tb) { return '<button class="tab' + (tb[0] === UI.storeTab ? ' active' : '') + '" data-act="tab" data-id="' + tb[0] + '">' + tb[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="tabs">' + tabs.map(function (tb) { return '<button class="tab' + (tb[0] === UI.storeTab ? ' active' : '') + '" data-act="tab" data-id="' + tb[0] + '">' + tb[1] + '</button>'; }).join('') + '</div>' +
       '<div class="grid g-' + UI.storeTab + '">' + body + '</div>';
   }
   /* Boden- und Kulissen-Bilder kommen päckchenweise nach (js/assets.js): Ist der Shop gerade offen, die Vorschau an Ort und Stelle auffrischen –
@@ -457,6 +474,11 @@
       li.push('⭐ <b>Neu: XP fürs Großziehen</b> – jeder Fisch, der bei dir erwachsen wird, bringt Erfahrung (Clownfisch ' + AA.FISH_BY.clown.xp + ', Blobfisch ' + AA.FISH_BY.blobfish.xp + ').');
       li.push('🌈 Farbvarianten sind seltener geworden (1 % je Ei), Farbfutter wirkt für die nächsten 3 Eier, der Markt erholt sich schon nach einer halben Stunde.');
     }
+    if (n.xmas18) li.push('🎄 <b>Weihnachts-Update:</b> neuer Reiter „Weihnachten“ im Shop mit Rentier, Eisbär, Schneemann, drei Weihnachts-Fischen und 15 Deko-Teilen – nur bis 6. Januar. Dazu zwei Winterböden und links der Adventskalender (bald verfügbar).');
+    if (n.gone) {                                      // Runde 18: Steinkopf mit Hut, Brücken und Wege sind raus (js/state.js, AA.dropGone)
+      const its = Object.keys(n.gone.items || {}).map(function (k) { const c = n.gone.items[k]; return (c > 1 ? c + '× ' : '') + esc(k); }).join(', ');
+      li.push('🧹 <b>Aufgeräumt:</b> Steinkopf mit Hut, Brücken und Wege gibt es nicht mehr. Für ' + (its || 'deine Stücke') + ' bekommst du den vollen Kaufpreis zurück: <b>' + fmt(n.gone.coins) + ' Münzen</b>.');
+    }
     if (n.present) {                                   // 17.11.2026: ein Fisch als Geschenk (js/social.js, giveFish)
       const P = n.present, def = AA.FISH_BY[P.sp], V = P.v && AA.VAR_BY[P.v];
       li.push('🎁 <b>Geschenk' + (P.from ? ' von ' + esc(P.from) : '') + ':</b> ' + esc(P.name) + ', ein ' + (V ? esc(V.name) + '-' : '') + esc(def ? def.name : P.sp) +
@@ -585,6 +607,7 @@
     return '<button class="x" data-act="desel" title="Schließen">✕</button>' +
       '<div class="c-top"><div class="c-pic deco">' + pic('deco/' + o.type) + '</div><div class="c-id"><div class="c-name">' + esc(def.name) + '</div><div class="c-sub">' + AA.DECO_CAT[def.cat] + '</div></div></div>' +
       '<div class="c-hint" id="c-dhint"></div>' + sizeHtml(o, def) +
+      (def.mistle ? '<div class="c-note">' + (AA.tank().role === 'brut' ? '💕 Wirkt hier nicht – im Brutbecken bringt der Mistelzweig nichts.' : '💕 Wirkt: Eier schlüpfen 10 % schneller, Paarungspause 10 % kürzer.') + '</div>' : '') +
       (UI.decoCardExtra ? UI.decoCardExtra(o, def) : '') +
       '<div class="c-btns">' + (def.crawl ? '' : '<button class="btn blue" data-act="flip">↔ Spiegeln</button>') + (def.daily ? '' : '<button class="btn green" data-act="selldeco">Verkaufen · ' + fmt(AA.decoSellValue(o)) + '</button>') + '</div>' +
       (UI.decoCardStore ? UI.decoCardStore(o, def) : '') +

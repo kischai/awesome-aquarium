@@ -865,7 +865,7 @@
   };
   V.toStage = function (x, y) { return { x: x, y: y }; };
   V.rebuild = function () {
-    V.fish = []; V.byId = {}; V.food = []; V.parts = []; V.texts = []; V.bubbles = []; V.rips = []; V.decoT = {}; V.crawl = {};
+    V.fish = []; V.byId = {}; V.food = []; V.parts = []; V.texts = []; V.bubbles = []; V.rips = []; V.decoT = {}; V.crawl = {}; V.globe = {};
     V.live = []; V.service = {}; V.nestle = {}; V.schools = {}; V.wipe = null; V.shine = {};
     V.sel = null; V.selDeco = null; V.dragDeco = null; V.sizing = null; V.dropSpot = null;
     V.clearThumbs();
@@ -942,6 +942,7 @@
     if (o === V.dragDeco) { c.tx = o.x; c.tz = o.z; c.wait = 1.5; c.v = 0; c.food = null; c.climb = null; return; }      // wird gerade getragen
     if (o === V.selDeco) { c.v = 0; return; }                                                          // ausgewählt: hält still
     if (V.service[o.id] > V.time) { c.v = 0; c.wait = Math.max(c.wait, 1.5); return; }                 // Putzerstation: putzt gerade einen Fisch
+    if (c.wave) { c.wave.t += dt; c.v = 0; if (c.wave.t >= AA.WAVE_T) c.wave = null; return; }       // Runde 18: Schneemann winkt gerade – steht still
     const night = !!AA.state.settings.night;
     let speed = def.crawl[1] * (night ? 0.5 : 1);
     if (def.eats) {                                    // Futterreste: nach liegen gebliebenen Flocken Ausschau halten
@@ -978,7 +979,11 @@
         c.wait = 0.4;
         return;
       }
+      if (c.wait <= 0 && kind === 'snowman' && !c.waved && !night && !V.photoMode && Math.random() < 0.55) {      // Runde 18: dreht sich zur Kamera und winkt
+        c.wave = { t: 0 }; c.waved = true; c.wait = AA.rand(0.8, 2.5); return;
+      }
       if (c.wait <= 0) {                               // neues Ziel in der Nähe; Seesterne und Seeigel trödeln länger
+        c.waved = false;
         const slow = kind === 'star' || kind === 'urchin' || kind === 'glide', far = kind === 'crab' ? 420 : (kind === 'glide' ? 120 : (slow ? 150 : 280));      // glide = Scholle: gleitet ein Stück, liegt dann lange still
         c.tx = AA.clamp(o.x + AA.rand(-far, far), lim[0] + 50, lim[1] - 50);
         c.tz = AA.clamp(o.z + AA.rand(-0.32, 0.32), 0.04, 1);
@@ -991,6 +996,7 @@
     else if (kind === 'crab') gait = Math.sin(c.ph * 1.3) > -0.25 ? 1 : 0;
     else if (kind === 'walk') gait = 0.55 + 0.45 * Math.abs(Math.sin(c.ph * 5));
     else if (kind === 'glide') gait = 0.9 + 0.1 * Math.sin(c.ph * 0.9);
+    else if (kind === 'snowman') gait = 0.2 + 0.8 * Math.max(0, Math.sin(c.ph * 2.2));      // Runde 18: gleitet in Schüben
     const step = Math.min(dist, speed * gait * dt);
     o.x = AA.clamp(o.x + dx / dist * step, lim[0] + 20, lim[1] - 20);
     o.z = AA.clamp(o.z + dz / dist * step / ZPX, 0.02, 1);
@@ -998,8 +1004,32 @@
     if (!def.sym && Math.abs(dx) > 3) o.flip = dx < 0;
   }
   /* Krabbler zeichnen: Ursprung = unten Mitte (wie bei der Deko), schon gespiegelt */
+  /* Runde 18: Schneemann – Seitenbild beim Gleiten; zum Winken dreht er sich zur Kamera (Bild klappt um), reißt den Arm hoch, winkt wild und dreht
+     sich zurück. Front ohne erhobenen Arm (deco/snowman_front) + Arm allein (deco/snowman_arm, gleiche Leinwand), Schulter-Gelenk = def.wave. */
+  AA.WAVE_T = 3.6;
+  function drawSnowman(ctx, o, def, img, b, c, mv) {
+    const W8 = c.wave, T = W8 ? W8.t : -1, E = AA.WAVE_T, turn = 0.26;
+    const front = W8 && T > turn && T < E - turn ? AA.assets.get('deco/snowman_front') : null, arm = front && AA.assets.get('deco/snowman_arm');
+    if (front && arm) {
+      const fw = b.h * front.width / front.height, k = T < 2 * turn ? (T - turn) / turn : (T > E - 2 * turn ? (E - turn - T) / turn : 1);
+      ctx.scale(Math.max(0.05, Math.min(1, k)), 1);
+      const up = AA.clamp((T - 2 * turn) / 0.25, 0, 1) * AA.clamp((E - 2 * turn - T) / 0.25, 0, 1);      // Arm hoch, winken, wieder runter
+      const ang = (1 - up) * 1.1 + up * (-0.32 + 0.42 * Math.sin((T - 2 * turn) * TAU * 3.1));
+      const px = -fw / 2 + def.wave[0] * fw, py = -b.h + def.wave[1] * b.h;
+      ctx.drawImage(front, -fw / 2, -b.h, fw, b.h);
+      ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.drawImage(arm, -px - fw / 2, -py - b.h, fw, b.h); ctx.restore();
+      return;
+    }
+    let sx = 1;
+    if (W8) sx = T <= turn ? 1 - T / turn : (T - (E - turn)) / turn;
+    const q = Math.sin(c.ph * 2.2) * 0.035 * (0.3 + 0.7 * mv);
+    ctx.translate(0, -Math.max(0, Math.sin(c.ph * 2.2)) * 1.6 * mv);
+    ctx.scale(Math.max(0.05, Math.min(1, sx)) * (1 + q), 1 - q * 0.8);
+    ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h);
+  }
   function drawCrawler(ctx, o, def, img, b) {
     const c = crawlState(o), kind = def.crawl[0], mv = Math.min(1, c.v / (def.crawl[1] * 0.5 + 0.01));
+    if (kind === 'snowman') { drawSnowman(ctx, o, def, img, b, c, mv); return; }
     if (kind === 'snail') { const q = Math.sin(c.ph * 2.4) * 0.055 * (0.25 + 0.75 * mv); ctx.scale(1 + q, 1 - q * 0.8); }
     else if (kind === 'star') { const q = Math.sin(c.ph * 0.9) * 0.02; ctx.translate(0, -b.h / 2); ctx.rotate(Math.sin(c.ph * 0.45) * 0.07); ctx.scale(1 + q, 1 + q); ctx.translate(0, b.h / 2); }
     else if (kind === 'urchin') { const q = Math.sin(c.ph * 1.7) * 0.022; ctx.scale(1 + q, 1 + q * 1.4); }
@@ -1118,9 +1148,13 @@
     for (let i = 0; i < tank.deco.length; i++) {
       const o = tank.deco[i], def = AA.DECO_BY[o.type];
       if (def.crawl) crawlStep(o, def, dt);
-      else if (def.prestige) {                         // Prestige-Stücke funkeln
+      else if (def.mistle && tank.matings && tank.matings.length && tank.role !== 'brut' && !V.photoMode) {      // Runde 18: Mistelzweig – Herzchen, solange ein Pärchen balzt
         V.shine[o.id] = (V.shine[o.id] === undefined ? Math.random() : V.shine[o.id]) - dt;
-        if (V.shine[o.id] <= 0) { V.shine[o.id] = AA.rand(0.35, 1.1); const b = V.decoBox(o); V.twinkle(b.x + AA.rand(0.12, 0.88) * b.w, b.y + AA.rand(0.08, 0.8) * b.h, Math.random() < 0.7 ? '#fff3b0' : '#ffffff', AA.rand(8, 15) * b.sc); }
+        if (V.shine[o.id] <= 0) { V.shine[o.id] = AA.rand(0.5, 1.1); const b = V.decoBox(o); V.puff('heart', b.cx + AA.rand(-0.25, 0.25) * b.w, b.y + b.h * AA.rand(0.1, 0.4), 1); }
+      }
+      else if (def.prestige || def.shine) {            // Prestige-Stücke funkeln (Runde 18: shine = glänzt ab und zu, 1 = selten, 2 = öfter)
+        V.shine[o.id] = (V.shine[o.id] === undefined ? Math.random() : V.shine[o.id]) - dt;
+        if (V.shine[o.id] <= 0) { V.shine[o.id] = def.prestige ? AA.rand(0.35, 1.1) : (def.shine === 1 ? AA.rand(2.2, 5.5) : AA.rand(0.8, 2.2)); const b = V.decoBox(o); V.twinkle(b.x + AA.rand(0.12, 0.88) * b.w, b.y + AA.rand(0.08, 0.8) * b.h, Math.random() < 0.7 ? '#fff3b0' : '#ffffff', AA.rand(8, 15) * b.sc); }
       }
     }
     for (let i = V.bubbles.length - 1; i >= 0; i--) {
@@ -1386,6 +1420,8 @@
     if (o.r) ctx.rotate(o.r * Math.PI / 180);          // Runde 10: gedreht um den Fuß (positiv = lehnt nach rechts, egal ob gespiegelt)
     if (o.flip) ctx.scale(-1, 1);
     if (def.alive) { const br = Math.sin(t * 1.7 + o.x * 0.01); ctx.scale(1 - br * 0.012, 1 + br * 0.025); }
+    const gl = def.globe ? globeState(o, t) : null;
+    if (gl && gl.shake > 0) ctx.rotate(Math.sin(t * 24) * 0.07 * Math.min(1, gl.shake));      // Runde 18: Schneekugel wackelt beim Schütteln
     // groß gezogen? Dann die große Fassung des Bildes nehmen (hd/<id>), sonst würde es unscharf – gleiche Form, nur mehr Pixel
     const hd = img && b.w * (V.res || 2) > img.width * 1.08 ? AA.assets.get('hd/' + o.type) : null;
     let im = hd || img;
@@ -1394,6 +1430,8 @@
     else if (def.crawl) drawCrawler(ctx, o, def, img, b);
     else if (def.sway) AA.drawSway(ctx, im, b.w, b.h, t, def.sway * (V.nestle[o.id] > t ? 2.4 : 1), (o.x * 0.013) % TAU);
     else ctx.drawImage(im, -b.w / 2, -b.h, b.w, b.h);
+    if (gl && img) drawGlobeSnow(ctx, def, b, gl);
+    if (def.lights && img) drawLights(ctx, def, b, t);
     ctx.restore();
     // Sockel im Kies versenken: Runde 12 – Sand-Wellen nur auf dem Stück selbst (siehe buildFoot); sonst wie früher die Szene über den Rand
     if (foot && img) cachedFoot(ctx, o, def, b, im);
@@ -1414,6 +1452,44 @@
     if (o === V.selDeco && !V.photoMode) drawSel(ctx, o, b, t, lift);
   }
 
+  /* Runde 18: Schneekugel – Flocken (Lage im Einheitskreis) rieseln im Glas; ab und zu und beim Antippen (Auswählen) schüttelt sie sich, dann wirbeln sie hoch */
+  function globeState(o, t) {
+    let g = V.globe[o.id];
+    if (!g) {
+      g = V.globe[o.id] = { f: [], t: t, shake: 0, sel: false, next: AA.rand(8, 25) };
+      for (let i = 0; i < 28; i++) g.f.push({ x: AA.rand(-0.75, 0.75), y: AA.rand(-0.8, 0.45), s: AA.rand(0.018, 0.036), ph: Math.random() * TAU });
+    }
+    const dt = AA.clamp(t - g.t, 0, 0.1); g.t = t;
+    if (o === V.selDeco && !g.sel) g.shake = 1.4;
+    g.sel = o === V.selDeco;
+    g.next -= dt; if (g.next <= 0 && !V.photoMode) { g.next = AA.rand(20, 45); g.shake = 1; }
+    const sh = g.shake; g.shake = Math.max(0, g.shake - dt);
+    for (let i = 0; i < g.f.length; i++) {
+      const f = g.f[i];
+      if (sh > 0) { const a = Math.atan2(f.y, f.x) + dt * 4.5 * sh, r = Math.hypot(f.x, f.y); f.x = r * Math.cos(a); f.y = r * Math.sin(a) - dt * 0.9 * sh; }
+      else { f.y += dt * 0.085; f.x += Math.sin(t * 1.3 + f.ph) * dt * 0.05; }
+      if (f.y > 0.5 || f.x * f.x + f.y * f.y > 0.78) { f.x = AA.rand(-0.6, 0.6); f.y = -0.82 + Math.random() * 0.1; }
+    }
+    return g;
+  }
+  function drawGlobeSnow(ctx, def, b, g) {
+    const G2 = def.globe, cx = -b.w / 2 + G2[0] * b.w, cy = -b.h + G2[1] * b.h, R = G2[2] * b.w * 0.93;
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.clip();
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    for (let i = 0; i < g.f.length; i++) { const f = g.f[i]; ctx.beginPath(); ctx.arc(cx + f.x * R, cy + f.y * R, f.s * b.w, 0, TAU); ctx.fill(); }
+    ctx.restore();
+  }
+  /* Runde 18: Lichterkette am geschmückten Tannenbaum – Lauflicht, nachts heller (def.lights = Lage der Birnchen im Bild) */
+  function drawLights(ctx, def, b, t) {
+    const L = def.lights, night = !!AA.state.settings.night, gs = glowSprite('#ffe9a0'), r = b.w * (night ? 0.075 : 0.055);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < L.length; i++) {
+      const k = 0.5 + 0.5 * Math.sin(t * 2.6 - i * 0.55), a = (night ? 0.95 : 0.6) * k * k;
+      if (a < 0.04) continue;
+      ctx.globalAlpha = a; ctx.drawImage(gs, -b.w / 2 + L[i][0] * b.w - r, -b.h + L[i][1] * b.h - r, 2 * r, 2 * r);
+    }
+    ctx.restore();
+  }
   /* Anfasser zum Größe-Ziehen und Prozent-Schildchen – liegen über allem, damit kein Fisch sie verdeckt */
   function drawSizeHandle(ctx) {
     const hd = V.sizeHandle();

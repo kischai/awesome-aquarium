@@ -388,6 +388,7 @@
     AA.assets.load(function (p) { $('#load-fill').style.width = Math.round(p * 100) + '%'; }).then(function () {
       V.rebuild();
       UI.init();
+      if (UI.xmasInit) UI.xmasInit();                  // Runde 18: Adventskalender-Knopf (js/xmas.js)
       lastWall = Date.now();
       requestAnimationFrame(function (ts) { last = ts; requestAnimationFrame(frame); });
       if (V.prewarm) V.prewarm();                      // Runde 14: Nachbarbecken im Leerlauf vorbereiten

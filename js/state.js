@@ -68,7 +68,8 @@
       tanks: [t], active: 0, walls: ['aqua'], clam: false, mateCd: {},
       daily: { day: 0, chest: false, hunts: 0, gift: false },
       stats: defaultStats(), medals: {}, settings: defaultSettings(),
-      lastSeen: Date.now(), created: Date.now(), intro: false
+      lastSeen: Date.now(), created: Date.now(), intro: false,
+      r18: 1, x18: 1                                 // Runde 18: ein neues Spiel hat nichts zu erstatten und braucht keine Weihnachts-Neuigkeit (der Reiter steht im Shop vorn)
     };
     AA.metaFix(AA.state, true);                      // Sammelbuch, Aufträge, Wochenkarte (js/meta.js)
     AA.bizFix(AA.state);                             // Gene, Markt, Kunden, Kassenbuch (js/biz.js)
@@ -231,6 +232,20 @@
   };
   /* Einen Spielstand (JSON-Text) zum laufenden Stand machen. guest = der Stand eines Freundes, den man nur ansieht: dann wird im
      Browser-Speicher nichts angefasst (keine Sicherungen, kein „…-kaputt“). */
+  /* Runde 18: Steinkopf mit Hut, Brücken und Wege sind aus dem Spiel (AA.DECO_GONE). Zählt, was davon in Becken und Lager liegt, und den Kaufpreis dafür. */
+  AA.dropGone = function (o) {
+    let coins = 0; const items = {};
+    const one = function (d) { const g = d && AA.DECO_GONE[d.type]; if (g) { coins += g[1]; items[g[0]] = (items[g[0]] || 0) + 1; } };
+    (o.tanks || []).forEach(function (t) { if (t && Array.isArray(t.deco)) t.deco.forEach(one); });
+    if (Array.isArray(o.storage)) o.storage.forEach(one);
+    return coins ? { coins: coins, items: items } : null;
+  };
+  /* Runde 18: Mistelzweig-Alge im Becken – { hatch, pause } (Faktoren auf Brutzeit und Paarungspause), sonst null. Im Brutbecken wirkt sie nicht; mehrere zählen wie eine. */
+  AA.mistle = function (t) {
+    if (!t || t.role === 'brut' || !Array.isArray(t.deco)) return null;
+    for (let i = 0; i < t.deco.length; i++) { const d = AA.DECO_BY[t.deco[i].type]; if (d && d.mistle) return d.mistle; }
+    return null;
+  };
   AA.loadRaw = function (raw, guest) {
     AA.loadingGuest = !!guest;                     // Runde 14: js/social.js verschenkt nichts in den Stand eines Freundes
     try { return loadRaw0(raw, guest); } finally { AA.loadingGuest = false; }
@@ -240,6 +255,7 @@
     try {
       const o = JSON.parse(raw);
       if (!o || !Array.isArray(o.tanks) || !o.tanks.length) throw new Error('kein Becken im Spielstand');
+      const gone = guest ? null : AA.dropGone(o);      // Runde 18: entfernte Deko zählen, bevor fixTank (Becken) und decorFix (Lager) sie still wegwerfen
       o.tanks = o.tanks.slice(0, AA.MAX_TANKS + 3).map(fixTank);      // 8 Becken + Süßwasser-Sonderangebot + Meeresbecken + Tiefsee-Becken
       if ((o.v | 0) < 3) { o.news = { water: migrateWater(o) }; o.v = 3; }      // Umzug + einmaliger Hinweis auf das, was neu ist (zeigt die Oberfläche)
       const ds = defaultStats(); o.stats = o.stats || {};
@@ -252,6 +268,8 @@
       o.active = AA.clamp(o.active | 0, 0, o.tanks.length - 1);
       o.coins = Math.max(0, Math.round(+o.coins || 0)); o.pearls = Math.max(0, Math.round(+o.pearls || 0));
       o.food = Math.max(0, Math.round(+o.food || 0)); o.xp = Math.max(0, Math.round(+o.xp || 0));
+      if (gone && !o.r18) { o.r18 = 1; o.coins += gone.coins; o.news = o.news || {}; o.news.gone = gone; }      // Merker r18: ein noch offenes altes Spiel erstattet nicht ein zweites Mal
+      if (!guest && !o.x18 && AA.season().xmas) { o.x18 = 1; o.news = o.news || {}; o.news.xmas18 = 1; }      // Runde 18: einmal Bescheid sagen, was es zu Weihnachten Neues gibt
       const was = Math.max(0, Math.round(+o.level || 0));
       o.level = AA.levelFor(o.xp);
       if (!guest && !o.r16) {                          // Runde 16, einmalig: flachere Level-Kurve ab Level 31 – wer dadurch aufsteigt, bekommt je Level eine Perle wie sonst auch.
@@ -414,6 +432,7 @@
   AA.buyFish = function (sp, name, sex, withPearls) {
     const s = AA.state, t = AA.tank(), def = AA.FISH_BY[sp];
     if (!def) return 'unknown';
+    if (def.season && !AA.season()[def.season]) return 'season';      // Runde 18: Weihnachts-Arten nur in der Weihnachtszeit
     if (s.level < def.lvl) return 'level';
     if (!AA.livesIn(def, t)) return AA.whyNot(def, t);      // 'ocean', 'deep', 'nodeep', 'big' oder 'water'
     if (AA.count(t) >= AA.cap(t)) return 'full';
@@ -471,7 +490,8 @@
     let cd = def ? def.pause : DAY;
     if (!cross && sp === 'salmon' && AA.SALMON) cd *= AA.SALMON.cd;      // Lachse laichen seltener (dafür 3 Eier)
     if (sp === 'clown' && AA.hostCount && AA.hostCount(t)) cd *= 0.75;
-    return Math.min(cd, AA.TEMPO.pauseMax);          // Runde 16: nie länger als 24 Std
+    const mi = AA.mistle(t);                          // Runde 18: Mistelzweig-Alge – Pause 10 % kürzer (nicht im Brutbecken)
+    return Math.min(cd, AA.TEMPO.pauseMax) * (mi ? mi.pause : 1);          // Runde 16: nie länger als 24 Std
   };
   /* Fische einer Art, die jetzt balzen könnten. why (Reihenfolge = was du tun kannst): nomale/nofemale · hungry · cd (cd = Wartezeit) · busy · dirty · full · coins */
   AA.pairPool = function (t, test) {                 // test(g) = gehört der Fisch zur gesuchten Art/Gruppe?
@@ -584,7 +604,7 @@
   /* ---------- Simulation: ein Zeitschritt (Spiel-Sekunden) für ein Becken ---------- */
   AA.advance = function (t, dt, sum) {
     const s = AA.state, n = t.fish.length, fed = t.feeder > 0, keeper = !!(s.staff && s.staff.keeper);
-    const growK = (t.role === 'aufzucht' ? AA.ROLES.aufzucht.grow : 1) * AA.bioGrow(t), hatchK = t.role === 'brut' ? AA.ROLES.brut.hatch : 1;
+    const growK = (t.role === 'aufzucht' ? AA.ROLES.aufzucht.grow : 1) * AA.bioGrow(t), mi = AA.mistle(t), hatchK = t.role === 'brut' ? AA.ROLES.brut.hatch : (mi ? 1 / mi.hatch : 1);   // Runde 18: Mistelzweig
     if (fed) t.feeder = Math.max(0, t.feeder - dt);
     const gp = AA.growPrep(t);                       // Schwarm, Turbofutter, Putzerstation (js/life.js)
     for (let i = 0; i < t.fish.length; i++) {
@@ -842,12 +862,13 @@
     const s = AA.state, def = AA.DECO_BY[type];
     let t = AA.tank();
     if (!def || def.fixed || def.trophy) return 'unknown';      // Pokale gibt es nur zu gewinnen (Runde 12)
+    if (def.season && !AA.season()[def.season]) return 'season';      // Runde 18: Weihnachts-Deko nur in der Weihnachtszeit
     if (s.level < def.lvl) return 'level';
     if (def.unique && s.clam) return 'owned';
     if (!AA.decoFits(def, t)) return 'water';
     if (!def.unique && !AA.decoRoom(t, def)) return def.crawl ? 'crawlfull' : 'decofull';
-    if (s.coins < def.price) return 'coins';
-    AA.addCoins(-def.price, false);
+    if (def.pearls ? s.pearls < def.pearls : s.coins < def.price) return def.pearls ? 'pearls' : 'coins';      // Runde 18: Mistelzweig kostet Perlen
+    if (def.pearls) AA.addPearls(-def.pearls); else AA.addCoins(-def.price, false);
     s.stats.decoBought++; s.stats.spentDeco += def.price;
     let o;
     if (type === 'bubbleclam') {                      // tauscht die Schatzkiste in Aquarium 1 aus

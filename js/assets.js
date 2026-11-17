@@ -12,7 +12,7 @@
   const As = AA.assets = { img: {}, tint: {}, done: {}, wait: {}, complete: false, stats: { first: 0, firstMs: 0, allMs: 0 } };
   const PACK = window.AA_PACK || null, GROUP = {};
   if (PACK) for (const g in PACK) PACK[g].forEach(function (k) { GROUP[k] = g; });
-  As.PROPS = ['hook', 'bomb', 'umbrella', 'monsterplant', 'catpaw', 'poison', 'coin', 'foodcan'];
+  As.PROPS = ['hook', 'bomb', 'umbrella', 'monsterplant', 'catpaw', 'poison', 'coin', 'foodcan', 'santahat', 'halo', 'advent_btn'];      // Runde 18: Mütze, Heiligenschein, Kalender-Knopf
   /* Im Netz (http/https) werden nur die Päckchen ausgeliefert, der Ordner assets/ nicht: Ein Bild, dessen Päckchen noch unterwegs ist, bekommt
      dort einen durchsichtigen Platzhalter mit seinem Namen hinten dran; As.refreshImgs setzt das echte Bild ein, sobald das Päckchen da ist.
      Per Doppelklick (file://) bleibt es beim direkten Griff nach assets/<bild>.png. */
@@ -55,7 +55,8 @@
       k.push('fish/' + f.id + '_m', 'fish/' + f.id + '_f', 'fish/' + f.id + '_b');   // ♂, ♀ (mit Wimpern), Baby
       if (f.suck) k.push('fish/' + f.id + '_n', 'fish/' + f.id + '_o', 'fish/' + f.id + '_u');   // Saugwels: ♂/♀ ohne Mund (klebt am Boden / an der Seitenscheibe), Unterseite (an der Frontscheibe)
     });
-    AA.DECO.forEach(function (d) { k.push('deco/' + d.id); if (d.glass) k.push('deco/' + d.id + '_glass'); });   // _glass = Bauchansicht an der Scheibe
+    AA.DECO.forEach(function (d) { k.push('deco/' + d.id); if (d.glass) k.push('deco/' + d.id + '_glass'); if (d.wave) k.push('deco/' + d.id + '_front', 'deco/' + d.id + '_arm'); });   // _glass = Bauchansicht an der Scheibe, _front/_arm = Schneemann winkt (Runde 18)
+    k.push('ui/advent');
     AA.WALLS.forEach(function (w) { if (w.img) k.push(w.img); });
     k.push('deco/chest_closed');
     AA.FLOORS.forEach(function (f) { k.push('floor/' + f.id); });

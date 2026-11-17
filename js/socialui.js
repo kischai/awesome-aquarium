@@ -53,7 +53,8 @@
   /* ---------- Neuigkeiten ---------- */
   /* Runde 14: Extra-Geschenk für Damians Stand (js/social.js) */
   UI.r14News = function (li, b) {
-    li.push('🎁 <b>Extra-Geschenk für dich:</b> ' + fmt(b.coins) + ' Münzen und ' + fmt(b.pearls) + ' Perlen. Sonst bleibt dein Spielstand genau, wie er ist.');
+    if (b.from) li.push('🎁 <b>Geschenk von ' + esc(b.from) + ':</b> ' + fmt(b.pearls) + ' Perlen und ' + fmt(b.coins) + ' Münzen.');      // Runde 18
+    else li.push('🎁 <b>Extra-Geschenk für dich:</b> ' + fmt(b.coins) + ' Münzen und ' + fmt(b.pearls) + ' Perlen. Sonst bleibt dein Spielstand genau, wie er ist.');
   };
   UI.r11News = function (li, n) {
     if (n.gift) li.push('🎁 <b>Geschenk für dich:</b> ' + fmt(n.gift.coins) + ' Münzen und Level ' + n.gift.level + ' – das höchste, das es gibt' + (n.gift.pearls ? ' (dazu ' + n.gift.pearls + ' Perlen für die Aufstiege)' : '') + '.');

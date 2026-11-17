@@ -353,7 +353,18 @@
     { id: 'penguin', name: 'Pinguin', lvl: 30, water: 'salt', special: true, pearlOnly: true, pearls: 25, price: 300, sell: 340, hours: 56, len: 140, speed: 52, egg: '#eef2f6',
       info: 'An Land watschelt er, unter Wasser fliegt er – die Flügel sind seine Paddel.' },
     { id: 'seal', name: 'Seehund', lvl: 35, water: 'salt', special: true, pearlOnly: true, pearls: 30, price: 420, sell: 475, hours: 64, len: 190, speed: 40, egg: '#b8bcc4',
-      info: 'Kulleraugen, Schnurrhaare, Speckröllchen. Paddelt mit den Vorderflossen und lässt sich gern treiben.' }
+      info: 'Kulleraugen, Schnurrhaare, Speckröllchen. Paddelt mit den Vorderflossen und lässt sich gern treiben.' },
+    /* ---------- Runde 18: Weihnachten – im Shop nur in der Weihnachtszeit (season: 'xmas', Reiter „Weihnachten“, AA.season); wer sie hat, behält sie ---------- */
+    { id: 'xmashorse', name: 'Weihnachts-Seepferdchen', season: 'xmas', lvl: 10, price: 80, sell: 92, hours: 20, len: 60, speed: 27, egg: '#ff2a3a',
+      info: 'Rot-weiß geringelt wie eine Zuckerstange, mit Weihnachtsmütze. Hält sich am liebsten an der Mistelzweig-Alge fest.' },
+    { id: 'halofish', name: 'Engel-Kaiserfisch', season: 'xmas', halo: true, lvl: 15, price: 95, sell: 108, hours: 24, len: 118, speed: 40, egg: '#ffe7a8',
+      info: 'Perlweiß mit goldenen Flossen. Über ihm schwebt ein Heiligenschein – nachts leuchtet er.' },
+    { id: 'candyeel', name: 'Zuckerstangen-Aal', season: 'xmas', hab: 'lurk', lvl: 20, price: 120, sell: 137, hours: 30, len: 210, speed: 34, egg: '#ff4a5a',
+      info: 'Rot-weiß gestreift, der Schwanz endet im Zuckerstangen-Haken. Wohnt am liebsten im Lebkuchenhaus-Wrack.' },
+    { id: 'reindeer', name: 'Tauch-Rentier', season: 'xmas', lvl: 10, water: 'both', special: true, pearlOnly: true, pearls: 12, price: 120, sell: 136, hours: 30, len: 150, speed: 34, egg: '#a0622d',
+      info: 'Mit Taucherbrille und Schnorchel. Paddelt mit allen vier Beinen – das Geweih wippt mit.' },
+    { id: 'polarbear', name: 'Eisbär', season: 'xmas', somersault: true, lvl: 18, water: 'salt', special: true, pearlOnly: true, pearls: 18, price: 200, sell: 226, hours: 40, len: 170, speed: 36, egg: '#eef3f8',
+      info: 'Mit rot-weißem Schal. Paddelt gemütlich mit allen vier Tatzen und schlägt ab und zu von selbst einen Purzelbaum.' }
   ];
   /* ---------- Runde 8: Hybride – nur durch Kreuzen zweier verwandter Arten (AA.startCross, js/life.js), nicht im Shop, unfruchtbar.
      Werte aus den Eltern: Level = höheres Eltern-Level + 2, Verkauf = (beide Verkaufspreise) × 1,6, Wachstum = Mittel × 1,1 … ---------- */
@@ -509,7 +520,6 @@
     { id: 'plateau', name: 'Felsplateau', cat: 'rock', lvl: 15, price: 110, w: 260, sink: 7, size: [0.5, 2.0], tops: [[0.202, 0.814, 0.978]] },
     { id: 'lotus', name: 'Seerose', cat: 'plant', lvl: 17, price: 90, w: 130, sway: 0.035, sink: 5, home: 'fresh', size: [0.5, 1.7] },
     { id: 'basalt', name: 'Basaltsäulen', cat: 'rock', lvl: 18, price: 130, w: 160, sink: 6, tops: [[0.026, 0.159, 0.622], [0.202, 0.355, 0.849], [0.398, 0.596, 0.987], [0.639, 0.77, 0.449], [0.815, 0.974, 0.622]] },
-    { id: 'stonebridge', name: 'Steinbrücke', cat: 'rock', lvl: 20, price: 160, w: 230, sink: 7, hide: [0, 0.28], size: [0.5, 2.3], tops: [[0.075, 0.937, 0.978]] },
     { id: 'bonsai', name: 'Bonsai-Baum', cat: 'plant', lvl: 21, price: 170, w: 180, sink: 6, home: 'fresh', size: [0.5, 2.6] },
     { id: 'rootarch', name: 'Mangroven-Wurzelbogen', cat: 'rock', lvl: 23, price: 190, w: 200, sink: 7, hide: [0, 0.3], size: [0.5, 2.7], tops: [[0.136, 0.864, 0.983]] },
     /* ----- Runde 9: fünf einfache Stücke und fünf Prestige-Stücke. prestige = funkelt und bringt mehr Ruf je Auftrag (AA.PRESTIGE in js/wild.js),
@@ -627,14 +637,12 @@
     { id: 'holestone', name: 'Lochstein', cat: 'rock', lvl: 20, price: 140, w: 190, sink: 6, hide: [0.05, 0.4], size: [0.5, 2.8], info: 'Kalkstein mit Löchern und Tunneln quer durch.' },
     { id: 'terrace', name: 'Steinterrasse', cat: 'rock', lvl: 21, price: 150, w: 230, sink: 6, size: [0.5, 2.3], tops: [[0.06,0.229,0.363], [0.32,0.486,0.679], [0.573,0.925,0.979]], info: 'Drei Stufen aus Schiefer – jede Stufe ist eine Stellfläche.' },
     { id: 'overhang', name: 'Überhang', cat: 'rock', lvl: 22, price: 160, w: 210, sink: 7, hide: [0.12, 0.2], size: [0.5, 2.5], info: 'Ein Felsdach mit Moos – darunter ist es schön schattig.' },
-    { id: 'rootbridge', name: 'Wurzelbrücke', cat: 'rock', lvl: 22, price: 165, w: 250, sink: 6, wood: true, hide: [0, 0.18], size: [0.5, 2.1], tops: [[0.073,0.925,0.981]], info: 'Eine Wurzel als Brücke: oben Stellfläche, unten Durchgang.' },
     { id: 'liverock', name: 'Lebendgestein', cat: 'rock', lvl: 23, price: 172, w: 170, sink: 6, home: 'salt', info: 'Riffgestein mit rosa Kalkalgen und kleinen Polypen.' },
     { id: 'rockgate', name: 'Felstor', cat: 'rock', lvl: 24, price: 185, w: 210, sink: 7, hide: [0, 0.3], size: [0.5, 2.5], info: 'Zwei Säulen, ein Deckstein – ein Tor für die ganze Schule.' },
     { id: 'pillarstump', name: 'Säulenstümpfe', cat: 'rock', lvl: 25, price: 200, w: 200, sink: 6, size: [0.5, 2.7], tops: [[0.022,0.166,0.624], [0.209,0.357,0.825], [0.402,0.594,0.985], [0.638,0.766,0.624], [0.809,0.975,0.737]], info: 'Fünf kurze Basaltsäulen – jede ist eine kleine Bühne.' },
     { id: 'rootcave', name: 'Wurzelhöhle', cat: 'rock', lvl: 26, price: 210, w: 220, sink: 7, wood: true, hide: [0, 0.22], size: [0.5, 2.4], info: 'Ein Wurzelgewirr mit einer großen Höhle darunter.' },
     { id: 'lavatwin', name: 'Lava-Zwillinge', cat: 'rock', lvl: 27, price: 230, w: 180, sink: 7, glow: [0.42, 0.55, '#ff8a3d', 0.7], info: 'Zwei Lavabrocken – die Risse glühen noch.' },
     { id: 'geode', name: 'Achat-Geode', cat: 'rock', lvl: 30, price: 280, w: 140, sink: 6, glow: [0.5, 0.36, '#d6a8ff', 0.6], info: 'Außen grauer Stein, innen ein Schatz aus Amethyst.' },
-    { id: 'moai_pukao', name: 'Steinkopf mit Hut', cat: 'prop', lvl: 27, price: 340, w: 112, sink: 8, stone: true, info: 'Der Steinkopf hat sich schick gemacht: roter Steinhut.' },
     { id: 'moai_reef', name: 'Bewachsener Steinkopf', cat: 'prop', lvl: 29, price: 380, w: 120, sink: 8, stone: true, info: 'Steht schon so lange im Meer, dass ihm Korallen wachsen.' },
     { id: 'moai_fallen', name: 'Umgekippter Steinkopf', cat: 'prop', lvl: 31, price: 420, w: 220, sink: 8, stone: true, info: 'Hat sich hingelegt. Steht so schnell nicht wieder auf.' },
     { id: 'ufo', name: 'Abgestürztes Ufo', cat: 'prop', lvl: 33, price: 2500, w: 200, sink: 9, glow: [0.42, 0.3, '#8cf0d6', 0.9], bubbles: [0.78, 0.15, 0.8], info: 'Notlandung im Aquarium. Die Lichter blinken noch.' },
@@ -686,16 +694,51 @@
     { id: 'stonelantern', name: 'Steinlaterne', cat: 'prop', lvl: 14, price: 55, w: 62, sink: 4, stone: true, info: 'Eine japanische Gartenlaterne aus Granit – passt perfekt auf den Zen-Kies.' },
     { id: 'frogking', name: 'Froschkönig', cat: 'prop', lvl: 15, price: 60, w: 64, sink: 4, stone: true, info: 'Ein Frosch aus Stein mit goldener Krone. Küssen auf eigene Gefahr.' },
     // Runde 13: Wege – liegen flach im Kies (von oben gemalt, auf den Blickwinkel des Bodens gestaucht), Fische schwimmen darüber
-    { id: 'path_stones', name: 'Trittstein-Pfad', cat: 'rock', lvl: 7, price: 40, w: 300, path: true, size: [0.5, 1.8], info: 'Liegt flach im Kies und führt schräg von hinten nach vorn – Fische und Deko kommen einfach darauf.' },
-    { id: 'path_planks', name: 'Holzbohlen-Weg', cat: 'rock', lvl: 9, price: 48, w: 320, path: true, wood: true, size: [0.5, 1.6], info: 'Ein Steg aus alten Planken, flach auf den Boden gelegt – quer durchs Becken.' },
-    { id: 'path_mosaic', name: 'Mosaik-Weg', cat: 'rock', lvl: 18, price: 90, w: 340, path: true, size: [0.5, 1.5], info: 'Antikes Mosaik mit Wellenband und Spiralen – wie aus einer versunkenen Villa an der Adria.' },
     // Runde 13: Treppen – jede Stufe ist eine Stellfläche
     { id: 'stairs_stone', name: 'Felstreppe', cat: 'rock', stairs: true, lvl: 11, price: 70, w: 230, sink: 5, size: [0.5, 2.3], tops: [[0.058, 0.175, 0.254], [0.232, 0.29, 0.49], [0.343, 0.495, 0.739], [0.56, 0.932, 0.973]], info: 'Vier grobe Steinplatten als Treppe – jede Stufe ist eine Stellfläche.' },
     { id: 'stairs_wood', name: 'Holztreppe', cat: 'rock', stairs: true, lvl: 16, price: 85, w: 220, sink: 5, wood: true, size: [0.5, 2.4], tops: [[0.017, 0.136, 0.196], [0.168, 0.32, 0.392], [0.354, 0.535, 0.592], [0.567, 0.836, 0.781], [0.868, 0.973, 0.997]], info: 'Alte Holzstufen mit Pfosten – auf jede Stufe und sogar auf den Pfosten passt etwas.' },
-    { id: 'stairs_marble', name: 'Tempeltreppe', cat: 'rock', stairs: true, lvl: 22, price: 140, w: 240, sink: 4, size: [0.5, 2.2], tops: [[0.017, 0.116, 0.213], [0.148, 0.244, 0.407], [0.276, 0.373, 0.601], [0.405, 0.498, 0.798], [0.53, 0.976, 0.996]], info: 'Fünf Marmorstufen mit Goldkante, wie vor einem griechischen Tempel.' }
+    { id: 'stairs_marble', name: 'Tempeltreppe', cat: 'rock', stairs: true, lvl: 22, price: 140, w: 240, sink: 4, size: [0.5, 2.2], tops: [[0.017, 0.116, 0.213], [0.148, 0.244, 0.407], [0.276, 0.373, 0.601], [0.405, 0.498, 0.798], [0.53, 0.976, 0.996]], info: 'Fünf Marmorstufen mit Goldkante, wie vor einem griechischen Tempel.' },
+    // Runde 18: Weihnachten (season: 'xmas' = nur im Reiter „Weihnachten“, solange Weihnachtszeit ist). lights = Lichterkette, globe = Schneekugel
+    // [x, y, Radius] im Bild, shine = funkelt ab und zu (1 = selten, 2 = öfter), mistle = Mistelzweig (Brut- und Pausen-Faktor), wave = Schneemann-Schulter
+    { id: 'baubles', name: 'Christbaumkugeln', cat: 'prop', season: 'xmas', lvl: 1, price: 15, w: 80, sink: 5, shine: 1, info: 'Vier Kugeln in Rot, Gold, Blau und Silber – sie glänzen ab und zu auf.' },
+    { id: 'giftbox', name: 'Geschenk', cat: 'prop', season: 'xmas', lvl: 1, price: 20, w: 56, sink: 5, info: 'Rot mit weißen Punkten und goldener Schleife. Was wohl drin ist?' },
+    { id: 'firtree', name: 'Tannenbaum', cat: 'plant', season: 'xmas', lvl: 2, price: 35, w: 120, sink: 6, sway: 0.02, info: 'Eine verschneite Tanne. Wiegt sich ganz leicht im Wasser.' },
+    { id: 'xmassign', name: 'Merry-Christmas-Schild', cat: 'prop', season: 'xmas', lvl: 2, price: 30, w: 100, sink: 7, wood: true, info: 'Ein Holzschild mit Schnee und Stechpalme.' },
+    { id: 'giftpile', name: 'Geschenke-Haufen', cat: 'prop', season: 'xmas', lvl: 3, price: 45, w: 100, sink: 6, info: 'Drei Geschenke übereinander – rot, grün und blau.' },
+    { id: 'snowmoss', name: 'Schnee-Mooskugeln', cat: 'plant', season: 'xmas', lvl: 4, price: 25, w: 110, sink: 4, info: 'Drei Mooskugeln mit Schneemützen.' },
+    { id: 'firlit', name: 'Geschmückter Tannenbaum', cat: 'prop', season: 'xmas', lvl: 5, price: 90, w: 120, sink: 6, glow: [0.5, 0.45, '#ffd27a', 1.2],
+      lights: [[0.64, 0.232], [0.562, 0.259], [0.413, 0.261], [0.351, 0.266], [0.459, 0.275], [0.61, 0.28], [0.371, 0.281], [0.608, 0.296], [0.37, 0.296], [0.496, 0.303], [0.492, 0.319], [0.481, 0.342], [0.702, 0.372], [0.627, 0.407], [0.538, 0.429], [0.405, 0.441], [0.44, 0.451], [0.343, 0.462], [0.706, 0.468], [0.272, 0.483], [0.695, 0.492], [0.571, 0.493], [0.418, 0.499], [0.755, 0.559], [0.247, 0.579], [0.664, 0.581], [0.242, 0.59], [0.341, 0.593], [0.551, 0.595], [0.442, 0.6], [0.757, 0.682], [0.661, 0.698], [0.818, 0.705], [0.135, 0.707], [0.304, 0.708], [0.559, 0.715], [0.166, 0.716], [0.252, 0.717], [0.672, 0.717], [0.393, 0.72], [0.164, 0.731], [0.665, 0.735], [0.321, 0.74], [0.493, 0.744], [0.149, 0.757]],
+      info: 'Mit Kugeln, Stern und Lichterkette. Die Lichter funkeln der Reihe nach, nachts leuchtet der ganze Baum.' },
+    { id: 'nutcracker', name: 'Nussknacker', cat: 'prop', season: 'xmas', lvl: 6, price: 70, w: 56, sink: 6, wood: true, info: 'Steht stramm in roter Uniform und bewacht das Becken.' },
+    { id: 'santadiver', name: 'Taucher-Weihnachtsmann', cat: 'prop', season: 'xmas', lvl: 7, price: 95, w: 90, sink: 7, bubbles: [0.366, 0.877, 2.4], info: 'Mit Taucherbrille, Schnorchel und einem Sack voller Geschenke. Aus dem Schnorchel steigen Blasen.' },
+    { id: 'snowglobe', name: 'Schneekugel', cat: 'prop', season: 'xmas', lvl: 8, price: 120, w: 80, sink: 5, globe: [0.5, 0.398, 0.499], info: 'Drinnen rieselt der Schnee. Antippen schüttelt sie – dann wirbelt er hoch.' },
+    { id: 'oldsleigh', name: 'Versunkener Schlitten', cat: 'prop', season: 'xmas', lvl: 9, price: 110, w: 150, sink: 7, wood: true, info: 'Liegt schon lange hier unten – mit Algen und zwei Seepocken.' },
+    { id: 'gingerwreck', name: 'Lebkuchenhaus-Wrack', cat: 'prop', season: 'xmas', lvl: 10, price: 140, w: 150, sink: 7, hide: [-0.05, 0.2], fav: 'candyeel', info: 'Halb eingestürzt und angeknabbert – ein Versteck für Höhlenbewohner.' },
+    { id: 'mistletoe', name: 'Mistelzweig-Alge', cat: 'plant', season: 'xmas', lvl: 10, price: 0, pearls: 5, w: 90, sink: 5, sway: 0.03, mistle: { hatch: 0.9, pause: 0.9 },
+      info: 'Im Becken, in dem sie steht, schlüpfen Eier 10 % schneller und die Paarungspause ist 10 % kürzer – nicht im Brutbecken. Eine pro Becken wirkt.' },
+    { id: 'snowchurch', name: 'Kirche im Schnee', cat: 'prop', season: 'xmas', lvl: 12, price: 220, w: 120, sink: 8, stone: true, glow: [0.447, 0.301, '#ffd27a', 1.0], info: 'Eine kleine Dorfkirche mit Glocke. Nachts leuchten die Fenster.' },
+    { id: 'balkansled', name: 'Balkanmafia Schlitten', cat: 'prop', season: 'xmas', lvl: 15, price: 1500, w: 170, sink: 5, shine: 2, info: 'Schwarze Limo im Geschenkpapier: Blondi am Steuer, der Braunhaarige hängt hinten aus dem Fenster.' },
+    { id: 'snowman', name: 'Schneemann', cat: 'critter', season: 'xmas', lvl: 4, price: 35, w: 62, sink: 2, water: 'both', crawl: ['snowman', 16], wave: [0.7386, 0.3783],
+      info: 'Gleitet über den Boden, dreht sich ab und zu um und winkt wie verrückt. Muscheln als Knöpfe, Koralle als Nase.' }
   ];
   AA.DECO_BY = {};
   AA.DECO.forEach(function (d) { AA.DECO_BY[d.id] = d; });
+  /* Runde 18: aus dem Spiel genommen (Steinkopf mit Hut, die Brücken und die Wege). Wer eins hatte, bekommt beim Laden den Kaufpreis zurück (AA.dropGone, js/state.js). */
+  AA.DECO_GONE = { moai_pukao: ['Steinkopf mit Hut', 340], stonebridge: ['Steinbrücke', 160], rootbridge: ['Wurzelbrücke', 165],
+    path_stones: ['Trittstein-Pfad', 40], path_planks: ['Holzbohlen-Weg', 48], path_mosaic: ['Mosaik-Weg', 90] };
+  /* Runde 18: Weihnachtszeit nach dem Kalender des Geräts. shop = Reiter „Weihnachten“ im Shop (15. November bis 6. Januar), hats = Mützen auf den
+     Clownfischen (1. Dezember bis 6. Januar), advent = Knopf „Adventskalender“ (wie shop). Für Tests: window.AA_DATE = '2026-12-05'. */
+  AA.season = function (now) {
+    const d = now || (window.AA_DATE ? new Date(window.AA_DATE + 'T12:00:00') : new Date()), m = d.getMonth() + 1, day = d.getDate();
+    const shop = (m === 11 && day >= 15) || m === 12 || (m === 1 && day <= 6), hats = m === 12 || (m === 1 && day <= 6);
+    return { xmas: shop, hats: hats, advent: shop };
+  };
+  let seasonC = null, seasonT = 0, seasonK = '';
+  AA.seasonNow = function () {                       // dasselbe, aber höchstens alle 30 Sekunden neu gerechnet (wird je Bild und Fisch gefragt)
+    const now = Date.now(), k = window.AA_DATE || '';
+    if (!seasonC || now - seasonT > 30000 || k !== seasonK) { seasonC = AA.season(); seasonT = now; seasonK = k; }
+    return seasonC;
+  };
   /* Putzkolonne (Runde 8): Jobs der Krabbler. algae = frisst Algen (bremst Veralgen, clean), glass = putzt die Scheibe (hinterlässt saubere Spuren und
      bremst Veralgen), food = räumt liegen gebliebenes Futter weg (sonst fault es und macht Schmutz), doctor = Putzerstation für die Fische.
      Sind mindestens zwei Jobs besetzt, gibt es einen Bonus, mit allen drei Putz-Jobs (algae, glass, food) einen größeren – und eine höhere Obergrenze. */
@@ -757,7 +800,10 @@
     { id: 'treasure', name: 'Schatzgrund', lvl: 24 },
     { id: 'nacre', name: 'Perlmutt', lvl: 28 },
     { id: 'deepsea', name: 'Tiefsee-Schlick', lvl: 30 },
-    { id: 'olymp', name: 'Olymp-Marmor', lvl: 34 }
+    { id: 'olymp', name: 'Olymp-Marmor', lvl: 34 },
+    /* Runde 18: zwei Winterböden – nicht an die Weihnachtszeit gebunden */
+    { id: 'powder', name: 'Pulverschnee', lvl: 1 },
+    { id: 'winterwood', name: 'Winterwald-Boden', lvl: 3 }
   ];
   /* ---------- Boden-Formen (Runde 7): 10 Anordnungen, gratis, jederzeit wechselbar. f(u) = Höhe 0…1 an der Stelle u (0 = links, 1 = rechts);
      an der höchsten Stelle liegt der Boden AA.LIFT_MAX Pixel höher. Deko, Eier, Krabbler und Futter folgen der Form von allein. ---------- */
@@ -1043,7 +1089,7 @@
       fish: ['neon', 'skalar', 'discus', 'ram', 'cory', 'ancistrus', 'piranha', 'arowana', 'arapaima', 'redtail', 'eleel', 'guppy', 'platy', 'molly', 'swordtail', 'pantodon',
         'oto', 'whiptail', 'sturisoma', 'zebrapleco', 'goldnugget', 'gibbiceps', 'greenphantom', 'bluephantom', 'royalpleco', 'scarletpleco', 'reticulatus', 'leopoldi'] },
     { id: 'japan', name: 'Japan-Teich', ico: '⛩️', water: 'fresh', walls: ['japanpond', 'lilypond', 'bamboo', 'iwagumi'], floors: ['zen', 'riverstone', 'whitegravel', 'mossfloor', 'split_whitemoss', 'slatefloor'],
-      deco: ['lotus', 'bamboo', 'bonsai', 'mossball', 'stonebridge', 'steprock', 'slate', 'tablerock', 'basalt', 'plateau', 'seiryu', 'dragonstone', 'pebbles3', 'cairn', 'rocktooth', 'spire', 'stepstone', 'pillarstump'],
+      deco: ['lotus', 'bamboo', 'bonsai', 'mossball', 'steprock', 'slate', 'tablerock', 'basalt', 'plateau', 'seiryu', 'dragonstone', 'pebbles3', 'cairn', 'rocktooth', 'spire', 'stepstone', 'pillarstump'],
       fish: ['koi', 'goldfish', 'carp', 'danio', 'kissing', 'betta', 'tigerbarb', 'clownloach', 'snakehead', 'axolotl', 'grasscarp'] },
     { id: 'river', name: 'Heimischer Fluss', ico: '🏞️', water: 'fresh', walls: ['river', 'lowriver', 'reeds', 'alpinelake', 'waterfall', 'castlelake'], floors: ['riverstone', 'mud', 'finesand', 'split_stonesand', 'slatefloor', 'redgravel'],
       deco: ['log', 'stump', 'driftwood', 'rootarch', 'vallisneria', 'cabomba', 'rock_grey', 'rocks_brown', 'jetty', 'steprock', 'basalt', 'roundboulder', 'pebblepile', 'dome', 'forkbranch', 'longbranch', 'twigbush'],

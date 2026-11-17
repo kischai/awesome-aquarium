@@ -19,7 +19,9 @@
   AA.GIFTS = [{ id: 'r11-damian', created: 1794340217986, coins: 1000000, maxLevel: true },
     { id: 'r14-damian', created: 1794340217986, coins: 2000000, pearls: 1000000 },
     /* 17.11.2026: Damian schenkt Shali „Parzival“, einen Clownfisch in Sternennacht (giveFish unten) */
-    { id: 'r17-shali-parzival', created: 1794846638798, from: 'Damian', fish: { sp: 'clown', v: 'night', name: 'Parzival', sex: 'm' } }];
+    { id: 'r17-shali-parzival', created: 1794846638798, from: 'Damian', fish: { sp: 'clown', v: 'night', name: 'Parzival', sex: 'm' } },
+    /* 17.11.2026 (Runde 18): Damian schenkt Shali 1.000 Perlen und 50.000 Münzen */
+    { id: 'r18-shali-bonus', created: 1794846638798, from: 'Damian', coins: 50000, pearls: 1000 }];
   /* Ein Fisch als Geschenk: erwachsen und satt, ins passende Becken mit dem meisten Platz (bei Gleichstand das gerade offene). Ist alles voll,
      kommt er trotzdem – das Becken ist dann einen über der Grenze, Kaufen und Paaren gehen dort erst wieder, wenn einer auszieht.
      Gibt es kein Becken mit passendem Wasser, bleibt das Geschenk liegen und kommt beim nächsten Laden. Ins Sammelbuch wie ein Schlüpfling
@@ -69,7 +71,7 @@
       s.coins = nw.coins; s.pearls = nw.pearls; s.xp = nw.xp; s.level = nw.level;
       s.news = s.news || {};
       if (g.maxLevel) s.news.gift = { coins: g.coins, level: s.level, pearls: nw.lv };
-      else s.news.bonus = { coins: g.coins || 0, pearls: g.pearls || 0 };
+      else s.news.bonus = { coins: g.coins || 0, pearls: g.pearls || 0, from: String(g.from || '').slice(0, 20) };
     });
   }
 
