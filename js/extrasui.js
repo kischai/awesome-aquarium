@@ -16,6 +16,7 @@
   /* ================= Pokale ================= */
   AA.on('trophy', function (id, why) {
     const d = AA.DECO_BY[id]; if (!d) return;
+    if (d.theme) { AA.save(); return; }                // Runde 19: Pokal eines Themen-Sets – das feiert js/themesui.js
     if (UI.toast) UI.toast('🏆 <b>Neuer Pokal: ' + esc(d.name) + '</b> – ' + esc(why || '') + '. Er liegt im Deko-Lager – stell ihn ins Becken und gib ein bisschen an. 😎', 'gold');
     AA.audio.play('sparkle'); AA.save();
   });
@@ -201,7 +202,7 @@
 
   /* ================= Neuigkeiten (einmal nach dem Update) ================= */
   UI.r12News = function (li) {
-    li.push('🦦 <b>Fünf besondere Tiere</b> – nur für Perlen: Wasserfrosch, Tauch-Hamster (mit Brille und Flossen!), Fischotter, Pinguin und Seehund. Shop → Fische, ganz oben.');
+    li.push('🦦 <b>Fünf besondere Tiere</b> – nur für Perlen: Wasserfrosch, Tauch-Hamster (mit Brille und Flossen!), Fischotter, Pinguin und Seehund. Shop → ⭐ Specials.');
     li.push('🦵 <b>Beine, die sich bewegen:</b> Axolotl, Otter & Co. paddeln mit ihren Beinen, der Hamster strampelt mit den Flossen, der Pinguin rudert mit den Flügeln.');
     li.push('🦈 <b>Peitschen-Schwänze:</b> Rochen haben jetzt lange Schwänze, die wie eine Peitsche schlagen – der Fuchshai und die Süßwasser-Rochen sind neu gezeichnet.');
     li.push('🏖️ <b>Adria-Biotop:</b> Krka-Wasserfälle fürs Süßwasser, Felsküste mit Neptungras fürs Meer – dazu Drachenkopf, Petermännchen (immer grimmig), Brasse, Mittelmeer-Muräne und Hornhecht.');

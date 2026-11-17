@@ -200,6 +200,15 @@
     if (AA.assets.get('floor/' + id) && Math.abs(w - G.fw) < 1) lruPut(floorCache, ck, oc, FLOOR_MAX);      // nur fertige Becken-Böden merken (keine Vorschaubilder, nicht den Ersatz-Sand, solange das Bild lädt)
     return h;
   };
+  /* Runde 19: Gold-Kulisse (Themen-Set „Ausgestellt“) = die Vorlage, golden eingefärbt */
+  function goldGrade(g, w, h) {
+    g.save();
+    g.globalCompositeOperation = 'color'; g.globalAlpha = 0.8; g.fillStyle = '#e4a81c'; g.fillRect(0, 0, w, h);      // Farbton Gold, Helligkeit bleibt
+    g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.35; g.fillStyle = '#e8a640'; g.fillRect(0, 0, w, h);   // wärmer und satter
+    g.globalCompositeOperation = 'screen'; g.globalAlpha = 0.12; g.fillStyle = '#fff0b0'; g.fillRect(0, 0, w, h);    // ein Hauch Glanz
+    g.restore();
+  }
+  AA.goldGrade = goldGrade;
   function buildBg(wallId, T) {
     const wall = AA.WALL_BY[wallId] || AA.WALLS[0];
     const c = mk(W * SS, H * SS), g = c.getContext('2d');
@@ -222,6 +231,7 @@
         g.restore();
       }
     } else AA.paintWater(g, wall, W, H, G.fTop + 14, 11);
+    if (wall.gold) goldGrade(g, W, H);
     return c;
   }
   function buildGlass() {
@@ -245,9 +255,11 @@
     if (thumbs['w' + id]) return thumbs['w' + id];
     const wk = (AA.WALL_BY[id] || {}).img;            // 15.11.2026: im Netz das kleine Vorschaubild (t-bg) statt der ganzen Kulisse (bis 1600 × 900, alle zusammen entpackt 236 MB)
     const wim = wk && (AA.assets.hasThumb(wk) ? AA.assets.get('th/' + wk) : AA.assets.get(wk));
-    if (wim) { const c2 = mk(240, 130), g2 = c2.getContext('2d'); g2.drawImage(wim, 0, 0, 240, 135); AA.paintFloor(g2, AA.tank().floor, -120, 96, 560); return (thumbs['w' + id] = c2.toDataURL('image/jpeg', 0.86)); }
+    const gold = (AA.WALL_BY[id] || {}).gold;
+    if (wim) { const c2 = mk(240, 130), g2 = c2.getContext('2d'); g2.drawImage(wim, 0, 0, 240, 135); if (gold) goldGrade(g2, 240, 130); AA.paintFloor(g2, AA.tank().floor, -120, 96, 560); return (thumbs['w' + id] = c2.toDataURL('image/jpeg', 0.86)); }
     const c = mk(240, 130), g = c.getContext('2d');
     AA.paintWater(g, AA.WALL_BY[id], 240, 130, 96, 5);
+    if (gold) goldGrade(g, 240, 130);
     AA.paintFloor(g, 'sand', -10, 90, 260);
     const u = c.toDataURL('image/jpeg', 0.86); if (!(AA.WALL_BY[id] || {}).img) thumbs['w' + id] = u;      // gemalte Kulisse noch nicht geladen: vorerst die Wasserfarbe, nicht merken
     return u;
@@ -943,6 +955,7 @@
     if (o === V.selDeco) { c.v = 0; return; }                                                          // ausgewählt: hält still
     if (V.service[o.id] > V.time) { c.v = 0; c.wait = Math.max(c.wait, 1.5); return; }                 // Putzerstation: putzt gerade einen Fisch
     if (c.wave) { c.wave.t += dt; c.v = 0; if (c.wave.t >= AA.WAVE_T) c.wave = null; return; }       // Runde 18: Schneemann winkt gerade – steht still
+    if (V.paradeStep && V.paradeStep(o, def, c, dt)) return;                                         // Runde 19: Gänsemarsch (js/themefx.js)
     const night = !!AA.state.settings.night;
     let speed = def.crawl[1] * (night ? 0.5 : 1);
     if (def.eats) {                                    // Futterreste: nach liegen gebliebenen Flocken Ausschau halten
@@ -1118,6 +1131,7 @@
     else if (V.kCur !== kt) V.setZoom(kt);
     V.sync();
     lifeRoles(tank);
+    if (AA.themeFx) AA.themeFx.update(dt, tank);      // Runde 19: Becken-Effekt, Gold-Funkeln, Gänsemarsch (js/themefx.js)
     // Futter
     let rot = 0;
     for (let i = V.food.length - 1; i >= 0; i--) {
@@ -1432,6 +1446,7 @@
     else ctx.drawImage(im, -b.w / 2, -b.h, b.w, b.h);
     if (gl && img) drawGlobeSnow(ctx, def, b, gl);
     if (def.lights && img) drawLights(ctx, def, b, t);
+    if (def.theme && img && V.trophyMark) V.trophyMark(ctx, o, def, b);      // Runde 19: Pokal eines Themen-Sets – Set-Zeichen auf dem Kelch
     ctx.restore();
     // Sockel im Kies versenken: Runde 12 – Sand-Wellen nur auf dem Stück selbst (siehe buildFoot); sonst wie früher die Szene über den Rand
     if (foot && img) cachedFoot(ctx, o, def, b, im);
@@ -1877,6 +1892,7 @@
     if (wall.live && AA.liveBg) AA.liveBg(ctx, wall.live, t, tank);      // Runde 12: lebende Kulisse (js/extras.js)
     drawPanes(ctx, tank);
     if (!tank.deep) drawRays(ctx, t, night, wall.ray);      // in die Tiefsee kommt kein Sonnenlicht
+    if (AA.themeFx) AA.themeFx.back(ctx, tank, t);     // Runde 19: Becken-Effekt, hintere Lage (js/themefx.js)
     // Schwebeteilchen
     ctx.fillStyle = tank.deep ? 'rgba(210,235,255,0.55)' : 'rgba(255,255,255,0.4)';
     for (let i = 0; i < V.plank.length; i++) { const p = V.plank[i]; ctx.beginPath(); ctx.arc(p.x, p.y, p.s * 0.6, 0, TAU); ctx.fill(); }
@@ -1907,6 +1923,7 @@
     drawParts(ctx);
     drawGlassCrawlers(ctx, t);
     for (let i = 0; i < onGlass.length; i++) { if (V.tool === 'deco') { ctx.save(); ctx.globalAlpha = 0.2; onGlass[i].draw(ctx, t); ctx.restore(); } else onGlass[i].draw(ctx, t); }
+    if (AA.themeFx) AA.themeFx.front(ctx, tank, t);    // Runde 19: Becken-Effekt, vordere Lage
     if (tank.deep) drawDeep(ctx, tank, t);
     else if (night) {
       ctx.fillStyle = 'rgba(8,22,70,0.5)'; ctx.fillRect(0, 0, W, H);
@@ -1915,6 +1932,7 @@
       ctx.fillStyle = mg; ctx.fillRect(0, 0, W, H);
     }
     if (tank.deep || night) drawGlows(ctx, tank, t, tank.deep ? 1 : 0.7);
+    if (AA.themeFx) AA.themeFx.glow(ctx, tank, t);     // Runde 19: Becken-Effekt, Leuchten (auch nachts hell)
     if (AA.lightFx) AA.lightFx(ctx, tank, t);          // Runde 12: Licht-Studio (js/extras.js)
     drawRips(ctx);
     ctx.drawImage(glassLayer(tank), 0, 0, W, H);      // Scheibe – bei Schmutz mit Trübung und Algen in einem Rutsch (Runde 14)

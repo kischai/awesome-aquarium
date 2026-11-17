@@ -379,17 +379,24 @@
   /* ---------- Freunde ---------- */
   C.loadFriends = function () {
     if (!C.user || !C.profile) return Promise.resolve([]);
-    return rpc('my_friends').then(function (l) { C.friends = Array.isArray(l) ? l : []; C.friendsAt = Date.now(); emit('friends'); return C.friends; });
+    return rpc('my_friends').then(function (l) { C.friends = Array.isArray(l) ? l : []; C.friendsAt = Date.now(); emit('friends'); C.loadCounts(); return C.friends; });
+  };
+  /* Runde 19: wie oft habe ich verschenkt / bei anderen geholfen? (Familien-Sets, js/themes.js) – alte Datenbank ohne die Funktion: einfach nichts */
+  C.loadCounts = function () {
+    if (!C.user) return Promise.resolve(null);
+    return rpc('my_social_counts', {}, 8000).then(function (r) {
+      C.counts = r && typeof r === 'object' ? { gifts: Math.max(0, r.gifts | 0), helps: Math.max(0, r.helps | 0) } : null; emit('counts'); return C.counts;
+    }).catch(function () { return null; });
   };
   C.requests = function () { return C.friends.filter(function (f) { return f.status === 'pending' && f.incoming; }).length; };
   C.addFriend = function (code) { return rpc('add_friend', { p_code: code }).then(function (r) { C.loadFriends().catch(function () { /* egal */ }); return r; }); };
   C.acceptFriend = function (id) { return rpc('accept_friend', { p_id: id }).then(function (r) { return C.loadFriends().then(function () { return r; }); }); };
   C.removeFriend = function (id) { return rpc('remove_friend', { p_id: id }).then(function (r) { return C.loadFriends().then(function () { return r; }); }); };
   /* Runde 12: Becken-Hilfe und Geschenke (supabase/migrations/20261112130000_help_gifts.sql) */
-  C.helpFriend = function (user, kind) { return rpc('help_friend', { p_user: user, p_kind: kind }); };
+  C.helpFriend = function (user, kind) { return rpc('help_friend', { p_user: user, p_kind: kind }).then(function (r) { C.loadCounts(); return r; }); };
   C.myHelps = function () { return rpc('my_helps', {}, 10000).then(function (l) { return Array.isArray(l) ? l : []; }); };
   C.todayDone = function () { return rpc('today_done', {}, 8000).then(function (r) { C.done = r || { helped: [], gifted: [] }; C.doneDay = new Date().toISOString().slice(0, 10); return C.done; }); };
-  C.sendGift = function (user, kind, item, amount) { return rpc('send_gift', { p_user: user, p_kind: kind, p_item: item || null, p_amount: amount || 1 }); };
+  C.sendGift = function (user, kind, item, amount) { return rpc('send_gift', { p_user: user, p_kind: kind, p_item: item || null, p_amount: amount || 1 }).then(function (r) { C.loadCounts(); return r; }); };
   C.myGifts = function () { return rpc('my_gifts', {}, 10000).then(function (l) { return Array.isArray(l) ? l : []; }); };
 
   /* ---------- Besuch ---------- */

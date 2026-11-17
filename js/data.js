@@ -1085,7 +1085,7 @@
       fish: ['auriga', 'clown', 'flameback', 'lemonpeel', 'gramma', 'chromis', 'blenny', 'yellowtang', 'damsel', 'mandarin', 'firefish', 'hawkfish', 'banggai', 'copperband', 'foxface', 'bluetang', 'tuskfish', 'parrotfish', 'butterfly', 'wrasse', 'boxfish', 'emperor', 'trigger', 'moorish', 'puffer', 'picasso', 'lion', 'seahorse', 'powderblue', 'eel', 'flameangel', 'dorade', 'turtle',
         'cleanerwrasse', 'neongoby', 'stonefish', 'sepia', 'squid', 'bluesquid', 'bambooshark', 'epaulette', 'hornshark', 'napoleon', 'goliath', 'barracuda', 'manta'] },
     { id: 'amazon', name: 'Amazonas', ico: '🌴', water: 'fresh', walls: ['amazon', 'blackwater', 'floodforest', 'jungle'], floors: ['amazonsoil', 'finesand', 'aquasoil', 'mud', 'redclay', 'riosand'],
-      deco: ['driftwood', 'log', 'rootarch', 'stump', 'woodslice', 'amazonsword', 'ludwigia', 'cabomba', 'vallisneria', 'javafern', 'anubias', 'spiderwood', 'bogwood', 'mangroveroots', 'talawa', 'rootcave', 'twigbush', 'forkbranch', 'longbranch', 'rootbridge', 'deadtree'],
+      deco: ['driftwood', 'log', 'rootarch', 'stump', 'woodslice', 'amazonsword', 'ludwigia', 'cabomba', 'vallisneria', 'javafern', 'anubias', 'spiderwood', 'bogwood', 'mangroveroots', 'talawa', 'rootcave', 'twigbush', 'forkbranch', 'longbranch', 'deadtree'],
       fish: ['neon', 'skalar', 'discus', 'ram', 'cory', 'ancistrus', 'piranha', 'arowana', 'arapaima', 'redtail', 'eleel', 'guppy', 'platy', 'molly', 'swordtail', 'pantodon',
         'oto', 'whiptail', 'sturisoma', 'zebrapleco', 'goldnugget', 'gibbiceps', 'greenphantom', 'bluephantom', 'royalpleco', 'scarletpleco', 'reticulatus', 'leopoldi'] },
     { id: 'japan', name: 'Japan-Teich', ico: '⛩️', water: 'fresh', walls: ['japanpond', 'lilypond', 'bamboo', 'iwagumi'], floors: ['zen', 'riverstone', 'whitegravel', 'mossfloor', 'split_whitemoss', 'slatefloor'],
@@ -1136,15 +1136,84 @@
     { id: 'deep', name: 'Tiefsee-Entdecker', ico: '🌌', pearls: 15, info: 'Alle Tiefsee-Tiere', list: function () { return AA.BIOTOPE_BY.deep.fish; } },
     { id: 'krka', name: 'Krka-Ranger', ico: '💦', pearls: 10, info: 'Alle Tiere des Krka-Flusses', list: function () { return AA.BIOTOPE_BY.krka.fish; } },
     { id: 'adria', name: 'Adria-Taucher', ico: '🏖️', pearls: 12, info: 'Alle Tiere der Adria-Küste', list: function () { return AA.BIOTOPE_BY.adria.fish; } },
-    { id: 'special', name: 'Tierfreund', ico: '⭐', pearls: 20, info: 'Alle besonderen Tiere (Perlen-Tiere)', list: function () { return AA.FISH.filter(function (f) { return f.special; }).map(function (f) { return f.id; }); } },
+    { id: 'special', name: 'Tierfreund', ico: '⭐', pearls: 20, info: 'Alle besonderen Tiere (Perlen-Tiere, ohne Saison-Tiere)', list: function () { return AA.FISH.filter(function (f) { return f.special && !f.season; }).map(function (f) { return f.id; }); } },      // Runde 19: Saison-Tiere (Rentier, Eisbär) zählen nicht
     { id: 'schools', name: 'Schwarm-Dirigent', ico: '🐟', pearls: 10, info: 'Alle Schwarmfische', list: function () { return AA.SCHOOL.species; } },
     { id: 'hybrid', name: 'Hybrid-Pionier', ico: '🧬', pearls: 30, info: 'Alle Hybride gezüchtet', list: function () { return AA.HYBRIDS.map(function (h) { return h.id; }); } },
-    { id: 'fresh', name: 'Süßwasser-Profi', ico: '🌿', pearls: 25, info: 'Alle Süßwasser-Arten (ohne Hybride)', list: function () { return AA.FISH.filter(function (f) { return !f.hybrid && f.water === 'fresh'; }).map(function (f) { return f.id; }); } },
-    { id: 'salt', name: 'Meeres-Profi', ico: '🌊', pearls: 25, info: 'Alle Meerwasser-Arten (ohne Hybride)', list: function () { return AA.FISH.filter(function (f) { return !f.hybrid && (f.water || 'salt') === 'salt'; }).map(function (f) { return f.id; }); } },
+    { id: 'fresh', name: 'Süßwasser-Profi', ico: '🌿', pearls: 25, info: 'Alle Süßwasser-Arten (ohne Hybride und Saison-Tiere)', list: function () { return AA.FISH.filter(function (f) { return !f.hybrid && !f.season && f.water === 'fresh'; }).map(function (f) { return f.id; }); } },
+    { id: 'salt', name: 'Meeres-Profi', ico: '🌊', pearls: 25, info: 'Alle Meerwasser-Arten (ohne Hybride und Saison-Tiere)', list: function () { return AA.FISH.filter(function (f) { return !f.hybrid && !f.season && (f.water || 'salt') === 'salt'; }).map(function (f) { return f.id; }); } },
     { id: 'colors', name: 'Farb-Fanatiker', ico: '🌈', pearls: 30, info: '10 Arten mit allen Farbvarianten', sets: 10 },
-    { id: 'all', name: 'Fisch-Enzyklopädie', ico: '📚', pearls: 60, info: 'Jede einzelne Art im Sammelbuch', list: function () { return AA.FISH.map(function (f) { return f.id; }); } }
+    { id: 'all', name: 'Fisch-Enzyklopädie', ico: '📚', pearls: 60, info: 'Jede Art im Sammelbuch (ohne Saison-Tiere)', list: function () { return AA.FISH.filter(function (f) { return !f.season; }).map(function (f) { return f.id; }); } }
   ];
   AA.BIOTOPE_BY = {}; AA.BIOTOPES.forEach(function (b) { AA.BIOTOPE_BY[b.id] = b; });
+
+  /* ---------- Runde 19: Themen-Sets (Regeln js/themes.js, Oberfläche js/themesui.js, Effekte js/themefx.js; docs/MECHANIK.md § 11h) ----------
+     kind: region = Kapitel eines Biotops (Arten aus AA.BIOTOPES nach Level-Band lv), coll = Sammlung quer durch alles, crawl = Krabbler-Album,
+     master = die großen Titel (AA.TITLES, eine Stufe), family = mit den Freunden zusammen (eine Stufe).
+     Stufen: Entdeckt (alles im Sammelbuch bzw. einmal besessen) → Titel + Perlen · Gezüchtet (selbst ausgebrütet; ab 12 Tieren reichen drei Viertel) → Becken-Effekt fx ·
+     Ausgestellt (alles gleichzeitig erwachsen in deinen Becken) → Gold-Kulisse (Regionen, Goldfassung von wall) bzw. Pokal, Goldrahmen, Abzeichen.
+     title: eigener Titel (Name) · titleId: vorhandener Titel aus AA.TITLES (eine Kapitel-Regionen und Meister). */
+  AA.THEMES = [
+    { id: 'riff1', kind: 'region', bio: 'reef', lv: [0, 12], name: 'Riff-Kinderstube', ico: '🐠', title: 'Riff-Küken', fx: 'sunspots', wall: 'reef' },
+    { id: 'riff2', kind: 'region', bio: 'reef', lv: [13, 30], name: 'Buntes Riff', ico: '🪸', title: 'Farbenprofi', fx: 'colorbubbles', wall: 'reef2' },
+    { id: 'riff3', kind: 'region', bio: 'reef', lv: [31, 99], name: 'Großes Riff', ico: '🐢', title: 'Riff-Kapitän', fx: 'manta', wall: 'atoll' },
+    { id: 'amaz1', kind: 'region', bio: 'amazon', lv: [0, 20], name: 'Kleiner Amazonas', ico: '🌿', title: 'Dschungelkind', fx: 'rain', wall: 'amazon' },
+    { id: 'amaz2', kind: 'region', bio: 'amazon', lv: [21, 99], name: 'Großer Amazonas', ico: '🌳', title: 'Dschungel-Profi', fx: 'leaves', wall: 'floodforest' },
+    { id: 'japan', kind: 'region', bio: 'japan', lv: [0, 99], name: 'Japan-Teich', ico: '⛩️', titleId: 'japan', fx: 'blossoms', wall: 'japanpond' },
+    { id: 'river', kind: 'region', bio: 'river', lv: [0, 99], name: 'Heimischer Fluss', ico: '🏞️', titleId: 'river', fx: 'autumn', wall: 'lowriver' },
+    { id: 'krka', kind: 'region', bio: 'krka', lv: [0, 99], name: 'Krka-Fluss', ico: '💦', titleId: 'krka', fx: 'spray', wall: 'krka' },
+    { id: 'adria', kind: 'region', bio: 'adria', lv: [0, 99], name: 'Adria-Küste', ico: '🏖️', titleId: 'adria', fx: 'wavelight', wall: 'adria' },
+    { id: 'deep1', kind: 'region', bio: 'deep', lv: [0, 43], name: 'Dämmerzone', ico: '🔦', title: 'Dämmerungs-Taucher', fx: 'plankton', wall: 'nightreef' },
+    { id: 'deep2', kind: 'region', bio: 'deep', lv: [44, 99], name: 'Abgrund', ico: '🌌', title: 'Tiefsee-Legende', fx: 'marinesnow', wall: 'abyss' },
+    { id: 'live', kind: 'coll', name: 'Lebendgebärende', ico: '🐣', title: 'Nachwuchs-Profi', fx: 'hearts', list: ['guppy', 'platy', 'molly', 'swordtail', 'swordplaty'] },
+    { id: 'cats', kind: 'coll', name: 'Welse und Sauger', ico: '🐟', title: 'Wels-Flüsterer', fx: 'sandpuffs',
+      list: ['oto', 'whiptail', 'cory', 'ancistrus', 'sturisoma', 'zebrapleco', 'upsidedown', 'goldnugget', 'gibbiceps', 'greenphantom', 'bluephantom', 'wels', 'redtail', 'royalpleco', 'scarletpleco'] },
+    { id: 'spiky', kind: 'coll', name: 'Lieber nicht anfassen', ico: '⚡', title: 'Stachel-Profi', fx: 'sparks', list: ['weever', 'scorpionfish', 'stonefish', 'puffer', 'piranha', 'lion', 'eleel', 'jellyfish'] },
+    { id: 'fossil', kind: 'coll', name: 'Lebende Fossilien', ico: '🦴', title: 'Zeitreisender', fx: 'ammonite', list: ['sturgeon', 'arowana', 'beluga', 'arapaima', 'chimaera', 'frilledshark', 'coelacanth'] },
+    { id: 'sharks', kind: 'coll', name: 'Haie und Rochen', ico: '🦈', title: 'Hai-Flüsterer', fx: 'shark',
+      list: ['reticulatus', 'bambooshark', 'epaulette', 'leopoldi', 'ray', 'hornshark', 'catshark', 'sawfish', 'shark', 'hammerhead', 'thresher', 'tigershark', 'manta', 'greatwhite', 'frilledshark', 'whaleshark'] },
+    { id: 'squids', kind: 'coll', name: 'Tintenfische und Kraken', ico: '🦑', title: 'Tinten-Künstler', fx: 'ink', list: ['sepia', 'squid', 'prachtsepia', 'bluesquid', 'galaxysquid', 'saphirsepia', 'dumbo'] },
+    { id: 'glow', kind: 'coll', name: 'Leuchtende Tiere', ico: '✨', title: 'Lichtsammler', fx: 'trails',
+      list: ['squid', 'jellyfish', 'lanternfish', 'monkfish', 'bluesquid', 'hatchetfish', 'galaxysquid', 'angler', 'viperfish', 'gulper', 'dumbo', 'barreleye', 'dragonfish', 'chimaera', 'oarfish', 'coelacanth'] },
+    { id: 'giants', kind: 'coll', name: 'Riesen der Meere', ico: '🐋', title: 'Riesen-Hüter', fx: 'whale',
+      list: ['beluga', 'tuna', 'napoleon', 'goliath', 'swordfish', 'arapaima', 'mola', 'manta', 'turtle', 'greatwhite', 'whaleshark', 'oarfish'] },
+    { id: 'menu', kind: 'coll', name: 'Die Speisekarte', ico: '🍽️', title: 'Feinschmecker – nur gucken!', list: ['carp', 'trout', 'bream', 'dorade', 'salmon', 'aal', 'johndory', 'monkfish', 'tuna', 'swordfish'] },
+    { id: 'winter', kind: 'coll', season: 'xmas', name: 'Winterwunderland', ico: '❄️', title: 'Schneeflöckchen', fx: 'snow', list: ['snowman', 'reindeer', 'xmashorse', 'halofish', 'polarbear', 'candyeel'] },
+    { id: 'snails', kind: 'crawl', name: 'Schnecken', ico: '🐌', title: 'Schneckentempo', list: ['seaslug', 'ramshorn', 'turbosnail', 'nerite', 'applesnail'] },
+    { id: 'stars', kind: 'crawl', name: 'Seesterne und Seeigel', ico: '⭐', title: 'Sternensammler', list: ['starfish', 'urchin', 'starfish_red', 'starfish_blue', 'brittlestar', 'urchin_diadem', 'urchin_pink', 'starfish_orange', 'urchin_pencil'] },
+    { id: 'shrimps', kind: 'crawl', name: 'Garnelen', ico: '🦐', title: 'Garnelen-Guru', list: ['cherryshrimp', 'amano', 'cleanershrimp', 'shrimp', 'bandedshrimp', 'harlequin', 'fireshrimp'] },
+    { id: 'crabs', kind: 'crawl', name: 'Krebse und Krabben', ico: '🦀', title: 'Scherenprofi', list: ['crab', 'fiddler', 'panthercrab', 'hermit', 'crayfish_blue', 'pompomcrab', 'hummer', 'lobster'] },
+    { id: 'flats', kind: 'crawl', name: 'Platt am Boden', ico: '🥞', title: 'Bodenständig', list: ['scholle', 'sole', 'turbot', 'torpedo'] },
+    { id: 'deepcrawl', kind: 'crawl', name: 'Tiefsee-Krabbler', ico: '🦞', title: 'Yeti-Freund', list: ['isopod', 'seapig', 'yeticrab'] },
+    { id: 'm_special', kind: 'master', titleId: 'special' }, { id: 'm_schools', kind: 'master', titleId: 'schools' }, { id: 'm_hybrid', kind: 'master', titleId: 'hybrid' },
+    { id: 'm_fresh', kind: 'master', titleId: 'fresh' }, { id: 'm_salt', kind: 'master', titleId: 'salt' }, { id: 'm_colors', kind: 'master', titleId: 'colors' }, { id: 'm_all', kind: 'master', titleId: 'all' },
+    { id: 'fam_book', kind: 'family', name: 'Familien-Enzyklopädie', ico: '🛡️', pearls: 20, info: 'Jede Art (ohne Saison-Tiere) haben mindestens zwei von euch entdeckt – ein einzelner Profi-Stand reicht nicht.' },
+    { id: 'fam_gifts', kind: 'family', name: 'Geschenkt!', ico: '🎁', title: 'Gute Seele', need: 10, info: '10 Geschenke an andere verschickt.' },
+    { id: 'fam_helps', kind: 'family', name: 'Gute Nachbarn', ico: '🤝', title: 'Guter Nachbar', need: 20, info: 'Bei anderen 20-mal gefüttert oder geputzt.' }
+  ];
+  AA.THEME_FX = { sunspots: 'Sonnenkringel', colorbubbles: 'Bunte Blasen', manta: 'Manta-Schatten', rain: 'Regen', leaves: 'Treibende Blätter', blossoms: 'Kirschblüten',
+    autumn: 'Herbstlaub', spray: 'Gischt', wavelight: 'Wellenlicht', plankton: 'Leuchtplankton', marinesnow: 'Meeresschnee', hearts: 'Herzchen-Blasen', sandpuffs: 'Sandwölkchen',
+    sparks: 'Funken', ammonite: 'Ammoniten-Schatten', shark: 'Hai-Schatten', ink: 'Tintenwölkchen', trails: 'Leuchtspuren', whale: 'Walhai in der Ferne', snow: 'Schneeflocken' };
+  AA.THEME_BY = {};
+  AA.THEMES.forEach(function (T) {
+    AA.THEME_BY[T.id] = T;
+    const ti = T.titleId && AA.TITLES.find(function (x) { return x.id === T.titleId; });
+    if (T.kind === 'master' && ti) { T.name = ti.name; T.ico = ti.ico; T.info = ti.info; }
+  });
+  /* Gold-Kulissen (Stufe „Ausgestellt“ der Regionen): Goldfassung einer vorhandenen Kulisse – js/tankview.js färbt sie beim Malen (wall.gold) */
+  AA.THEMES.forEach(function (T) {
+    if (T.kind !== 'region') return;
+    const b = AA.WALL_BY[T.wall];
+    const w = { id: 'gold_' + T.id, name: 'Gold: ' + T.name, pearls: 0, theme: T.id, gold: T.wall, img: b.img, home: b.home, cols: b.cols, far: b.far, ray: '255,236,170' };
+    AA.WALLS.push(w); AA.WALL_BY[w.id] = w;
+    AA.BIOTOPES.forEach(function (bi) { if (bi.walls.indexOf(T.wall) >= 0) bi.walls.push(w.id); });      // zählt im Biotop wie das Vorbild
+  });
+  /* Pokale (Stufe „Ausgestellt“ der Sammlungen und Krabbler-Alben): ein Bild für alle (as), das Spiel malt das Set-Zeichen darauf */
+  AA.THEMES.forEach(function (T) {
+    if (T.kind !== 'coll' && T.kind !== 'crawl') return;
+    const d = { id: 'trophy_' + T.id, name: 'Pokal: ' + T.name, cat: 'prop', lvl: 1, price: 0, w: 88, sink: 4, trophy: 6, as: 'trophy_gold', theme: T.id,
+      info: 'Für „' + T.name + '“: alle Tiere gleichzeitig in deinen Becken. Gibt es nicht zu kaufen – nur zu verdienen.' };
+    AA.DECO.push(d); AA.DECO_BY[d.id] = d;
+  });
   /* Optik: Textur-Maßstab je Beckengröße (Kies und Kulisse werden mit wachsendem Becken feiner, damit sie zur Größe passen),
      Tiefe der Seitenscheiben in Pixeln. Das Meeresbecken ist extra weit: alles darin ist kleiner gezeichnet (OCEAN_SPR). */
   AA.TEX = [1.08, 0.93, 0.82, 0.72]; AA.TEX_OCEAN = 0.5; AA.OCEAN_SPR = 0.78;

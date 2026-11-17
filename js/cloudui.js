@@ -14,6 +14,7 @@
   }
   /* Launch: Gesicht eines Spielers – sein Profilfoto (nur für ihn selbst und Freunde ladbar), sonst sein Fisch */
   function face(p, cls) {
+    if (p && p.gold > 0) cls = (cls ? cls + ' ' : '') + 'gold';      // Runde 19: Goldrahmen – mindestens ein Themen-Set ausgestellt
     if (!p || !(p.photo > 0) || !p.user || !C.on) return av(p && p.avatar, cls);
     const url = C.photoUrl(p.user, p.photo), fk = 'fish/' + (AA.FISH_BY[p.avatar] ? p.avatar : 'clown') + '_b';
     return '<img class="av photo' + (url ? ' ready' : '') + (cls ? ' ' + cls : '') + '" data-ph="' + esc(p.user + ':' + p.photo) + '" src="' + (url || AA.assets.thumb(fk)) + '" alt="">';
@@ -31,7 +32,7 @@
     });
   }
   UI.fillPhotos = function () { applyPhotos(); fillPhotos(); };
-  function me() { return C.profile ? { user: C.user && C.user.id, photo: C.profile.photo, avatar: C.profile.avatar } : null; }
+  function me() { return C.profile ? { user: C.user && C.user.id, photo: C.profile.photo, avatar: C.profile.avatar, gold: AA.themeGoldCount && AA.state && !AA.visit ? AA.themeGoldCount() : 0 } : null; }
   function err(msg) { const e = $('#cl-err'); if (e) { e.innerHTML = msg || ''; e.classList.toggle('hidden', !msg); } if (msg) AA.audio.play('error'); }
   function busy(on, sel) { gate.busy = !!on; document.querySelectorAll('#modal ' + (sel || '.btn')).forEach(function (b) { b.disabled = !!on; }); }
   /* Fehlermeldungen von Supabase Auth in Klartext */
@@ -188,7 +189,8 @@
       const btn = f.status === 'accepted' ? '<button class="btn sm green" data-act="fr-visit" data-id="' + f.id + '">👀 Besuchen</button><button class="btn sm grey" data-act="fr-remove" data-id="' + f.id + '" title="Freundschaft beenden">✕</button>'
         : (f.incoming ? '<button class="btn sm green" data-act="fr-accept" data-id="' + f.id + '">✔ Annehmen</button><button class="btn sm grey" data-act="fr-remove" data-id="' + f.id + '" title="Ablehnen">✕</button>'
           : '<button class="btn sm grey" data-act="fr-remove" data-id="' + f.id + '">Zurückziehen</button>');
-      return '<div class="cl-friend' + (f.status !== 'accepted' ? ' pending' : '') + '">' + face(f) + '<div class="cl-fn"><b>' + esc(f.name) + '</b><small>' + sub + '</small></div><div class="row">' + btn + '</div></div>';
+      const extra = f.status === 'accepted' && UI.titleLine ? (UI.titleLine(f.title) + (UI.themeBadges ? UI.themeBadges(f.badges) : '')) : '';      // Runde 19: Titel und Abzeichen
+      return '<div class="cl-friend' + (f.status !== 'accepted' ? ' pending' : '') + '">' + face(f) + '<div class="cl-fn"><b>' + esc(f.name) + '</b>' + (extra ? '<span class="cl-tb">' + extra + '</span>' : '') + '<small>' + sub + '</small></div><div class="row">' + btn + '</div></div>';
     }).join('');
   }
   UI.openProfile = function () {
@@ -390,7 +392,7 @@
     else if (C.profile) h += '<button class="fcard me" data-fb="profile">' + face(me()) + '<b>' + esc(C.profile.name) + '</b><small>Profil &amp; Code</small></button>';
     C.friends.forEach(function (f) {
       if (f.status === 'accepted') {
-        h += '<button class="fcard' + (f.user === here ? ' here' : '') + '" data-fb="visit" data-id="' + f.id + '">' + face(f) + '<b>' + esc(f.name) + '</b><small>Level ' + (f.level || 1) + ' · ' + (f.fish || 0) + ' 🐟</small>' +
+        h += '<button class="fcard' + (f.user === here ? ' here' : '') + '" data-fb="visit" data-id="' + f.id + '">' + face(f) + '<b>' + esc(f.name) + (UI.themeBadges ? UI.themeBadges(f.badges) : '') + '</b><small>Level ' + (f.level || 1) + ' · ' + (f.fish || 0) + ' 🐟</small>' +
           '<small class="ago">' + (f.user === here ? 'du bist hier' : (f.updated_at ? C.ago(f.updated_at) : 'noch kein Aquarium')) + '</small>' + (UI.giftBadge ? UI.giftBadge(f) : '') + '</button>';
       } else if (f.incoming) {
         h += '<div class="fcard req">' + av(f.avatar) + '<b>' + esc(f.name) + '</b><small>möchte dein Freund sein</small><span class="fc-btns"><button data-fb="accept" data-id="' + f.id + '" title="Annehmen">✔</button><button data-fb="remove" data-id="' + f.id + '" title="Ablehnen">✕</button></span></div>';

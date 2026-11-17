@@ -69,7 +69,7 @@
       daily: { day: 0, chest: false, hunts: 0, gift: false },
       stats: defaultStats(), medals: {}, settings: defaultSettings(),
       lastSeen: Date.now(), created: Date.now(), intro: false,
-      r18: 1, x18: 1                                 // Runde 18: ein neues Spiel hat nichts zu erstatten und braucht keine Weihnachts-Neuigkeit (der Reiter steht im Shop vorn)
+      r18: 1, x18: 1, r19: 1                         // Runde 18/19: ein neues Spiel hat nichts zu erstatten und braucht keine Weihnachts-Neuigkeit (der Reiter steht im Shop vorn)
     };
     AA.metaFix(AA.state, true);                      // Sammelbuch, Aufträge, Wochenkarte (js/meta.js)
     AA.bizFix(AA.state);                             // Gene, Markt, Kunden, Kassenbuch (js/biz.js)
@@ -80,6 +80,7 @@
     if (AA.decorFix) AA.decorFix(AA.state);          // Runde 10 (js/decor.js)
     if (AA.familyFix) AA.familyFix(AA.state);        // Runde 10 (js/family.js)
     if (AA.socialFix) AA.socialFix(AA.state);        // Runde 11 (js/social.js)
+    if (AA.themesNew) AA.themesNew(AA.state);        // Runde 19: Themen-Sets (js/themes.js)
     AA.questRoll();
     AA.bizStart();
     return AA.state;
@@ -270,6 +271,7 @@
       o.food = Math.max(0, Math.round(+o.food || 0)); o.xp = Math.max(0, Math.round(+o.xp || 0));
       if (gone && !o.r18) { o.r18 = 1; o.coins += gone.coins; o.news = o.news || {}; o.news.gone = gone; }      // Merker r18: ein noch offenes altes Spiel erstattet nicht ein zweites Mal
       if (!guest && !o.x18 && AA.season().xmas) { o.x18 = 1; o.news = o.news || {}; o.news.xmas18 = 1; }      // Runde 18: einmal Bescheid sagen, was es zu Weihnachten Neues gibt
+      if (!guest && !o.r19) { o.r19 = 1; o.news = o.news || {}; o.news.r19 = 1; }      // Runde 19: einmal Bescheid sagen (Reiter „Specials“)
       const was = Math.max(0, Math.round(+o.level || 0));
       o.level = AA.levelFor(o.xp);
       if (!guest && !o.r16) {                          // Runde 16, einmalig: flachere Level-Kurve ab Level 31 – wer dadurch aufsteigt, bekommt je Level eine Perle wie sonst auch.
@@ -316,6 +318,7 @@
       if (AA.familyFix) AA.familyFix(o);               // Runde 10: Login-Kalender, Testfreund (js/family.js)
       if (AA.socialFix) AA.socialFix(o);               // Runde 11: Profil, Grenzen, Geschenk (js/social.js)
       AA.state = o;
+      if (AA.themesAfterLoad) AA.themesAfterLoad(o, guest);      // Runde 19: Themen-Sets – beim ersten Mal still gutschreiben (js/themes.js)
       for (let i = 0; i < o.tanks.length; i++) finishAll(o.tanks[i], true);   // Balz, die beim Schließen lief
       AA.questRoll();                                  // Aufträge für heute (falls es noch keine gibt)
       AA.bizStart();                                   // Tageskurs, Kunden
@@ -918,6 +921,7 @@
   AA.setWall = function (id) {
     const s = AA.state, def = AA.WALL_BY[id];
     if (!def) return 'unknown';
+    if (def.theme && s.walls.indexOf(id) < 0) return 'locked';      // Runde 19: Gold-Kulisse – nur zu verdienen (js/themes.js)
     if (s.walls.indexOf(id) < 0) {
       if (s.pearls < def.pearls) return 'pearls';
       AA.addPearls(-def.pearls);

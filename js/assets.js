@@ -25,7 +25,15 @@
   const NET = navigator.connection || {};
   As.lean = window.AA_LEAN !== undefined ? !!window.AA_LEAN : HOSTED && !window.AA_EAGER && !!(NET.saveData || /2g|3g/.test(NET.effectiveType || '') ||
     (navigator.deviceMemory && navigator.deviceMemory < 4) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
+  /* Runde 19: Deko, die das Bild einer anderen benutzt (def.as – die Set-Pokale nehmen den Goldpokal): Schlüssel umlenken */
+  function real(key) {
+    if (!AA.DECO_BY) return key;
+    const m = /^(th\/)?(deco|hd)\/([a-z0-9_]+)$/.exec(key), d = m && AA.DECO_BY[m[3]];
+    return d && d.as ? (m[1] || '') + m[2] + '/' + d.as : key;
+  }
+  As.real = real;
   As.src = function (key) {
+    key = real(key);
     const u = window.AA_BUNDLE && window.AA_BUNDLE[key];
     if (u) return u;
     if (!HOSTED || !PACK || !GROUP[key]) return 'assets/' + key + '.png';
@@ -36,8 +44,9 @@
      Päckchen t-… (tools/bundle.py, ein paar KB je Bild) statt aus dem großen Päckchen der Art – vorher holte schon der Fisch-Reiter des
      Shops alle 141 Fisch-Päckchen (entpackt rund 170 MB), und beim zweiten Öffnen kamen alle 269 Bilder in voller Größe auf einmal:
      Safari auf dem iPhone hat die Seite dann neu geladen („Absturz“). Per Doppelklick (file://) und ohne Vorschau: das große Bild. */
-  As.hasThumb = function (key) { return HOSTED && !!GROUP['th/' + key]; };
+  As.hasThumb = function (key) { return HOSTED && !!GROUP['th/' + real(key)]; };
   As.thumb = function (key, lazy) {
+    key = real(key);
     if (!As.hasThumb(key)) return As.src(key);
     const tk = 'th/' + key;
     if (lazy) { As.want(tk); return BLANK + '#' + tk; }      // lazy: Platzhalter ins HTML, das Bild setzt As.refreshImgs danach – so bleibt das HTML klein (Shop: 0,1 statt 3 MB)
@@ -55,9 +64,9 @@
       k.push('fish/' + f.id + '_m', 'fish/' + f.id + '_f', 'fish/' + f.id + '_b');   // ♂, ♀ (mit Wimpern), Baby
       if (f.suck) k.push('fish/' + f.id + '_n', 'fish/' + f.id + '_o', 'fish/' + f.id + '_u');   // Saugwels: ♂/♀ ohne Mund (klebt am Boden / an der Seitenscheibe), Unterseite (an der Frontscheibe)
     });
-    AA.DECO.forEach(function (d) { k.push('deco/' + d.id); if (d.glass) k.push('deco/' + d.id + '_glass'); if (d.wave) k.push('deco/' + d.id + '_front', 'deco/' + d.id + '_arm'); });   // _glass = Bauchansicht an der Scheibe, _front/_arm = Schneemann winkt (Runde 18)
+    AA.DECO.forEach(function (d) { if (d.as) return; k.push('deco/' + d.id); if (d.glass) k.push('deco/' + d.id + '_glass'); if (d.wave) k.push('deco/' + d.id + '_front', 'deco/' + d.id + '_arm'); });   // _glass = Bauchansicht an der Scheibe, _front/_arm = Schneemann winkt (Runde 18)
     k.push('ui/advent');
-    AA.WALLS.forEach(function (w) { if (w.img) k.push(w.img); });
+    AA.WALLS.forEach(function (w) { if (w.img && !w.gold) k.push(w.img); });      // Gold-Kulissen (Runde 19) nehmen das Bild ihrer Vorlage
     k.push('deco/chest_closed');
     AA.FLOORS.forEach(function (f) { k.push('floor/' + f.id); });
     As.PROPS.forEach(function (p) { k.push('prop/' + p); });
@@ -88,10 +97,10 @@
     return Promise.all(list.map(function (g) { return As.loadGroup(g).then(function () { done++; if (onProgress) onProgress(done / n); }); }));
   };
   /* Bild wird gleich gebraucht: sein Päckchen vorziehen (kehrt sofort zurück) */
-  As.want = function (key) { const g = GROUP[key]; if (g && !As.wait[g]) As.loadGroup(g); return !!(g && As.done[g]); };
+  As.want = function (key) { key = real(key); const g = GROUP[key]; if (g && !As.wait[g]) As.loadGroup(g); return !!(g && As.done[g]); };
   /* was der aktuelle Spielstand zum Start braucht */
   As.needed = function () {
-    const need = { core: 1 }, s = AA.state, add = function (key) { const g = GROUP[key]; if (g) need[g] = 1; };
+    const need = { core: 1 }, s = AA.state, add = function (key) { const g = GROUP[real(key)]; if (g) need[g] = 1; };
     ['floor/sand', 'deco/chest', 'deco/seaweed', 'deco/rock_grey', 'fish/clown_m', 'fish/auriga_m', 'fish/guppy_m'].forEach(add);      // Grundausstattung + Schatzsuche
     if (s) s.tanks.forEach(function (t) {
       t.fish.forEach(function (f) { add('fish/' + f.sp + '_m'); });
@@ -125,7 +134,7 @@
       setTimeout(next, window.AA_EAGER ? 0 : (HOSTED ? 5000 : 400));      // im Netz erst das Spiel in Ruhe starten lassen
     });
   };
-  As.get = function (key) { const im = As.img[key]; if (im) return im; if (im === undefined && PACK && !As.complete) As.want(key); return null; };
+  As.get = function (key) { key = real(key); const im = As.img[key]; if (im) return im; if (im === undefined && PACK && !As.complete) As.want(key); return null; };
   /* kränklich-grün eingefärbte Fassung eines Sprites (für kranke Fische), einmal berechnet und gemerkt */
   As.tinted = function (key) {
     if (As.tint[key]) return As.tint[key];

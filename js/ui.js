@@ -5,7 +5,7 @@
   const UI = AA.ui = { storeTab: 'fish', modalKind: null, buy: null, lockModal: false, pending: null };
   let COIN = '🪙', FOODI = '🥫';
   const PEARL = '<span class="pearl" title="Perlen"></span>';
-  const ERR = { season: 'Gibt es nur in der Weihnachtszeit (bis 6. Januar).', coins: 'Nicht genug Münzen.', pearls: 'Nicht genug Perlen.', full: 'Das Becken ist voll.', level: 'Dafür brauchst du ein höheres Level.', max: 'Mehr geht nicht.',
+  const ERR = { locked: 'Gibt es nicht zu kaufen – nur zu verdienen (Sammelbuch → 🗺️ Themen-Sets).', season: 'Gibt es nur in der Weihnachtszeit (bis 6. Januar).', coins: 'Nicht genug Münzen.', pearls: 'Nicht genug Perlen.', full: 'Das Becken ist voll.', level: 'Dafür brauchst du ein höheres Level.', max: 'Mehr geht nicht.',
     unknown: 'Das gibt es nicht.', water: 'Das passt nicht zum Wasser in diesem Becken.', decofull: 'In dieses Becken passt keine Deko mehr.', nofish: 'Kein passender Fisch da (erwachsen, gesund, Klasse/Farbe wie gewünscht).', crawlfull: 'Mehr Krabbler passen nicht in dieses Becken.', owned: 'Die hast du schon.',
     ocean: 'Diese Art lebt nur im Meeresbecken.', deep: 'Diese Art lebt nur im Tiefsee-Becken.', nodeep: 'Ins Tiefsee-Becken dürfen nur Tiefsee-Tiere.', big: 'Diese Art braucht das größte Becken (125 Gallonen) oder das Meeresbecken.' };
   function real(sec) { return sec / AA.speed(); }       // Spiel-Sekunden -> echte Sekunden beim aktuellen Tempo
@@ -123,7 +123,7 @@
   function tpic(key, cls) { return '<img' + (cls ? ' class="' + cls + '"' : '') + ' src="' + AA.assets.thumb(key, true) + '" alt="">'; }      // kleines Vorschaubild für die Shop-Karten (js/assets.js), echtes Bild setzt UI.openStore danach
 
   /* ---------- Shop ---------- */
-  const TABS = [['fish', '🐠 Fische'], ['crawl', '🦀 Krabbler'], ['food', '🥫 Futter'], ['deco', '🪸 Deko'], ['look', '🎨 Kies & Hintergrund'], ['tank', '🏠 Aquarien'], ['perk', '⚡ Perks']];
+  const TABS = [['fish', '🐠 Fische'], ['special', '⭐ Specials'], ['crawl', '🦀 Krabbler'], ['food', '🥫 Futter'], ['deco', '🪸 Deko'], ['look', '🎨 Kies & Hintergrund'], ['tank', '🏠 Aquarien'], ['perk', '⚡ Perks']];
   function buyBtn(act, id, price, locked, lvl, extraLock, pearls) {
     const s = AA.state;
     if (locked) return '<button class="buy locked" disabled>🔒 Ab Level ' + lvl + '</button>';
@@ -150,7 +150,7 @@
         '<div class="nm">' + esc(f.name) + '</div><div class="info">' + esc(f.info) + '</div>' +
         '<div class="stats"><span title="' + W[w].name + '">' + W[w].ico + '</span>' + 
         (f.school ? '<span class="tag-job" title="Schwarmfisch: ab ' + AA.SCHOOL.min + ' Tieren schwimmen sie im Schwarm und wachsen schneller – unter ' + AA.SCHOOL.lonely + ' sind sie einsam">🐟 Schwarm</span>' : '') +
-        (UI.wildTags ? UI.wildTags(f) : '') +
+        (UI.wildTags ? UI.wildTags(f) : '') + (UI.themeTag ? UI.themeTag(f.id) : '') +
         (f.hab === 'bottom' ? '<span title="Grundfisch: bleibt am Boden">⬇️ Grund</span>' : (f.hab === 'lurk' ? '<span title="Höhlenbewohner: braucht ein Versteck (Deko mit 🏠)">🕳️ Höhle</span>' : '')) +
         (f.id === 'clown' ? '<span title="Wohnt in einer Anemone (Shop → Deko): nach der Balz schneller wieder bereit">🏠 Anemone</span>' : '') + '<span title="Zeit bis erwachsen">⏱ ' + AA.fmtDur(real(f.grow)) + '</span><span title="Verkaufswert (erwachsen)">💰 ' + fmt(f.sell) + '</span><span title="Paarung kostet">❤ ' + fmt(f.mate) + '</span></div>' +
         (f.special ? '<div class="stats"><span class="tag-special" title="Besonderes Tier: gibt es nur für Perlen">⭐ Besonderes Tier</span></div>' : '') +
@@ -159,9 +159,8 @@
   function fishCards() {
     const s = AA.state, t = AA.tank(), W = AA.WATER, card = fishCard;
     const fits = function (f) { const w = AA.waterOf(f); return w === 'both' || w === t.water; };
-    const base = AA.FISH.filter(function (f) { return !f.hybrid && !f.season; }).sort(function (a, b) { return a.lvl - b.lvl; });      // Hybride gibt es nur durch Kreuzen, Weihnachts-Arten im Reiter „Weihnachten“
-    const spec = base.filter(function (f) { return f.special && fits(f) && !AA.whyNot(f, t); });      // Runde 12: besondere Tiere (nur für Perlen) stehen oben
-    const mine = base.filter(function (f) { return !f.special && fits(f) && !AA.whyNot(f, t); }), rest = base.filter(function (f) { return !fits(f); });
+    const base = AA.FISH.filter(function (f) { return !f.hybrid && !f.season && !f.special; }).sort(function (a, b) { return a.lvl - b.lvl; });      // Hybride gibt es nur durch Kreuzen, Weihnachts-Arten im Reiter „Weihnachten“, besondere Tiere im Reiter „Specials“ (Runde 19)
+    const mine = base.filter(function (f) { return fits(f) && !AA.whyNot(f, t); }), rest = base.filter(function (f) { return !fits(f); });
     /* Arten mit passendem Wasser, die trotzdem ein anderes Becken brauchen, stehen in eigenen Gruppen darunter – mit Weg dorthin */
     const goTo = function (test, hint) { const i = s.tanks.findIndex(test); return i >= 0 ? ' <button class="lnk" data-act="gotankstore" data-id="' + i + '">→ zu „' + esc(s.tanks[i].name) + '“ wechseln</button>' : ' ' + hint; };
     const toTanks = 'Gibt es im Reiter <button class="lnk" data-act="tab" data-id="tank">🏠 Aquarien</button>.';
@@ -171,8 +170,7 @@
       ['deep', '🌌 <b>Tiefsee-Tiere</b> – leben nur im stockdunklen Tiefsee-Becken.', function () { return goTo(function (tk) { return tk.deep; }, toTanks); }],
       ['nodeep', '🌊 <b>Keine Tiefsee-Tiere</b> – denen ist es hier unten zu dunkel und zu kalt.', function () { return goTo(function (tk) { return tk.water === 'salt' && !tk.deep; }, ''); }]
     ];
-    let h = '<div class="sec">' + AA.tankIco(t) + ' „' + esc(t.name) + '“ ist ' + (t.deep ? 'das <b>Tiefsee-Becken</b>' : (t.ocean ? 'das <b>Meeresbecken</b>' : 'ein <b>' + W[t.water].name + '-Becken</b>')) + ' (' + AA.count(t) + ' von ' + AA.cap(t) + ' Bewohnern). Fische kommen als hungrige Babys.</div>' +
-      (spec.length ? '<div class="sec special">⭐ <b>Besondere Tiere</b> – gibt es nur für Perlen <span class="pearl" title="Perlen"></span>. Du hast <b>' + fmt(s.pearls) + '</b>.</div>' + spec.map(card).join('') + '<div class="sec">Fische</div>' : '') +
+    let h = '<div class="sec">' + AA.tankIco(t) + ' „' + esc(t.name) + '“ ist ' + (t.deep ? 'das <b>Tiefsee-Becken</b>' : (t.ocean ? 'das <b>Meeresbecken</b>' : 'ein <b>' + W[t.water].name + '-Becken</b>')) + ' (' + AA.count(t) + ' von ' + AA.cap(t) + ' Bewohnern). Fische kommen als hungrige Babys. Frosch, Hamster, Otter & Co. für Perlen: <button class="lnk" data-act="tab" data-id="special">⭐ Specials</button></div>' +
       mine.map(card).join('');
     GROUPS.forEach(function (g) {
       const l = base.filter(function (f) { return fits(f) && AA.whyNot(f, t) === g[0]; });
@@ -198,7 +196,7 @@
   function decoCards() {
     const s = AA.state;
     return '<div class="sec">Einrichten: Stück im Becken antippen, dann <b>ziehen</b> zum Verschieben (nach oben = weiter hinten), <b>↔ spiegeln</b> und die <b>Größe</b> ändern – am runden Anfasser, mit dem Regler oder den Tasten + und −. Wie weit, hängt vom Stück ab (📐). Stücke mit <b>🧱 Stellfläche</b> sind oben flach: Zieh andere Deko darauf, sie bleibt dort stehen.' + (UI.wildDecoTop ? UI.wildDecoTop() : '') + '</div>' + (UI.decorShopTop ? UI.decorShopTop() : '') +
-    AA.DECO.filter(function (d) { return !d.fixed && !d.crawl && !d.season; }).sort(function (a, b) { return (a.trophy ? 1 : 0) - (b.trophy ? 1 : 0) || a.lvl - b.lvl; }).map(decoCard).join('');
+    AA.DECO.filter(function (d) { return !d.fixed && !d.crawl && !d.season && !d.theme; }).sort(function (a, b) { return (a.trophy ? 1 : 0) - (b.trophy ? 1 : 0) || a.lvl - b.lvl; }).map(decoCard).join('');
   }
   function decoCard(d) {                               // Runde 18: eigene Funktion (auch für den Reiter „Weihnachten“)
       const s = AA.state, locked = s.level < d.lvl && !d.trophy, rg = AA.decoRange(d);
@@ -238,7 +236,7 @@
       return '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '">' +
         '<div class="pic deco">' + tpic('deco/' + d.id) + '</div>' +
         '<div class="nm">' + esc(d.name) + '</div><div class="info">' + esc(d.info || '') + '</div>' +
-        '<div class="stats"><span title="' + AA.WATER[w].name + '">' + AA.WATER[w].ico + '</span>' + tags + '</div>' +
+        '<div class="stats"><span title="' + AA.WATER[w].name + '">' + AA.WATER[w].ico + '</span>' + tags + (UI.themeTag ? UI.themeTag(d.id) : '') + '</div>' +
         buyBtn('buydeco', d.id, d.price, locked, d.lvl, wrong ? AA.WATER[w].ico + ' ' + AA.WATER[w].only : (full ? 'Becken voll' : '')) + '</div>';
   }
   function lookCards() {
@@ -254,21 +252,23 @@
     }).join('');
     if (UI.ecoShapes) h += UI.ecoShapes();
     /* Runde 12: Hintergründe gehören dir, sobald du sie einmal gekauft hast – in jedem Becken. Deine stehen oben, getrennt vom Rest. */
-    const isOwned = function (w) { return s.walls.indexOf(w.id) >= 0 || !w.pearls; };      // Gratis-Farben gelten als vorhanden
+    const isOwned = function (w) { return s.walls.indexOf(w.id) >= 0 || (!w.pearls && !w.theme); };      // Gratis-Farben gelten als vorhanden; Gold-Kulissen (Runde 19) gibt es nur zu verdienen
     const wallCard = function (w) {
       const owned = isOwned(w);
       let btn;
       if (t.wall === w.id) btn = '<button class="buy active" disabled>✓ Hängt in diesem Becken</button>';
       else if (owned) btn = '<button class="buy use" data-act="setwall" data-id="' + w.id + '">Verwenden</button>';
+      else if (w.theme) btn = '<button class="buy locked" disabled>🏆 Nur zu verdienen</button>';
       else btn = buyBtn('setwall', w.id, w.pearls, false, 0, '', true);
       const tg = '<div class="stats">' + (owned && w.pearls ? '<span class="tag-owned" title="Einmal gekauft – in jedem Becken nutzbar">✓ Gehört dir</span>' : '') + (w.live ? '<span class="tag-special" title="Im Hintergrund ziehen Silhouetten vorbei">🎞️ Lebendig</span>' : '') +
         (w.special ? '<span class="tag-special" title="Besonders kräftige Kulisse – ein Hingucker">✨ Spezial</span>' : '') + (w.img ? '<span>🖼️ Gemalt</span>' : '') + (w.home ? '<span>' + AA.WATER[w.home].ico + ' ' + AA.WATER[w.home].name + '</span>' : '') + '</div>';
       return '<div class="card' + (owned ? ' is-owned' : '') + '"><div class="pic floor"><img data-wl="' + w.id + '" src="' + V.wallThumb(w.id) + '" alt=""></div><div class="nm">' + esc(w.name) + '</div>' + tg + btn + '</div>';
     };
-    const mineW = AA.WALLS.filter(isOwned), shopW = AA.WALLS.filter(function (w) { return !isOwned(w); });
+    const mineW = AA.WALLS.filter(isOwned), shopW = AA.WALLS.filter(function (w) { return !isOwned(w) && !w.theme; }), goldW = AA.WALLS.filter(function (w) { return !isOwned(w) && w.theme; });
     h += '<div class="sec">🖼️ <b>Deine Hintergründe</b> (' + mineW.length + ') – einmal mit Perlen gekauft, gehören sie dir für immer und passen in <b>jedes</b> Becken. Einfach „Verwenden“.</div>';
     h += mineW.map(wallCard).join('');
     if (shopW.length) h += '<div class="sec">Weitere Hintergründe – kosten einmalig Perlen (jedes Level und jede Medaille bringt welche)</div>' + shopW.map(wallCard).join('');
+    if (goldW.length) h += '<div class="sec">🏆 <b>Gold-Kulissen</b> – nicht zu kaufen: Stell alle Tiere einer Region gleichzeitig aus (Sammelbuch → 🗺️ Themen-Sets), dann gehört dir ihre Gold-Fassung.</div>' + goldW.map(wallCard).join('');
     return h;
   }
   function tankCards() {
@@ -293,6 +293,7 @@
         tankBtn('bonus', '🌿 Süßwasser', rq) + '</div>';
     }
     if (UI.lightCard) h += UI.lightCard();              // Runde 12: Licht-Studio (js/extrasui.js)
+    if (UI.themeFxCard) h += UI.themeFxCard();          // Runde 19: Becken-Effekt der Themen-Sets (js/themesui.js)
     if (UI.farmTankCards) h += UI.farmTankCards();      // Zuchtstation, Meeresbecken (js/farmui.js)
     if (UI.wildTankCards) h += UI.wildTankCards();      // Tiefsee-Becken (js/wildui.js)
     h += '<div class="card wide"><div class="pic emoji">🆕</div><div class="nm">Neues Aquarium</div>';
@@ -324,11 +325,20 @@
       '<div class="sec">🦀 Krabbler</div>' + AA.DECO.filter(function (d) { return x(d) && d.crawl; }).map(crawlCard).join('') +
       '<div class="sec">🪸 Deko</div>' + AA.DECO.filter(function (d) { return x(d) && !d.crawl; }).sort(lv).map(decoCard).join('');
   }
+  /* Runde 19: Reiter „Specials“ – die besonderen Tiere (nur für Perlen, ohne Saison-Tiere): was ins aktuelle Becken passt zuerst, dann die fürs andere Wasser */
+  function specialCards() {
+    const s = AA.state, t = AA.tank(), lv = function (a, b) { return a.lvl - b.lvl; };
+    const fits = function (f) { const w = AA.waterOf(f); return w === 'both' || w === t.water; };
+    const all = AA.FISH.filter(function (f) { return f.special && !f.season && !f.hybrid; }).sort(lv);
+    const here = all.filter(fits), other = all.filter(function (f) { return !fits(f); });
+    return '<div class="sec special">⭐ <b>Specials</b> – besondere Tiere, gibt es nur für Perlen <span class="pearl" title="Perlen"></span>. Du hast <b>' + fmt(s.pearls) + '</b>.</div>' +
+      here.map(fishCard).join('') + (other.length ? otherWaterSec('Specials') + other.map(fishCard).join('') : '');
+  }
   UI.storeTabs = function () { return (AA.season().xmas ? [['xmas', '🎄 Weihnachten']] : []).concat(TABS); };
   function storeHtml() {
     const s = AA.state, t = AA.tank(), tabs = UI.storeTabs();
     if (!tabs.some(function (tb) { return tb[0] === UI.storeTab; })) UI.storeTab = 'fish';      // Weihnachtszeit vorbei: zurück zu den Fischen
-    const body = { xmas: xmasCards, fish: fishCards, crawl: crawlCards, food: foodCards, deco: decoCards, look: lookCards, tank: tankCards, perk: perkCards }[UI.storeTab]();
+    const body = { xmas: xmasCards, fish: fishCards, special: specialCards, crawl: crawlCards, food: foodCards, deco: decoCards, look: lookCards, tank: tankCards, perk: perkCards }[UI.storeTab]();
     return head('🛒 Shop', '<div class="m-coins"><span id="m-coins">' + COIN + ' <b>' + fmt(s.coins) + '</b></span><span id="m-pearls">' + PEARL + ' <b>' + fmt(s.pearls) + '</b></span><small>Level ' + s.level + ' · ' + AA.count(t) + '/' + AA.cap(t) + ' 🐟</small></div>') +
       '<div class="tabs">' + tabs.map(function (tb) { return '<button class="tab' + (tb[0] === UI.storeTab ? ' active' : '') + '" data-act="tab" data-id="' + tb[0] + '">' + tb[1] + '</button>'; }).join('') + '</div>' +
       '<div class="grid g-' + UI.storeTab + '">' + body + '</div>';
@@ -474,6 +484,18 @@
       li.push('⭐ <b>Neu: XP fürs Großziehen</b> – jeder Fisch, der bei dir erwachsen wird, bringt Erfahrung (Clownfisch ' + AA.FISH_BY.clown.xp + ', Blobfisch ' + AA.FISH_BY.blobfish.xp + ').');
       li.push('🌈 Farbvarianten sind seltener geworden (1 % je Ei), Farbfutter wirkt für die nächsten 3 Eier, der Markt erholt sich schon nach einer halben Stunde.');
     }
+    if (n.r19) {                                       // Runde 19: Themen-Sets, Adventskalender, Shop-Reiter „Specials“
+      li.push('🗺️ <b>Neu: Themen-Sets</b> (Sammelbuch → 🗺️ Themen-Sets): ' + AA.THEMES.length + ' Sets – Regionen, Sammlungen wie „Haie und Rochen“ oder „Die Speisekarte“, Krabbler-Alben und eins für die ganze Familie. ' +
+        'Jedes in drei Stufen: ⭐ <b>Entdeckt</b> → Titel und Perlen, 🥚 <b>Gezüchtet</b> → ein Becken-Effekt (Regen, Kirschblüten, Leuchtplankton …), 🏆 <b>Ausgestellt</b> → Gold-Kulisse oder Pokal, Goldrahmen und Abzeichen.');
+      if (n.themes && n.themes.list) { const k = n.themes.list.length; li.push('🎉 <b>Schon geschafft:</b> ' + k + (k === 1 ? ' Set-Stufe' : ' Set-Stufen') + ' aus deiner bisherigen Sammlung sind gutgeschrieben' + (n.themes.pearls ? ' – <b>+' + n.themes.pearls + ' Perlen</b>' : '') + '. Was genau, steht im Sammelbuch unter 🗺️ Themen-Sets.'); }
+      li.push('🥚 „Gezüchtet“ zählt ab jetzt: jedes eigene Ei, das bei dir schlüpft. 📌 Ein Set lässt sich als Ziel anheften – dann steht es links oben.');
+      if (AA.seasonNow().advent) li.push('🎄 <b>Adventskalender:</b> Ab 1. Dezember geht jeden Tag ein Türchen auf (Knopf links am Rand) – verpasste kannst du bis 6. Januar nachholen. Hinter der 24 wartet ein Regenbogen-Seepferdchen.');
+      li.push('⭐ <b>Neuer Shop-Reiter „Specials“:</b> Wasserfrosch, Tauch-Hamster, Fischotter, Pinguin und Seehund haben jetzt ihren eigenen Reiter – gleich neben den Fischen.');
+    }
+    if (n.themes && n.themes.list && !n.r19) {         // Runde 19: beim ersten Laden still gutgeschrieben (js/themes.js) – steht sonst schon oben bei den Themen-Sets
+      const k = n.themes.list.length;
+      li.push('🎉 <b>Schon geschafft:</b> ' + k + (k === 1 ? ' Set-Stufe' : ' Set-Stufen') + ' aus deiner bisherigen Sammlung sind gutgeschrieben' + (n.themes.pearls ? ' – <b>+' + n.themes.pearls + ' Perlen</b>' : '') + '. Was genau, steht im Sammelbuch unter 🗺️ Themen-Sets.');
+    }
     if (n.xmas18) li.push('🎄 <b>Weihnachts-Update:</b> neuer Reiter „Weihnachten“ im Shop mit Rentier, Eisbär, Schneemann, drei Weihnachts-Fischen und 15 Deko-Teilen – nur bis 6. Januar. Dazu zwei Winterböden und links der Adventskalender (bald verfügbar).');
     if (n.gone) {                                      // Runde 18: Steinkopf mit Hut, Brücken und Wege sind raus (js/state.js, AA.dropGone)
       const its = Object.keys(n.gone.items || {}).map(function (k) { const c = n.gone.items[k]; return (c > 1 ? c + '× ' : '') + esc(k); }).join(', ');
@@ -538,6 +560,7 @@
     li.push('😢 <b>Ehrliche Gesichter:</b> Wer Hunger hat, krank ist oder im Dreck sitzt, schaut jetzt traurig – ein Blick ins Becken zeigt, wem etwas fehlt.');
     }
     UI.open('news', '<div class="hero news"><div class="h2">Neu im Aquarium</div><ul>' + li.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul><button class="btn green lg" data-act="newsok">Alles klar</button></div>', 'small hero-m', true);
+    if (n.themes && UI.confetti) setTimeout(function () { UI.confetti(56); AA.audio.play('win'); }, 350);      // Runde 19: geschaffte Set-Stufen feiern
   };
   UI.welcomeBack = function (sum) {
     const lines = [], t = AA.tank(), s = AA.state;
@@ -780,6 +803,8 @@
     if (UI.socialClick && UI.socialClick(act, id, b)) return;     // Runde 11: Profil, Musik (js/socialui.js)
     if (UI.familyClick && UI.familyClick(act, id, b)) return;     // Runde 10: Rangliste, Login-Kalender, Testfreund, Deko-Modus aus dem Shop (js/familyui.js)
     if (UI.r12Click && UI.r12Click(act, id, b)) return;           // Runde 12: Licht-Studio, Geschenke, Pokale (js/extrasui.js)
+    if (UI.themeClick && UI.themeClick(act, id, b)) return;       // Runde 19: Themen-Sets (js/themesui.js)
+    if (UI.xmasClick && UI.xmasClick(act, id, b)) return;         // Runde 19: Adventskalender (js/xmas.js)
     if (UI.lifeClick && UI.lifeClick(act, id, b)) return;         // Kreuzen, Titel, Vorlagen, Alle füttern, Klang (js/lifeui.js)
     if (UI.extraClick && UI.extraClick(act, id, b)) return;       // Aufträge, Wochenkarte, Sammelbuch, Glitzer-Eier (js/metaui.js)
     if (UI.ecoClick && UI.ecoClick(act, id, b)) return;           // Boden-Form, Übersicht, Räuber-Schalter (js/ecoui.js)

@@ -677,7 +677,7 @@ body.visiting #tank-label { cursor: default; }
    oben nur noch das Nötigste + Menü-Knopf ☰ (alles andere steckt im Menü, js/cloudui.js: UI.openMenu), unten Shop, Werkzeuge, Beckenwahl. */
 html, body { touch-action: manipulation; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
 #stage { --ui: 1; }
-#hud-top, #hud-bottom, #card, #toasts, #modal, #friends-bar, #visit-banner, #foodbar, #advent-btn { zoom: var(--ui); }
+#hud-top, #hud-bottom, #card, #toasts, #modal, #friends-bar, #visit-banner, #foodbar, #advent-btn, #theme-pin { zoom: var(--ui); }
 #btn-menu { display: none; }
 /* 14.11.2026: obere Leiste in Stufen enger (UI.fitTop in js/ui.js), statt dass sich Balken und Knöpfe überlappen */
 #hud-top.t1 .btns > #btn-photo, #hud-top.t1 .btns > #btn-light, #hud-top.t1 .btns > #btn-sound, #hud-top.t1 .btns > #btn-settings { display: none; }
@@ -919,7 +919,8 @@ img.av.photo:not(.ready) { object-fit: contain; }
 #advent-btn:active { transform: translateY(-50%) scale(.96); }
 #modal.advent { width: 900px; }
 #modal.advent .adv-wrap { position: relative; margin: 14px 18px 18px; border-radius: 18px; overflow: hidden; background: #dff5fa; aspect-ratio: 1344 / 752; border: 2px solid #cfeaf1; }
-#modal.advent .adv-img { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .4; }
+#modal.advent .adv-img { position: absolute; inset: 0; width: 100%; height: 100%; }
+#modal.advent .adv-wrap.before .adv-img { opacity: .55; }
 #modal.advent .adv-door { position: absolute; display: grid; place-items: center; padding: 0; border: 0; background: none; cursor: pointer; }
 #modal.advent .adv-door span { min-width: 34px; height: 34px; padding: 0 6px; border-radius: 12px; display: grid; place-items: center; background: rgba(255, 255, 255, .92);
   border: 2px solid #f1b26b; color: #8a3b12; font: 900 19px var(--font); box-shadow: 0 2px 0 rgba(138, 59, 18, .25); transition: transform .12s; }
@@ -929,3 +930,91 @@ img.av.photo:not(.ready) { object-fit: contain; }
 #stage.compact #advent-btn img { width: 50px; height: 48px; border-radius: 11px; }
 #stage.compact #modal.advent { width: 96%; }
 #stage.compact #modal.advent .adv-door span { min-width: 26px; height: 26px; font-size: 15px; border-radius: 9px; }
+
+/* ---------- Runde 19: Adventskalender mit Türchen ---------- */
+#modal.advent .adv-soon { font-size: 13px; font-weight: 900; background: #e63946; color: #fff; padding: 2px 9px; border-radius: 10px; margin-left: 6px; vertical-align: 3px; }
+#modal.advent .adv-door { perspective: 420px; overflow: visible; }
+#modal.advent .adv-door .in { position: absolute; inset: 6%; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-style: normal;
+  background: radial-gradient(circle at 50% 35%, #fff8e1, #f2c98c); box-shadow: inset 0 2px 6px rgba(90, 40, 0, .45); opacity: 0; color: #6b3200; text-align: center; padding: 2px; }
+#modal.advent .adv-door .in b { font-size: 22px; line-height: 1; } #modal.advent .adv-door .in small { font: 900 9.5px/1.1 var(--font); }
+#modal.advent .adv-door .leaf { position: absolute; inset: 0; border-radius: 6px; background-image: var(--adv); background-repeat: no-repeat; transform-origin: 2% 50%; transition: transform .7s cubic-bezier(.3, 1.2, .5, 1), opacity .7s; backface-visibility: hidden; }
+#modal.advent .adv-door span { position: relative; z-index: 2; transition: opacity .3s; }
+#modal.advent .adv-door.open .in, #modal.advent .adv-door.opening .in { opacity: 1; transition: opacity .3s .15s; }
+#modal.advent .adv-door.open .leaf, #modal.advent .adv-door.opening .leaf { transform: rotateY(-78deg); opacity: .9; box-shadow: 4px 0 10px rgba(60, 25, 0, .35); }
+#modal.advent .adv-door.open span, #modal.advent .adv-door.opening span { opacity: 0; }
+#modal.advent .adv-door.can span { background: #fff; border-color: #22c55e; color: #116b2e; animation: advGlow 1.4s ease-in-out infinite; }
+#modal.advent .adv-door.shut span { opacity: .82; }
+#modal.advent .adv-egg { margin: -6px 18px 12px; padding: 8px 12px; border-radius: 12px; background: #fff3d6; font-weight: 800; font-size: 13.5px; }
+@keyframes advGlow { 0%, 100% { box-shadow: 0 2px 0 rgba(17, 107, 46, .3), 0 0 0 0 rgba(34, 197, 94, .55); } 50% { box-shadow: 0 2px 0 rgba(17, 107, 46, .3), 0 0 0 7px rgba(34, 197, 94, 0); } }
+#advent-btn .soon.hidden { display: none; }
+#advent-btn.ready { animation: advPulse 1.6s ease-in-out infinite; }
+@keyframes advPulse { 0%, 100% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.07); } }
+#stage.compact #modal.advent .adv-door .in b { font-size: 15px; } #stage.compact #modal.advent .adv-door .in small { display: none; }
+
+/* ---------- Runde 19: Themen-Sets ---------- */
+.grid.g-book.sets { display: block; padding: 0; }
+.grid.g-book.sets .list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.grid.g-book.sets .sec { grid-column: auto; }
+.ts-intro { line-height: 1.4; font-weight: 700; }
+.ts-kind { margin-top: 6px; } .ts-kind small { font-weight: 700; opacity: .72; margin-left: 4px; }
+.ts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 10px; }
+.tset { position: relative; display: flex; gap: 10px; align-items: center; text-align: left; padding: 9px 12px; border-radius: 16px; border: 2px solid #d6edf3; background: linear-gradient(#ffffff, #eef9fc);
+  box-shadow: 0 3px 0 #b9dce6; cursor: pointer; font: inherit; color: var(--navy, #0b3a57); }
+.tset:active { transform: translateY(2px); box-shadow: 0 1px 0 #b9dce6; }
+.tset.done { border-color: #f3cf5a; background: linear-gradient(#fffbe8, #ffefb8); box-shadow: 0 3px 0 #e2b93b; }
+.tset.pinned { border-color: #ff9f43; }
+.ts-pin { position: absolute; right: 8px; top: 5px; font-style: normal; font-size: 14px; }
+.ts-ico { font-size: 32px; width: 44px; text-align: center; flex: none; }
+.ts-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ts-nm { font-weight: 900; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 14px; }
+.ts-stars i { font-style: normal; font-size: 13px; margin-right: 3px; filter: grayscale(1); opacity: .3; }
+.ts-stars i.on { filter: none; opacity: 1; }
+.ts-sub { font-size: 11.5px; font-weight: 800; opacity: .75; }
+.ts-done { font-weight: 900; color: #a86d00; font-size: 13px; }
+.tset .bar.q, .ts-stage .bar.q { height: 15px; }
+.ts-badges { background: #fff6dc; border-radius: 12px; padding: 8px 12px; font-size: 14px; } .ts-badges small { opacity: .7; font-weight: 700; }
+.ts-badges .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ts-bdg { width: 42px; height: 42px; border-radius: 50%; border: 2px solid #e6cf8a; background: #fffdf4; font-size: 21px; cursor: pointer; filter: grayscale(.8); opacity: .65; }
+.ts-bdg.on { filter: none; opacity: 1; border-color: #f0b400; box-shadow: 0 0 0 3px rgba(240, 180, 0, .3); background: linear-gradient(#fff8d2, #ffe58a); }
+.ts-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ts-ttl { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px; } .ts-ttl b { font-size: 19px; font-weight: 900; display: block; } .ts-ttl small { font-weight: 800; opacity: .7; }
+.ts-big { font-size: 42px; }
+.ts-head .ts-stars i { font-size: 20px; }
+.ts-info { font-size: 13.5px; font-weight: 700; line-height: 1.4; background: #f1fbfd; border-radius: 12px; padding: 8px 12px; }
+.ts-stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.ts-stage { display: flex; gap: 10px; padding: 9px 11px; border-radius: 14px; border: 2px solid #d6edf3; background: #fff; }
+.ts-stage.ok { border-color: #f3cf5a; background: linear-gradient(#fffbe8, #fff3cc); }
+.ts-sico { font-size: 26px; } .ts-stage b { font-size: 15px; } .ts-stage small { font-size: 12px; font-weight: 700; opacity: .8; line-height: 1.3; }
+.ts-stage .ts-rw { opacity: 1; color: #6b4a00; } .ts-stage .pearl { width: 14px; height: 14px; vertical-align: -2px; }
+.ts-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.ts-legend { font-size: 12.5px; font-weight: 800; opacity: .7; }
+.ts-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.ts-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px 7px; border-radius: 14px; background: #f4fbfd; border: 2px solid #d6edf3; text-align: center; }
+.ts-item.unknown .ts-pic img { filter: brightness(0) opacity(.35); }
+.ts-pic { width: 92px; height: 58px; display: grid; place-items: center; } .ts-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.ts-inm { font-weight: 900; font-size: 12.5px; line-height: 1.15; }
+.ts-st i { font-style: normal; font-size: 13px; margin: 0 1px; padding: 1px 3px; border-radius: 7px; filter: grayscale(1); opacity: .22; } .ts-st i.on { filter: none; opacity: 1; background: #d9f6dd; box-shadow: inset 0 0 0 1px #9fe0a8; }
+.ts-where { font-size: 10.5px; font-weight: 800; opacity: .65; }
+.stats span.tag-set { background: #e2f0ff; color: #1b4f8a; font-weight: 900; }
+.ls-btn.locked { opacity: .45; }
+.themefx .ls-btn { font-weight: 800; font-size: 12.5px; }
+/* angeheftetes Ziel */
+#theme-pin { position: absolute; left: 14px; top: 86px; z-index: 11; display: flex; align-items: center; gap: 7px; max-width: 260px; padding: 6px 12px 6px 8px; border-radius: 16px;
+  border: 2px solid #fff; background: linear-gradient(#fffdf2, #ffeebd); box-shadow: 0 3px 0 rgba(150, 100, 0, .3), 0 8px 18px rgba(0, 20, 40, .25); cursor: pointer; font: inherit; color: #5a3a00; text-align: left; }
+#theme-pin.hidden, body.visiting #theme-pin { display: none; }
+#theme-pin i { font-style: normal; font-size: 13px; } #theme-pin .tp-ico { font-size: 24px; }
+#theme-pin .tp-txt { display: flex; flex-direction: column; min-width: 0; } #theme-pin b { font-size: 13px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#theme-pin small { font-size: 11.5px; font-weight: 800; opacity: .8; }
+#stage.compact #theme-pin { left: 8px; top: 64px; max-width: 200px; padding: 4px 9px 4px 6px; } #stage.compact #theme-pin .tp-ico { font-size: 19px; }
+/* Konfetti */
+.confetti { position: absolute; inset: 0; pointer-events: none; z-index: 70; overflow: hidden; }
+.confetti i { position: absolute; top: -20px; width: 10px; height: 14px; border-radius: 2px; animation: confFall 2.4s cubic-bezier(.25, .6, .45, 1) forwards; }
+.confetti i:nth-child(3n) { width: 8px; height: 8px; border-radius: 50%; } .confetti i:nth-child(4n) { width: 6px; height: 16px; }
+@keyframes confFall { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(var(--x, 0), 105vh) rotate(var(--r, 360deg)); opacity: 0; } }
+/* Goldrahmen, Abzeichen, Titel bei Freunden */
+img.av.gold { border-color: #ffd34d; box-shadow: 0 0 0 2px #e0a800, 0 2px 0 #b07a12, 0 0 12px rgba(255, 200, 40, .7); }
+.pbdg { margin-left: 4px; white-space: nowrap; } .pbdg i { font-style: normal; font-size: 14px; margin-left: 1px; }
+.ptitle { font-size: 12px; font-weight: 800; color: #8a5a00; white-space: nowrap; }
+.cl-tb { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.rk-ttl { display: block; font-weight: 800; }
+.fcard .pbdg i { font-size: 12px; }

@@ -307,7 +307,7 @@
     if (P.pearls && s.pearls < P.pearls) return 'pearls';
     const tpl = P.tpl;
     // Kulisse, Boden, Form
-    if (AA.WALL_BY[tpl.wall]) { if (P.wallBuy) { AA.addPearls(-P.wallBuy); s.walls.push(tpl.wall); } t.wall = tpl.wall; }
+    if (AA.WALL_BY[tpl.wall] && !(AA.WALL_BY[tpl.wall].theme && s.walls.indexOf(tpl.wall) < 0)) { if (P.wallBuy) { AA.addPearls(-P.wallBuy); s.walls.push(tpl.wall); } t.wall = tpl.wall; }
     if (P.floorOk) t.floor = tpl.floor;
     if (tpl.shape && tpl.shape !== 'flat') t.shape = tpl.shape; else delete t.shape;
     // Deko: vorhandene Stücke an die Plätze der Vorlage, fehlende kaufen

@@ -105,7 +105,7 @@
         '<div class="bpic' + (f.inv ? ' inv' : '') + '"><img src="' + AA.assets.thumb('fish/' + f.id + '_m', true) + '" alt=""></div><div class="bnm">' + (b ? esc(f.name) : '???') + '</div>' +
         (b ? dots(f.id) : '<div class="blvl">' + (f.hybrid ? '🧬 ' + esc(AA.FISH_BY[f.hybrid[0]].name) + ' × ' + esc(AA.FISH_BY[f.hybrid[1]].name) : AA.WATER[AA.waterOf(f)].ico + ' ab Level ' + f.lvl) + '</div>') + '</button>';
     }).join('');
-    const TABS = [['all', 'Alle'], ['salt', '🌊 Meerwasser'], ['fresh', '🌿 Süßwasser'], ['var', '✨ Mit Varianten'], ['hyb', '🧬 Hybride'], ['titel', '🏅 Titel']];
+    const TABS = [['all', 'Alle'], ['salt', '🌊 Meerwasser'], ['fresh', '🌿 Süßwasser'], ['var', '✨ Mit Varianten'], ['hyb', '🧬 Hybride'], ['sets', '🗺️ Themen-Sets'], ['titel', '🏅 Titel']];
     const ttl = AA.titleOf ? AA.titleOf() : null;
     const pS = Math.round(C.species / C.speciesMax * 100), pV = Math.round(C.vars / C.varsMax * 100);
     return head('📖 Sammelbuch', '<div class="m-coins book">' + (ttl ? '<span class="ttl" title="Dein Titel – wählbar im Reiter Titel">' + ttl.ico + ' ' + esc(ttl.name) + '</span>' : '') + '<span title="Arten entdeckt">🐟 <b>' + C.species + '</b> / ' + C.speciesMax + '</span><span title="Farbvarianten entdeckt">✨ <b>' + C.vars + '</b> / ' + C.varsMax + '</span></div>') +
@@ -114,6 +114,7 @@
       (C.open ? '<button class="btn green" data-act="bookall">Alle ' + C.open + ' Belohnungen abholen</button>' : '<div class="bhint">Neue Arten: kaufen. Farbvarianten: nur aus Eiern (Zucht, Glitzer-Ei) – nächstes Ei: ' + (Math.round(AA.variantChance() * 1000) / 10).toString().replace('.', ',') + ' %.</div>') + '</div>' +
       '<div class="tabs">' + TABS.map(function (tb) { return '<button class="tab' + (tb[0] === UI.bookTab ? ' active' : '') + '" data-act="booktab" data-id="' + tb[0] + '">' + tb[1] + '</button>'; }).join('') + '</div>' +
       (UI.bookTab === 'titel' && UI.lifeTitles ? '<div class="grid g-book titles"><div class="list">' + UI.lifeTitles() + '</div></div>' :
+      UI.bookTab === 'sets' && UI.themesBook ? '<div class="grid g-book sets"><div class="list">' + UI.themesBook() + '</div></div>' :
       '<div class="grid g-book">' + (cards || '<div class="sec">' + (UI.bookTab === 'hyb' ? 'Hybride gibt es nur durch Kreuzen.' : 'Noch keine Farbvariante entdeckt. Züchte fleißig – jedes Ei ohne Mutation erhöht die Chance fürs nächste.') + '</div>') + '</div>');
   }
   function formTile(sp, v) {                           // eine Form der Art: normal ('') oder eine Variante
@@ -181,7 +182,7 @@
       return true;
     }
     if (act === 'book') { UI.bookSp = null; UI.openBook(); return true; }
-    if (act === 'booktab') { UI.bookTab = id; UI.bookScroll = 0; const g = $('#modal .grid.g-book'); if (g) g.scrollTop = 0; UI.openBook(); return true; }
+    if (act === 'booktab') { UI.bookTab = id; UI.themeSel = null; UI.bookScroll = 0; const g = $('#modal .grid.g-book'); if (g) g.scrollTop = 0; UI.openBook(); return true; }
     if (act === 'booksp') { UI.openBook(id); return true; }
     if (act === 'bookback') { UI.bookSp = null; UI.openBook(); return true; }
     if (act === 'bookform') { UI.bookForm = id; UI.openBook(); return true; }
