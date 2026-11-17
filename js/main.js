@@ -321,6 +321,7 @@
      rafMs = geglätteter Takt des Bildschirms; erst unter 10 ms (über 100 Hz) wird gedrosselt, 60/75/90 Hz laufen unverändert (kein Stottern). */
   const FRAME_MS = 1000 / 60;
   let nextAt = 0, prevTs = 0, rafMs = 16.7;
+  let holdT = 0;
   function frame(ts) {
     requestAnimationFrame(frame);
     const d = ts - prevTs; prevTs = ts;
@@ -339,8 +340,13 @@
     else if (wall > 1.5) AA.catchUp(wall * AA.speed());      // Tab war im Hintergrund / Rechner hat geschlafen
     else if (wall > 0) AA.tick(wall * AA.speed(), wall);
     V.update(dt);
-    ctx.setTransform(R, 0, 0, R, 0, 0);
-    V.render(ctx);
+    const hold = AA.assets.lean && UI.modalKind && UI.modalKind !== 'mini';      // Handy: hinter einem Fenster (Shop, Sammelbuch …) nur zweimal pro Sekunde zeichnen – spart Grafik-Speicher und Akku
+    if (hold) holdT -= dt;
+    if (!hold || holdT <= 0) {
+      holdT = 0.5;
+      ctx.setTransform(R, 0, 0, R, 0, 0);
+      V.render(ctx);
+    }
     AA.mini.frame(dt);
     uiT -= dt; if (uiT <= 0) { uiT = 0.25; UI.tick(); }
     saveT += dt; if (saveT > 10) { saveT = 0; AA.save(); }
@@ -368,8 +374,27 @@
     };
     if (C && C.on) C.before(go); else go();
   }
+  /* Absturz-Spur (17.11.2026): Vor jedem Fenster merkt sich das Spiel kurz, was gerade passiert; geht die Seite normal in den Hintergrund oder
+     zu, gilt das als sauber. Fehlt das beim nächsten Start, wurde die Seite abgeschossen (z. B. iOS wegen Speicher) – dann landet ein kurzer
+     Eintrag in s.diag (geht mit dem Spielstand in die Wolke; dort lässt sich nachsehen, wobei und auf welchem Gerät es passierte). */
+  const CRUMB = 'aa-crumb', CRUMB_OK = 'aa-crumb-ok';
+  AA.crumb = function (what) { try { localStorage.setItem(CRUMB, JSON.stringify({ t: Date.now(), a: String(what).slice(0, 60), imgs: AA.assets.img ? Object.keys(AA.assets.img).length : 0 })); } catch (e) { /* voll: egal */ } };
+  function crumbOk() { try { localStorage.setItem(CRUMB_OK, String(Date.now())); } catch (e) { /* egal */ } }
+  function crumbCheck() {
+    try {
+      const c = JSON.parse(localStorage.getItem(CRUMB) || 'null'), ok = +localStorage.getItem(CRUMB_OK) || 0, s = AA.state;
+      localStorage.removeItem(CRUMB);
+      if (!c || !s || AA.visit || c.t <= ok || Date.now() - c.t > 30 * 60000) return;
+      const n = navigator, d = { at: c.t, a: c.a, imgs: c.imgs, ua: String(n.userAgent || '').slice(0, 180), dpr: window.devicePixelRatio || 1, w: window.innerWidth, h: window.innerHeight,
+        app: !!(n.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)), lean: !!AA.assets.lean, mem: n.deviceMemory || null };
+      s.diag = (Array.isArray(s.diag) ? s.diag : []).concat([d]).slice(-6);
+      AA.save();
+    } catch (e) { /* kaputte Spur: egal */ }
+  }
+  AA.crumbOk = crumbOk;
   function start(back) {
     canvas = $('#cv'); ctx = canvas.getContext('2d');
+    crumbCheck();
     AA.audio.on = !!AA.state.settings.sound;
     AA.audio.mode = 'rec'; AA.audio.amb = AA.state.settings.amb !== false;     // Runde 11: nur noch die neuen Klänge; Blubbern im Hintergrund
     fit();
@@ -382,9 +407,9 @@
     canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     canvas.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
-    document.addEventListener('visibilitychange', function () { if (document.hidden) AA.save(); });
-    window.addEventListener('pagehide', function () { AA.save(); });
-    window.addEventListener('beforeunload', function () { AA.save(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { AA.save(); crumbOk(); } });
+    window.addEventListener('pagehide', function () { AA.save(); crumbOk(); });
+    window.addEventListener('beforeunload', function () { AA.save(); crumbOk(); });
     AA.assets.load(function (p) { $('#load-fill').style.width = Math.round(p * 100) + '%'; }).then(function () {
       V.rebuild();
       UI.init();

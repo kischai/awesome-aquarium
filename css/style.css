@@ -1018,3 +1018,15 @@ img.av.gold { border-color: #ffd34d; box-shadow: 0 0 0 2px #e0a800, 0 2px 0 #b07
 .cl-tb { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .rk-ttl { display: block; font-weight: 800; }
 .fcard .pbdg i { font-size: 12px; }
+
+/* ---------- 17.11.2026: Handy sparsam (.lite, js/assets.js) – Absturz der Home-Bildschirm-App beim Öffnen des Shops ----------
+   Listen ohne CSS-Filter und ohne Dauer-Animation (jedes gefilterte Bild braucht auf iOS einen eigenen Zwischenspeicher), Grau/Blass
+   über Deckkraft; Karten außerhalb des sichtbaren Bereichs überspringt der Browser (content-visibility). */
+.lite .card .pic img, .lite .card.is-other .pic img, .lite .bpic img, .lite .ts-pic img, .lite .pic.big img, .lite .bbig img { filter: none; animation: none; }
+.lite .card.is-locked .pic img { filter: none; opacity: .38; }
+.lite .card.is-other .pic img { opacity: .7; }
+.lite .bcard.unknown .bpic img, .lite .ts-item.unknown .ts-pic img { filter: none; opacity: .14; }
+.lite .bbig img.sil { filter: brightness(0) opacity(.3); }
+.lite .grid .card, .lite .grid .bcard, .lite .ts-item, .lite .tset { content-visibility: auto; contain-intrinsic-size: auto 220px; }
+.lite .grid .bcard, .lite .ts-item { contain-intrinsic-size: auto 120px; }
+.lite .tset { contain-intrinsic-size: auto 90px; }

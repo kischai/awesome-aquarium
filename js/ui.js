@@ -112,6 +112,8 @@
     m.className = cls || '';
     m.innerHTML = html;
     $('#overlay').classList.remove('hidden');
+    if (AA.assets.watchImgs) AA.assets.watchImgs(m);   // Handy: Bilder erst beim Hinscrollen (js/assets.js)
+    if (AA.crumb) AA.crumb('open:' + kind + (kind === 'store' ? ':' + UI.storeTab : (kind === 'book' ? ':' + UI.bookTab : '')));      // Absturz-Spur (js/main.js)
   };
   UI.close = function () {
     const was = UI.modalKind;

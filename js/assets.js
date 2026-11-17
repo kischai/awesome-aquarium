@@ -25,6 +25,9 @@
   const NET = navigator.connection || {};
   As.lean = window.AA_LEAN !== undefined ? !!window.AA_LEAN : HOSTED && !window.AA_EAGER && !!(NET.saveData || /2g|3g/.test(NET.effectiveType || '') ||
     (navigator.deviceMemory && navigator.deviceMemory < 4) || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
+  /* 17.11.2026: Handy als App vom Home-Bildschirm stürzte beim Öffnen des Shops ab (iOS beendet Web-Apps mit zu viel Bild- und Ebenen-Speicher).
+     Sparsam heißt darum auch: .lite – Listen ohne CSS-Filter (Schatten, Grau), Vorschaubilder erst, wenn sie ins Bild scrollen (As.watchImgs). */
+  try { document.documentElement.classList.toggle('lite', As.lean); } catch (e) { /* ohne DOM (Tests): egal */ }
   /* Runde 19: Deko, die das Bild einer anderen benutzt (def.as – die Set-Pokale nehmen den Goldpokal): Schlüssel umlenken */
   function real(key) {
     if (!AA.DECO_BY) return key;
@@ -49,12 +52,37 @@
     key = real(key);
     if (!As.hasThumb(key)) return As.src(key);
     const tk = 'th/' + key;
-    if (lazy) { As.want(tk); return BLANK + '#' + tk; }      // lazy: Platzhalter ins HTML, das Bild setzt As.refreshImgs danach – so bleibt das HTML klein (Shop: 0,1 statt 3 MB)
+    if (lazy) { if (!As.lean) As.want(tk); return BLANK + '#' + tk; }      // lazy: Platzhalter ins HTML, das Bild setzt As.refreshImgs danach – so bleibt das HTML klein (Shop: 0,1 statt 3 MB); sparsam: erst beim Hinscrollen (As.watchImgs)
     return As.src(tk);
   };
   As.refreshImgs = function () {
     if (!HOSTED || !window.AA_BUNDLE) return;
-    document.querySelectorAll('img[src^="' + BLANK + '#"]').forEach(function (im) { const u = window.AA_BUNDLE[im.getAttribute('src').slice(BLANK.length + 1)]; if (u) im.src = u; });
+    document.querySelectorAll('img[src^="' + BLANK + '#"]').forEach(function (im) {
+      if (io && im.dataset.lz === '1') return;          // sparsam: noch nicht ins Bild gescrollt – bleibt Platzhalter (As.watchImgs)
+      const u = window.AA_BUNDLE[im.getAttribute('src').slice(BLANK.length + 1)]; if (u) im.src = u;
+    });
+  };
+  /* Sparsam (Handy): Bilder in einem Fenster (Shop, Sammelbuch …) erst holen und setzen, wenn sie in die Nähe des sichtbaren Bereichs kommen.
+     Vorher dekodierte der Fisch-Reiter alle ~260 Vorschaubilder auf einmal (samt Filtern) – zu viel für iOS als Home-Bildschirm-App. */
+  let io = null;
+  As.watchImgs = function (box) {
+    if (io) { io.disconnect(); io = null; }
+    if (!HOSTED || !As.lean || !window.IntersectionObserver || !box) return false;
+    const L = box.querySelectorAll('img[src^="' + BLANK + '#"]');
+    if (!L.length) return false;
+    const sc = box.querySelector('.grid') || null;
+    io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        const im = e.target, src = im.getAttribute('src') || '';
+        io.unobserve(im); im.dataset.lz = '0';
+        if (src.indexOf(BLANK + '#') !== 0) return;
+        const tk = src.slice(BLANK.length + 1), u = window.AA_BUNDLE && window.AA_BUNDLE[tk];
+        if (u) im.src = u; else As.want(tk);          // Päckchen holen – As.refreshImgs setzt das Bild, sobald es da ist
+      });
+    }, { root: sc && sc.scrollHeight > sc.clientHeight + 4 ? sc : null, rootMargin: '240px 0px' });
+    L.forEach(function (im) { im.dataset.lz = '1'; io.observe(im); });
+    return true;
   };
   As.groupOf = function (key) { return GROUP[key] || null; };
   /* alle Bilder, die das Spiel laut js/data.js braucht (plus hd/ und sad/ aus den Päckchen) – auch für die Tests: fehlt eins davon? */
@@ -85,7 +113,8 @@
   As.loadGroup = function (g) {
     if (As.wait[g]) return As.wait[g];
     return (As.wait[g] = new Promise(function (res) {
-      const fin = function () { Promise.all(PACK[g].map(decode)).then(function () { As.done[g] = true; for (const k in As.tint) if (As.tint[k] === null) delete As.tint[k]; As.refreshImgs(); res(); if (AA.emit) AA.emit('assets', g); }); };
+      const thumbsOnly = /^t-(fish|deco)-/.test(g);      // Vorschaubilder für Listen braucht nur <img src> – keine Bild-Objekte vorab dekodieren (spart Speicher auf dem Handy)
+      const fin = function () { (thumbsOnly ? Promise.resolve() : Promise.all(PACK[g].map(decode))).then(function () { As.done[g] = true; for (const k in As.tint) if (As.tint[k] === null) delete As.tint[k]; As.refreshImgs(); res(); if (AA.emit) AA.emit('assets', g); }); };
       const sc = document.createElement('script');
       sc.src = 'js/pack/' + g + '.js' + (HOSTED && PV[g] ? '?v=' + PV[g] : '');      // im Netz mit Kurz-Prüfsumme: so darf der Browser Päckchen ewig aufheben und lädt nach einem Update trotzdem frisch
       sc.onload = fin; sc.onerror = fin;
