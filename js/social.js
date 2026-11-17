@@ -17,12 +17,43 @@
      Runde 11: 1.000.000 Münzen und das höchste Level · Runde 14: 2.000.000 Münzen und 1.000.000 Perlen – sonst bleibt der Stand, wie er ist.
      Rechnet erst alles aus und übernimmt es dann in einem Rutsch: Ein Geschenk kann das Laden nie stören (nicht bei einem Freund zu Besuch). */
   AA.GIFTS = [{ id: 'r11-damian', created: 1794340217986, coins: 1000000, maxLevel: true },
-    { id: 'r14-damian', created: 1794340217986, coins: 2000000, pearls: 1000000 }];
+    { id: 'r14-damian', created: 1794340217986, coins: 2000000, pearls: 1000000 },
+    /* 17.11.2026: Damian schenkt Shali „Parzival“, einen Clownfisch in Sternennacht (giveFish unten) */
+    { id: 'r17-shali-parzival', created: 1794846638798, from: 'Damian', fish: { sp: 'clown', v: 'night', name: 'Parzival', sex: 'm' } }];
+  /* Ein Fisch als Geschenk: erwachsen und satt, ins passende Becken mit dem meisten Platz (bei Gleichstand das gerade offene). Ist alles voll,
+     kommt er trotzdem – das Becken ist dann einen über der Grenze, Kaufen und Paaren gehen dort erst wieder, wenn einer auszieht.
+     Gibt es kein Becken mit passendem Wasser, bleibt das Geschenk liegen und kommt beim nächsten Laden. Ins Sammelbuch wie ein Schlüpfling
+     (1 = entdeckt, die Belohnung wartet), aber ohne Ereignisse: Der Spielstand wird hier gerade erst geladen. */
+  function giveFish(s, g) {
+    const F = g.fish, def = AA.FISH_BY[F.sp];
+    if (!def || !Array.isArray(s.tanks)) return;
+    let best = null, room = -1e9;
+    s.tanks.forEach(function (t, i) {
+      if (!t || !Array.isArray(t.fish) || !AA.SIZES[t.size] && !t.ocean && !t.deep || !AA.livesIn(def, t)) return;
+      const free = AA.cap(t) - t.fish.length - (Array.isArray(t.eggs) ? t.eggs.length : 0) + (i === s.active ? 0.5 : 0);
+      if (free > room) { room = free; best = t; }
+    });
+    if (!best) return;
+    const f = { id: AA.uid(), sp: def.id, name: AA.cleanName(F.name) || AA.pick(AA.NAMES), sex: F.sex === 'f' ? 'f' : 'm', age: def.grow, adult: true,
+      hunger: 1, starve: 0, sick: false, tricks: [], trainPh: -1, born: +s.clock || 0, g: AA.shopGenes(), gift: String(g.from || '').slice(0, 20) };      // hunger 1 = satt
+    if (F.v && AA.VAR_BY[F.v]) f.v = F.v;
+    s.book = s.book && typeof s.book === 'object' ? s.book : {};
+    const b = s.book[def.id] && typeof s.book[def.id] === 'object' ? s.book[def.id] : (s.book[def.id] = { n: 0, v: {} });
+    b.v = b.v && typeof b.v === 'object' ? b.v : {};
+    const fresh = !b.n || !!(f.v && !b.v[f.v]);
+    if (!b.n) b.n = 1;
+    if (f.v && !b.v[f.v]) { b.v[f.v] = 1; s.stats = s.stats || {}; s.stats.variants = (+s.stats.variants || 0) + 1; }
+    best.fish.push(f);
+    s.gifts[g.id] = Date.now();
+    s.news = s.news || {};
+    s.news.present = { from: f.gift, name: f.name, sp: def.id, v: f.v || '', tank: String(best.name || ''), book: fresh };
+  }
   function giveGifts(s) {
     if (AA.loadingGuest) return;                      // zu Besuch bei einem Freund: dessen Stand nur ansehen, nichts schenken
     s.gifts = s.gifts && typeof s.gifts === 'object' ? s.gifts : {};
     AA.GIFTS.forEach(function (g) {
       if (s.gifts[g.id] || +s.created !== g.created) return;
+      if (g.fish) { try { giveFish(s, g); } catch (e) { /* lieber kein Geschenk als ein kaputter Spielstand */ } return; }
       let nw;
       try {
         nw = { coins: Math.max(0, Math.round(+s.coins || 0)) + (g.coins || 0), pearls: Math.max(0, Math.round(+s.pearls || 0)) + (g.pearls || 0), xp: s.xp, level: s.level, lv: 0 };

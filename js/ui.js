@@ -457,6 +457,11 @@
       li.push('⭐ <b>Neu: XP fürs Großziehen</b> – jeder Fisch, der bei dir erwachsen wird, bringt Erfahrung (Clownfisch ' + AA.FISH_BY.clown.xp + ', Blobfisch ' + AA.FISH_BY.blobfish.xp + ').');
       li.push('🌈 Farbvarianten sind seltener geworden (1 % je Ei), Farbfutter wirkt für die nächsten 3 Eier, der Markt erholt sich schon nach einer halben Stunde.');
     }
+    if (n.present) {                                   // 17.11.2026: ein Fisch als Geschenk (js/social.js, giveFish)
+      const P = n.present, def = AA.FISH_BY[P.sp], V = P.v && AA.VAR_BY[P.v];
+      li.push('🎁 <b>Geschenk' + (P.from ? ' von ' + esc(P.from) : '') + ':</b> ' + esc(P.name) + ', ein ' + (V ? esc(V.name) + '-' : '') + esc(def ? def.name : P.sp) +
+        (P.tank ? ', schwimmt jetzt in „' + esc(P.tank) + '“' : '') + '.' + (P.book ? ' Im Sammelbuch wartet noch eine Belohnung.' : ''));
+    }
     if (n.curve) {                                     // Runde 16: flachere Level-Kurve hat jemanden direkt aufsteigen lassen (state.js)
       const k = n.curve.to - n.curve.from;
       li.push('📈 <b>Schneller leveln:</b> Ab Level 31 braucht jedes Level jetzt viel weniger XP. Du bist direkt auf Level ' + n.curve.to + ' gestiegen – +' + k + (k === 1 ? ' Perle' : ' Perlen') + '.');
@@ -706,6 +711,7 @@
           if (o && o.pay > AA.fishValue(f.d)) notes.push('📦 <b>' + esc(o.name) + '</b> zahlt ' + fmt(o.pay) + ' Münzen – liefern statt verkaufen (Knopf auf der Karte oder im Büro)?');
           if (cl === 'S' || cl === 'A') notes.push('🧬 <b>Klasse ' + cl + '</b> – ein Zuchttier: Babys erben die Gene. Behalten lohnt sich oft mehr.');
           if (f.d.v) notes.push('✨ <b>Farbvariante ' + esc(AA.VAR_BY[f.d.v].name) + '</b> (' + AA.VAR_BY[f.d.v].rare + '): vererbt ihre Farbe an ' + Math.round(AA.VAR.inherit1 * 100) + ' % der Eier.');
+          if (f.d.gift) notes.push('🎁 Ein Geschenk von <b>' + esc(f.d.gift) + '</b>.');
           return notes.length ? '<div class="note warn">' + notes.join('<br>') + '</div>' : '';
         })() +
         '<div class="row end"><button class="btn grey" data-act="close">Behalten</button><button class="btn green" data-act="sellyes">Verkaufen</button></div></div>', 'small');
