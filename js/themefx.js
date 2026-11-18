@@ -369,6 +369,34 @@
         ctx.restore();
       }
     },
+    jellyglow: {                                       // Runde 20b: Quallen-Ballett – kleine Leucht-Quallen pulsieren langsam nach oben
+      step: function (dt) {
+        if (!st.init) { st.init = true; for (let i = 0; i < 9; i++) P.push({ x: rnd(40, W - 40), y: rnd(G.top + 60, G.fTop + 40), vx: rnd(-4, 4), vy: rnd(-12, -6), ph: Math.random() * TAU, s: rnd(7, 13), col: pick(['#ffb4f0', '#c8b8ff', '#8ff6ff', '#ffd2a8']) }); }
+        P.forEach(function (p) {
+          p.ph += dt * 1.6;
+          const push = Math.max(0, Math.sin(p.ph));      // Schub beim Zusammenziehen
+          p.y += p.vy * (0.3 + 1.5 * push) * dt; p.x += (p.vx + Math.sin(p.ph * 0.37) * 4) * dt;
+          if (p.y < G.top + 24) { p.y = G.fTop + 50; p.x = rnd(40, W - 40); }
+          if (p.x < 10) p.x = W - 12; if (p.x > W - 10) p.x = 12;
+        });
+      },
+      glow: function (ctx) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+        P.forEach(function (p) {
+          const q = Math.sin(p.ph), r = p.s * (1 - 0.12 * q), hh = p.s * (0.8 + 0.12 * q);
+          ctx.globalAlpha = 0.4 + 0.15 * q; ctx.drawImage(glow(p.col), p.x - r * 2, p.y - r * 1.7, r * 4, r * 3.4);
+          ctx.fillStyle = p.col; ctx.globalAlpha = 0.3 + 0.1 * q;
+          ctx.beginPath(); ctx.ellipse(p.x, p.y, r, hh, 0, Math.PI, TAU); ctx.fill();
+          ctx.strokeStyle = p.col; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.3;
+          for (let k = -1; k <= 1; k++) {
+            ctx.beginPath(); ctx.moveTo(p.x + k * r * 0.5, p.y);
+            ctx.quadraticCurveTo(p.x + k * r * 0.5 + Math.sin(p.ph * 1.3 + k) * 3, p.y + p.s * 1.1, p.x + k * r * 0.4 + Math.sin(p.ph + k) * 4, p.y + p.s * 2.2);
+            ctx.stroke();
+          }
+        });
+        ctx.restore();
+      }
+    },
     whale: { pass: PASS.whale },
     snow: { flakes: { n: 56, vy: [14, 26], s: [1.6, 3.4], sw: 14, col: 'rgba(255,255,255,0.9)' } }
   };

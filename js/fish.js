@@ -155,6 +155,8 @@
       const id = this.nextTrick();
       if (id && this.startTrick(id)) return;
     }
+    if (this.def.flash && dist < 380) { this.flashT = 1.5; this.say('❗', 0.9); AA.audio.play('splash'); return; }      // Runde 20b: Fliegender Knurrhahn klappt die Flügelflossen auf
+    if (this.def.spines && dist < 300) { this.flashT = 1.5; this.say('⚠️', 1.1); return; }      // Runde 20b: Kaninchenfisch stellt die Giftstacheln auf
     if (this.def.still) { if (dist < 320) this.say('😒', 1.3); return; }      // Steinfisch: lässt sich von Klopfen nicht aus der Ruhe bringen
     if (dist < 300) {
       const k = 1 - dist / 300, sp = 230 + 280 * k;
@@ -218,7 +220,13 @@
     else x = AA.rand(lim[0], lim[1]);
     let top = G.top + h * 0.5, bot = AA.floorY(z) - h * 0.5;
     const hab = this.def.hab;
-    if (night || this.d.sick) y = AA.rand(bot - 110, bot);
+    if (this.def.surface) {                           // Runde 20b: Galeere, Blauer Drache – treiben an der Oberfläche, die Strömung schiebt sie quer übers Becken
+      if (!this.cur) this.cur = Math.random() < 0.5 ? -1 : 1;
+      x = this.x + this.cur * AA.rand(180, 420);
+      if (x < lim[0] + s || x > lim[1] - s) { this.cur = -this.cur; x = this.x + this.cur * AA.rand(160, 360); }
+      y = top - h * 0.1;
+    }
+    else if (night || this.d.sick) y = AA.rand(bot - 110, bot);
     else if (hab === 'bottom') y = Math.random() < 0.94 ? AA.rand(bot - 6, bot) : AA.rand(bot - 110, bot - 40);              // Bodenbewohner: fast immer direkt auf dem Grund
     else if (hab === 'lurk') y = this.outT > 0 && !night ? (Math.random() < 0.45 ? AA.rand(bot - 30, bot) : AA.rand(top + (bot - top) * 0.3, bot - 30))   // auf Ausflug: auch quer durchs freie Wasser
       : (Math.random() < 0.9 ? AA.rand(bot - 20, bot) : AA.rand(bot - 140, bot));
@@ -305,6 +313,35 @@
       }
       const left = (this.denIdx % 2) === 0;                                // keine Höhle: in eine hintere Ecke
       return { tx: left ? 70 + s * 0.3 : W - 70 - s * 0.3, ty: AA.floorY(0.12, left ? 80 : W - 80) - h * 0.5, b: 1, r: 10, z: 0.12, face: left ? 1 : -1 };
+    }
+    // Runde 20b: Titan-Drückerfisch verteidigt sein Revier – ein größeres Deko-Stück in seiner Nähe – und scheucht andere Fische weg (wie der Clownfisch)
+    if (def.biter && d.adult && !night && !d.sick) {
+      const me = this;
+      if (this.revier && tank.deco.indexOf(this.revier) < 0) this.revier = null;
+      if (!this.revier) {
+        let bd = 1e9;
+        for (let i = 0; i < tank.deco.length; i++) { const o = tank.deco[i], dd = AA.DECO_BY[o.type]; if (!dd || dd.crawl || dd.path || dd.flat || (dd.w || 0) < 90) continue; const q = Math.abs(o.x - this.x); if (q < bd) { bd = q; this.revier = o; } }
+      }
+      const o = this.revier;
+      if (o) {
+        const b = V.decoBox(o), cy = b.y + b.h * 0.5;
+        if (this.state === 'defend') {
+          const g = this.defTarget; this.defTime -= dt;
+          if (g && !g.ghost && !g.dead && this.defTime > 0) {
+            if (Math.hypot(g.x - this.x, g.y - this.y) < s * 0.6 + g.size() * 0.45) { g.shoo(b.cx); this.defTime = Math.min(this.defTime, 0.25); }
+            return { tx: g.x, ty: g.y, b: 2.6, r: 2, z: g.z };
+          }
+          this.state = 'wander';
+        }
+        this.defT -= dt;
+        if (this.defT <= 0) {
+          this.defT = AA.rand(4, 9);
+          if (Math.hypot(this.x - b.cx, this.y - cy) < 420) {
+            const R = Math.max(150, b.w * 0.8), intr = V.fish.find(function (g) { return g !== me && !g.def.biter && !g.def.venom && !g.ghost && !g.busy() && g.state !== 'hunt' && Math.hypot(g.x - b.cx, g.y - cy) < R && Math.abs(g.z - o.z) < 0.4; });
+            if (intr) { this.state = 'defend'; this.defTarget = intr; this.defTime = 1.6; this.say('😤', 1.2); return { tx: intr.x, ty: intr.y, b: 2.6, r: 2, z: intr.z }; }
+          }
+        }
+      }
     }
     // 4) Clownfisch mit Anemone: wohnt darin, kuschelt sich hinein, verjagt Eindringlinge
     if (def.home && this.host && !d.sick) {
@@ -510,6 +547,19 @@
       if (this.sumT <= 0) { this.sumT = AA.rand(35, 80); if (!d.sick && d.hunger > 0.3 && this.startTrick('loop', true)) return; }
     }
 
+    if (this.flashT > 0) this.flashT -= dt;          // Runde 20b: Knurrhahn – Flügel auf (1,5 s)
+    if (def.yawn && !V.photoMode) {                   // Runde 20b: Gelber Angler gähnt ab und zu riesig (Augen halb zu)
+      if (this.yawnT > 0) { this.yawnT -= dt; this.eyeShut = this.yawnT > 0.2; }
+      this.yawnW = (this.yawnW === undefined ? AA.rand(15, 40) : this.yawnW) - dt;
+      if (this.yawnW <= 0 && this.state === 'wander') { this.yawnW = AA.rand(30, 70); this.yawnT = 1.6; this.say('🥱', 1.6); }
+    }
+    if ((def.biter || def.id === 'bluedragon') && d.adult && !d.sick && !night && !this.ghost && !V.photoMode && this.state === 'wander') {
+      this.seekW = (this.seekW === undefined ? AA.rand(def.biter ? 40 : 20, def.biter ? 90 : 60) : this.seekW) - dt;
+      if (this.seekW <= 0) {
+        if (def.biter) { if (AA.state.settings.bite !== false && AA.biteTarget && AA.biteTarget()) { this.state = 'bite'; this.timer = 7; } else this.seekW = 12; }
+        else { const mw = AA.seaPartner ? AA.seaPartner(this, 'manowar') : null; if (mw) { this.state = 'nibble'; this.timer = 25; this.partner = mw; } else this.seekW = AA.rand(30, 60); }
+      }
+    }
     const hungry = d.hunger < B.hungryBelow, starving = d.hunger <= 0.001;
     const s = this.size(), h = s * this.ar();
     const speed = def.speed * (d.adult ? 1 : 1.15) * (night && def.hab !== 'lurk' ? 0.4 : 1) * (d.sick ? 0.4 : (starving ? 0.65 : 1)) * (this.isLeader ? 0.82 : 1) * (this.tended > V.time ? 0.22 : 1);   // Lauerer sind nachtaktiv; wer gerade geputzt wird, hält still
@@ -613,9 +663,25 @@
           tx = P.x - this.dir * s * 0.5; ty = P.y; burst = 2.4; arriveR = 3; this.state = 'follow';
           if (this.holdId !== V.holdId && Math.hypot(P.x - this.x, P.y - this.y) < s * 0.8 + 30) { this.holdId = V.holdId; AA.trickDone(d); V.puff('star', this.x, this.y - h * 0.5, 2); }
         } else if (this.state === 'follow') { this.state = 'wander'; this.wait = 0.3; this.tx = this.x; this.ty = this.y; tx = this.x; ty = this.y; }
+        if (this.state === 'bite' || this.state === 'nibble') {      // Runde 20b: Titan-Drückerfisch beißt den Zeiger · Blauer Drache knabbert an der Galeere
+          const bite = this.state === 'bite', g = bite ? (AA.biteTarget ? AA.biteTarget() : null) : (this.partner && V.fish.indexOf(this.partner) >= 0 ? this.partner : null);
+          this.timer -= dt;
+          if (!g || this.timer <= 0 || (bite && AA.state.settings.bite === false)) { this.state = 'wander'; this.wait = 0.3; this.seekW = AA.rand(50, 100); this.partner = null; this.biteDir = 0; tx = this.x; ty = this.y; this.tx = tx; this.ty = ty; }
+          else {
+            const m = this.mouth(), gx = g.x, gy = bite ? g.y : g.y + g.size() * g.ar() * 0.12, mm = this.rig().mouth || NO_RIG.mouth;
+            // Anflugseite festhalten (wie beim Futter): sonst steht er mit der Körpermitte auf dem Ziel und dreht sich hin und her, das Maul kommt nie an
+            if (!this.biteDir || (Math.abs(gx - this.x) > s * 0.9 && (gx >= this.x ? 1 : -1) !== this.biteDir)) this.biteDir = gx >= this.x ? 1 : -1;
+            tx = gx - this.biteDir * (mm[0] - 0.5) * s; ty = gy - (m.y - this.y); burst = bite ? 3.4 : 1.6; arriveR = 3; this.zT = bite ? 1 : g.z;
+            if (Math.hypot(gx - m.x, gy - m.y) < (bite ? 18 : 26) + s * 0.06) {
+              this.chomp = 1; this.state = 'wander'; this.wait = 0.8; this.partner = null; this.biteDir = 0;
+              if (bite) { this.seekW = AA.rand(180, 300); if (AA.titanBite) AA.titanBite(this, gx, gy); }      // höchstens alle 3–5 Minuten
+              else { this.seekW = AA.rand(45, 90); d.hunger = Math.max(d.hunger, 0.97); this.say('😋', 1.4); V.puff('spark', gx, gy, 3); AA.audio.play('eat'); }
+            }
+          }
+        }
         if (this.state === 'curious') { this.timer -= dt; if (this.timer <= 0) { this.state = 'wander'; this.wait = 0; } }
         if (this.state === 'hide') { burst = 1.5; this.timer -= dt; if (this.timer <= 0) { this.state = 'wander'; this.wait = 0; this.hideT = AA.rand(AA.HIDE.every[0], AA.HIDE.every[1]); } }
-        if (this.state !== 'food' && this.state !== 'follow' && this.state !== 'curious' && this.state !== 'hide') {
+        if (this.state !== 'food' && this.state !== 'follow' && this.state !== 'curious' && this.state !== 'hide' && this.state !== 'bite' && this.state !== 'nibble') {
           const o = this.behave(dt, V, tank, night);   // Runde 8: Höhle, Anemone, Schwarm, Putzerstation, Pflanze, Betteln
           if (o) { tx = o.tx; ty = o.ty; burst = o.b || 1; arriveR = o.r || 6; if (o.z !== undefined) this.zT = o.z; if (o.face) this.faceLock = o.face; }
           else if (BEH[this.state]) { this.state = 'wander'; this.wait = 0.2; this.tx = this.x; this.ty = this.y; tx = this.x; ty = this.y; }
@@ -637,9 +703,30 @@
       }
       if (this.dodgeT > 0) { this.dodgeT -= dt; if (this.state === 'wander') burst = Math.max(burst, 3); }      // Runde 14: verdeckter Grundfisch zieht flott um (sonst kriecht er ewig hinter Steinen entlang)
       const dx = tx - this.x, dy = ty - this.y, dist = Math.hypot(dx, dy);
+      if (def.still && this.state === 'wander' && dist > 120) burst = Math.max(burst, 3);      // Runde 20b: Steinfisch & Gelber Angler – weit weg vom Platz (z. B. nach dem Laden): zügig hin
       this.near = dist < Math.max(arriveR + 14, s * 0.1);      // (fast) am Ziel
       let dvx = 0, dvy = 0;
-      if (dist > arriveR) { const sp = Math.min(speed * burst, dist * 2.4 + 8); dvx = dx / dist * sp; dvy = dy / dist * sp; }
+      if (dist > arriveR) {
+        let sp = Math.min(speed * burst, dist * 2.4 + 8);
+        if (def.hop && def.hab === 'bottom' && this.state !== 'flee') {            // Runde 20b: hüpft ruckartig – kurzer Satz, dann Pause
+          const hp = (V.time * 1.25 + this.seed) % 1, on = hp < 0.24;
+          sp *= on ? 3.4 : 0.06;
+          dvy = on ? -Math.sin(hp / 0.24 * Math.PI) * 55 : 0;
+        }
+        dvx = dx / dist * sp; dvy += dy / dist * sp;
+      }
+      if (def.surface && (this.state === 'wander' || this.state === 'nibble')) {       // Runde 20b: Galeere & Blauer Drache haben Auftrieb – sie steigen immer wieder nach oben
+        const want = G.top + h * 0.4;
+        if (this.y > want + 4) dvy = Math.min(dvy, -Math.min(70, (this.y - want) * 0.9));
+      }
+      if (!def.venom && V.venoms && V.venoms.length && (this.state === 'wander' || this.state === 'school' || this.state === 'curious' || this.state === 'patrol')) {      // Runde 20b: Gift-Tieren (Quallen & Co.) weicht man aus – nur beim Umherschwimmen, nicht beim Fressen, Beißen, Balzen
+        for (let i = 0; i < V.venoms.length; i++) {
+          const o = V.venoms[i];
+          if (o === this || Math.abs(o.z - this.z) > 0.3) continue;
+          const ox = this.x - o.x, oy = this.y - o.y, r = o.size() * 0.55 + s * 0.4 + 26, dd = Math.hypot(ox, oy);
+          if (dd < r && dd > 0.01) { const kk = (1 - dd / r) * Math.max(60, speed * 2.4); dvx += ox / dd * kk; dvy += oy / dd * kk; }
+        }
+      }
       else if (this.state === 'wander') {
         this.wait -= dt;
         if (def.hab === 'bottom' && !d.sick) {          // Bodenfisch rastet auf dem Kies und gründelt ab und zu im Sand
@@ -660,7 +747,7 @@
         this.gapeT -= dt;
         if (this.gapeT <= 0) { this.gapeT = AA.rand(1.2, 2.2); if (def.hab === 'lurk') this.chomp = Math.max(this.chomp, 0.4); }
       }
-      const k = Math.min(1, dt * (burst > 1 ? 4.2 : 2.3));
+      const k = Math.min(1, dt * (def.hop ? 9 : (burst > 1 ? 4.2 : 2.3)));
       this.vx += (dvx - this.vx) * k; this.vy += (dvy - this.vy) * k;
       if (partner && Math.abs(this.x - partner.x) < s * 2) this.lookAt = partner.x; else this.lookAt = null;
     }
@@ -685,9 +772,15 @@
     const sp2 = Math.hypot(this.vx, this.vy);
     if (this.state === 'mate' && this.lookAt !== null && this.lookAt !== undefined) this.dir = this.lookAt > this.x ? 1 : -1;
     else if (this.state === 'food' && this.foodDir) this.dir = this.foodDir;      // beim Fressen: Blick zur Flocke, kein Hin-und-her
+    else if ((this.state === 'bite' || this.state === 'nibble') && this.biteDir) this.dir = this.biteDir;      // Runde 20b: Biss / Knabbern – Blick zum Ziel
     else if (this.faceLock && (this.near || Math.hypot(this.vx, this.vy) < 5)) this.dir = this.faceLock;   // angekommen: in der Höhle Kopf nach draußen, im Schwarm wie der Anführer.
     // (Früher galt das schon unter Tempo 40 – Zitteraal und Wels sind nie schneller und schwammen deshalb rückwärts in ihre Höhle.)
     else if (this.sk && this.sk.on) { /* klebt: die Richtung gibt das Festsaugen vor */ }
+    else if (this.rig().kind === 'ribbon' && this.state !== 'food' && this.state !== 'den') {       // Runde 20b: Geistermesserfisch – kurze Strecken rückwärts, ohne Wende
+      const nd = this.vx > 0 ? 1 : -1, rev = Math.abs(this.vx) > 7 && nd !== this.dir;
+      this.revT = rev ? (this.revT || 0) + dt : 0;
+      if (rev && (this.revT > 2.2 || Math.abs(this.vx) > 80)) { this.dir = nd; this.turnT = 0.45; this.revT = 0; }
+    }
     else if (Math.abs(this.vx) > (this.turnT > 0 ? 40 : 7)) { const nd = this.vx > 0 ? 1 : -1; if (nd !== this.dir) { this.dir = nd; this.turnT = 0.45; } }
     if (this.turnT > 0) this.turnT -= dt;            // nach einer Wende kurz träge – kein Zappeln bei kleinen Geschwindigkeiten
     this.face += (this.dir - this.face) * Math.min(1, dt * 9);
@@ -727,14 +820,16 @@
 
   Fish.prototype.draw = function (ctx, t) {
     AA.lureK = this.lureE || 0; AA.lureT = t + this.seed * 7;     // Runde 14: Angel-Wedeln (AA.drawLimbed liest das für Teile mit occ)
+    AA.ribbonDir = this.vx * this.dir < -5 ? -1 : 1;              // Runde 20b: schwimmt der Geistermesserfisch rückwärts, läuft die Flossenwelle andersherum
     this.drawFish(ctx, t);
-    AA.lureK = 0;
+    AA.lureK = 0; AA.ribbonDir = 1;
   };
   Fish.prototype.drawFish = function (ctx, t) {
     const img = this.img(), s = this.size(), ar = this.ar(), w = s, h = s * ar, rig = this.rig(), sk = this.sk, on = !!(sk && sk.on);
     const bob = this.state === 'trick' || on || (this.def.still && this.resting) || (this.state === 'den' && this.resting) ? 0 : Math.sin(t * 1.4 + this.seed) * 2.2;      // Runde 14: Muräne in der Höhle wippt nicht
     ctx.save();
     ctx.translate(this.x, this.y + bob);
+    if (this.def.alpha) ctx.globalAlpha *= this.def.alpha;      // Runde 20b: Würfel- und Irukandji-Qualle sind fast durchsichtig
     if (!img) { ctx.fillStyle = '#ff9a3c'; ctx.beginPath(); ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, TAU); ctx.fill(); ctx.restore(); return; }
     if (on && sk.mode === 'glass') {                  // Saugwels an der Frontscheibe: Unterseite, Kopf in Kriechrichtung (das Bild schaut nach rechts)
       ctx.rotate(sk.ang);
@@ -747,6 +842,7 @@
       ctx.rotate(AA.clamp(this.vx * 0.0022, -0.3, 0.3) + this.spin * this.dir + Math.sin(t * 1.1 + this.seed) * 0.03);
       if (this.chomp > 0) { const c = Math.sin(this.chomp * Math.PI); ctx.scale(1 + c * 0.07, 1 - c * 0.06); }
       AA.drawBody(ctx, img, w, h, this.phase, rig, this.amp);
+      if (this.def.rainbow) drawRainbow(ctx, w, h, t + this.seed);      // Runde 20b: Rippenqualle – Lichtwellen über die Kämme
     } else {
       let fx = this.face;
       if (Math.abs(fx) < 0.12) fx = fx < 0 ? -0.12 : 0.12;
@@ -755,11 +851,21 @@
       if (this.def.inv) ctx.scale(1, -1);             // Rückenschwimmender Kongowels: immer Bauch nach oben
       if (rig.kind === 'up')                         // Seepferdchen: bleibt aufrecht, lehnt sich beim Schwimmen nur etwas nach vorn
         ctx.rotate(this.tilt * 0.3 + this.spin + AA.clamp(Math.abs(this.vx) * 0.004, 0, 0.2) + Math.sin(t * 1.2 + this.seed) * 0.04);
-      else if (rig.kind === 'flap' || rig.kind === 'eel')
+      else if (rig.kind === 'flap' || rig.kind === 'eel' || rig.kind === 'ribbon')
         ctx.rotate(this.tilt * 0.8 + this.spin);
-      else ctx.rotate(this.tilt + this.spin + Math.sin(this.phase + 2.4) * 0.035 * this.amp);
+      else ctx.rotate(this.tilt + this.spin + Math.sin(this.phase + 2.4) * 0.035 * this.amp + (this.def.sway ? Math.sin(t * 0.8 + this.seed) * 0.09 : 0));      // sway: Seedrache wiegt sich wie Tang
       if (this.chomp > 0) { const c = Math.sin(this.chomp * Math.PI); ctx.scale(1 + c * 0.09, 1 - c * 0.07); }
+      const fl = this.flashT > 0 ? Math.sin(Math.PI * Math.min(1, (1.5 - this.flashT) / 1.5)) : 0;
+      if (fl > 0) ctx.scale(1 + fl * 0.05, 1 + fl * (this.def.spines ? 0.12 : 0.3));      // Runde 20b: Knurrhahn – die Flügelflossen gehen auf · Kaninchenfisch – Stacheln hoch
+      if (this.yawnT > 0) { const e = Math.sin(Math.PI * (1 - this.yawnT / 1.6)); ctx.scale(1 - e * 0.04, 1 + e * 0.11); }      // Runde 20b: Gelber Angler gähnt
       AA.drawBody(ctx, img, w, h, this.phase, rig, this.amp);
+      if (fl > 0 && this.def.flash) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createRadialGradient(0, 0, h * 0.1, 0, 0, w * 0.6);
+        g.addColorStop(0, 'rgba(90,190,255,' + (0.45 * fl).toFixed(3) + ')'); g.addColorStop(1, 'rgba(90,190,255,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, w * 0.6, h * 0.62, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
     }
     if (this.sad()) AA.drawSad(ctx, this.key(), w, h, this.d.sick, t + this.seed, this.d.hunger <= 0.02 || this.d.sick, this.d.v);   // Schmollmund, hängendes Lid, Tränen
     if (this.eyeShut || this.d.sick) AA.drawBlink(ctx, rig, w, h, this.d.v);       // Babys haben keine Augen-Daten: ihr Lach-Auge ist schon zu
@@ -793,6 +899,21 @@
     ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, hw * 0.75, hw * 0.42, 0, 0, TAU); ctx.fill();
     ctx.restore();
     ctx.drawImage(im, x - hw / 2, y - hh / 2, hw, hh);
+  }
+  /* Runde 20b: Rippenqualle – über acht Kämme (Meridiane des Eis) wandern bunte Lichtpunkte von oben nach unten */
+  function drawRainbow(ctx, w, h, t) {
+    const rx = w * 0.4, ry = h * 0.36, cy = -h * 0.04;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 8; i++) {
+      const f = -0.86 + i * (1.72 / 7);
+      for (let j = 0; j < 3; j++) {
+        const q = ((t * 0.45 + i * 0.11 + j / 3) % 1), v = q * 2 - 1, x = f * rx * Math.sqrt(Math.max(0, 1 - v * v)), y = cy + v * ry;
+        ctx.globalAlpha = 0.55 * Math.sin(q * Math.PI);
+        ctx.fillStyle = 'hsl(' + Math.round((t * 90 + i * 45 + j * 120) % 360) + ',100%,68%)';
+        ctx.beginPath(); ctx.arc(x, y, w * 0.035, 0, TAU); ctx.fill();
+      }
+    }
+    ctx.restore();
   }
   /* traurig schaut ein Fisch, wenn er hungrig (unter einem Viertel) oder krank ist – oder das Becken völlig veralgt */
   Fish.prototype.sad = function () { const d = this.d; if (this.def.grim) return false; return d.sick || d.hunger < 0.25 || AA.tank().dirt > 0.75 || this.lonely; };      // grim: Steinfisch und Blobfisch schauen immer gleich   // lonely: Schwarmfisch ohne Schwarm

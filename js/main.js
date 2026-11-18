@@ -81,7 +81,8 @@
       V.select(fv || null); if (fv) AA.audio.play('pop');
       return;
     }
-    P.x = p.x; P.y = p.y; P.down = true; P.inside = true;
+    P.x = p.x; P.y = p.y; P.down = true; P.inside = true; P.touch = p.touch;
+    if (p.touch) V.lastTap = { x: p.x, y: p.y, t: V.time };          // Runde 20b: am Handy beißt der Titan-Drückerfisch in den letzten Fingertipp
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* egal */ }
     if (V.tool === 'hand' || V.tool === 'deco') {   // Deko-Modus (Runde 10): wie die Hand, nur Fische und Eier lassen sich nicht anklicken
       const deco = V.tool === 'deco';
@@ -98,7 +99,7 @@
       }
       const o = V.hitDeco(p.x, p.y), f = deco ? null : (V.hitFish(p.x, p.y) || (p.touch && !o ? V.hitFishNear(p.x, p.y, 34 * (V.ui || 1)) : null));
       if (o && !deco && AA.DECO_BY[o.type].daily && AA.state.active === 0 && AA.chestInfo().ready && !(f && f.z > o.z)) { collectChest(o); return; }
-      if (f) { V.select(f); AA.audio.play('pop'); return; }
+      if (f) { V.select(f); AA.audio.play('pop'); if (f.def.find && AA.findFish) AA.findFish(f); return; }      // Runde 20b: Irukandji – gefunden!
       const egg = deco ? null : V.hitEgg(p.x, p.y);
       if (egg) {                                     // Runde 12: antippen = Info-Fenster, ziehen = im Becken umlegen (entschieden beim Loslassen)
         const pe = V.eggPos(egg);
@@ -116,7 +117,7 @@
   }
   function onMove(e) {
     const p = pos(e), P = V.pointer;
-    P.x = p.x; P.y = p.y; P.inside = p.x >= 0 && p.y >= 0 && p.x <= W && p.y <= H;
+    P.x = p.x; P.y = p.y; P.inside = p.x >= 0 && p.y >= 0 && p.x <= W && p.y <= H; P.touch = p.touch;
     if (P.down) {
       if (drag && drag.size) {
         const qx = p.x - drag.gx - drag.ax, qy = p.y - drag.gy - drag.ay;

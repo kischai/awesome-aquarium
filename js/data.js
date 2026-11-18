@@ -354,6 +354,46 @@
       info: 'An Land watschelt er, unter Wasser fliegt er – die Flügel sind seine Paddel.' },
     { id: 'seal', name: 'Seehund', lvl: 35, water: 'salt', special: true, pearlOnly: true, pearls: 30, price: 420, sell: 475, hours: 64, len: 190, speed: 40, egg: '#b8bcc4',
       info: 'Kulleraugen, Schnurrhaare, Speckröllchen. Paddelt mit den Vorderflossen und lässt sich gern treiben.' },
+    /* ---------- Runde 20b: Bestell-Tiere und Quallen (eigene Werte, an die Nachbarn in der Tabelle angelehnt) ----------
+       biter  = greift alle paar Minuten den Mauszeiger an (Handy: den letzten Fingertipp), abschaltbar in ⚙️ (settings.bite)
+       venom  = giftig: andere Fische halten Abstand (js/fish.js) · jelly = Qualle (Puls-Rig „front“) · surface = treibt an der Oberfläche
+       hop    = hüpft ruckartig über den Boden · sway = wiegt sich beim Schweben wie eine Pflanze · flash = klappt beim Klopfen die Flügel auf
+       alpha  = halb durchsichtig · find = kommt erst ins Sammelbuch, wenn man das Tier im Becken antippt · rainbow = Regenbogen-Lichtwellen
+       spines = stellt beim Klopfen die Stacheln auf · yawn = gähnt ab und zu */
+    { id: 'flamegoby', name: 'Flammen-Garnelengrundel', lvl: 14, price: 64, sell: 74, hours: 24, len: 74, speed: 30, egg: '#ff5a1a', hab: 'bottom', hop: true,
+      info: 'Klein, rot getupft und mit einer riesigen Rückenflosse wie eine Fahne. Hüpft ruckartig über den Boden – ein Flummi mit Flosse.' },
+    { id: 'pyjama', name: 'Pyjama-Kardinalbarsch', lvl: 16, price: 72, sell: 83, hours: 26, len: 78, speed: 20, egg: '#e8d820', school: true,
+      info: 'Gelbes Gesicht, rote Augen, hinten getupft wie ein Schlafanzug. Schwebt fast reglos im Grüppchen – und die Väter brüten die Eier im Maul aus.' },
+    { id: 'moonjelly', name: 'Mondqualle', lvl: 18, price: 84, sell: 97, hours: 28, len: 96, speed: 18, egg: '#c8a8f0', hab: 'open', jelly: true,
+      info: 'Der Klassiker unter den Quallen: vier Ringe im Schirm, ein Saum aus feinen Fäden. Pulsiert gemütlich und ist völlig harmlos.' },
+    { id: 'rabbitfish', name: 'Streifen-Kaninchenfisch', lvl: 20, price: 95, sell: 109, hours: 30, len: 124, speed: 44, egg: '#ffd84a', algae: 0.15, venom: true, spines: true,
+      info: 'Goldene Längslinien und großer Appetit auf Algen: Das Becken veralgt 15 % langsamer. Bei Gefahr stellt er die giftigen Rückenstacheln auf.' },
+    { id: 'ghostknife', name: 'Geistermesserfisch', lvl: 22, water: 'fresh', price: 114, sell: 131, hours: 32, len: 168, speed: 30, egg: '#22222e', hab: 'lurk',
+      info: 'Schwarz wie die Nacht, mit weißer Nase und zwei Ringeln am Schwanz. Über seine lange Bauchflosse läuft eine Welle – so schwimmt er vorwärts UND rückwärts, ohne sich umzudrehen. Tagsüber versteckt, nachts unterwegs.' },
+    { id: 'compass', name: 'Kompassqualle', lvl: 24, price: 142, sell: 163, hours: 34, len: 86, speed: 20, egg: '#c8783a', hab: 'open', jelly: true, venom: true,
+      info: 'Braune Strahlen auf dem Schirm wie die Nadel eines Kompasses. Treibt im Sommer an der Adria – nicht anfassen, das brennt!' },
+    { id: 'cowfish', name: 'Langhorn-Kofferfisch', lvl: 27, price: 176, sell: 203, hours: 40, len: 112, speed: 28, egg: '#ffd21f',
+      info: 'Ein Kofferfisch mit Hörnern vorn und hinten – wie eine kleine Kuh. Schwirrt wie ein Hubschrauber durchs Becken; die Babys sind fast kugelrund.' },
+    { id: 'gurnard', name: 'Fliegender Knurrhahn', lvl: 29, price: 240, sell: 274, hours: 42, len: 136, speed: 24, egg: '#3a8ad6', hab: 'bottom', flash: true,
+      info: '„Läuft“ mit seinen Flossenfingern über den Boden. Klopfst du ans Glas, klappt er die riesigen blauen Flügelflossen auf – Schreck lass nach!' },
+    { id: 'titan', name: 'Titan-Drückerfisch', lvl: 31, price: 290, sell: 330, hours: 48, len: 140, speed: 46, egg: '#9a9a2a', biter: true,
+      info: 'Der Rambo des Riffs. Alle paar Minuten schießt er auf deinen Mauszeiger zu und beißt rein – Autsch! (Abschaltbar in ⚙️.) Manchmal lässt er Schmerzensgeld fallen.' },
+    { id: 'yellowangler', name: 'Gelber Anglerfisch', lvl: 33, price: 430, sell: 486, hours: 36, len: 116, speed: 14, egg: '#ffd21f', hab: 'bottom', still: true, front: true, yawn: true,
+      info: 'Warzig, knallgelb und tiefenentspannt: chillt nur am Boden und wedelt mit seiner rosa Angel. Fällt Futter in die Nähe – schnapp! Schneller, als man gucken kann.' },
+    { id: 'boxjelly', name: 'Würfelqualle', lvl: 36, price: 730, sell: 820, hours: 32, len: 66, speed: 36, egg: '#a8d8ff', hab: 'open', jelly: true, venom: true, alpha: 0.78,
+      info: 'Die Seewespe: eckiger, fast unsichtbarer Schirm. Als einzige Qualle kann sie richtig steuern – sie hat sogar Augen. Die anderen Fische halten lieber Abstand.' },
+    { id: 'irukandji', name: 'Irukandji-Qualle', lvl: 40, price: 1520, sell: 1715, hours: 50, len: 30, speed: 16, egg: '#ffc8e0', hab: 'open', jelly: true, venom: true, alpha: 0.55, find: true,
+      info: 'Nicht größer als ein Fingernagel und fast unsichtbar. Ins Sammelbuch kommt sie erst, wenn du sie im Becken gefunden und angetippt hast!' },
+    { id: 'seadragon', name: 'Seedrache (Fetzenfisch)', lvl: 42, price: 1950, sell: 2195, hours: 72, len: 150, speed: 14, egg: '#e8c43a', sway: true,
+      info: 'Blatt-Lappen wie Tang am ganzen Körper: Er schwebt im Zeitlupentempo und wiegt sich wie eine Pflanze. Bei ihm tragen die Väter die Eier am Schwanz.' },
+    { id: 'combjelly', name: 'Rippenqualle', lvl: 44, price: 2350, sell: 2645, hours: 72, len: 80, speed: 18, egg: '#d8c8ff', hab: 'open', jelly: true, rainbow: true, glow: '#c8b8ff', deep: 2,
+      info: 'Gar keine echte Qualle: Über ihre acht Wimpernkämme laufen Regenbogen-Lichtwellen. Sie nesselt nicht – gucken lohnt sich trotzdem.' },
+    { id: 'manowar', name: 'Portugiesische Galeere', lvl: 46, price: 2880, sell: 3240, hours: 72, len: 92, speed: 12, egg: '#c86ad8', hab: 'open', jelly: true, venom: true, surface: true,
+      info: 'Treibt mit einem lila Gas-Segel an der Wasseroberfläche und lässt sich von der Strömung quer übers Becken schieben. Die blauen Fäden darunter sind meterlang – und gefährlich.' },
+    { id: 'bluedragon', name: 'Blauer Drache', lvl: 48, price: 3420, sell: 3850, hours: 84, len: 76, speed: 12, egg: '#2a5ad6', hab: 'open', inv: true, surface: true, venom: true,
+      info: 'Eine winzige Meeresschnecke, silber-blau mit Finger-Fransen. Treibt bauchoben an der Oberfläche und knabbert am liebsten an der Portugiesischen Galeere – dann ist er satt.' },
+    { id: 'lionsmane', name: 'Löwenmähnen-Qualle', lvl: 52, price: 5300, pearls: 50, sell: 5960, hours: 110, len: 170, speed: 12, egg: '#ff7a1a', hab: 'open', jelly: true, venom: true, big: true,
+      info: 'Legendär: die größte Qualle der Welt. Ihre Tentakel-Mähne reicht durchs halbe Becken – gibt es für Münzen oder Perlen und braucht ein großes Becken.' },
     /* ---------- Runde 18: Weihnachten – im Shop nur in der Weihnachtszeit (season: 'xmas', Reiter „Weihnachten“, AA.season); wer sie hat, behält sie ---------- */
     { id: 'xmashorse', name: 'Weihnachts-Seepferdchen', season: 'xmas', lvl: 10, price: 80, sell: 92, hours: 20, len: 60, speed: 27, egg: '#ff2a3a',
       info: 'Rot-weiß geringelt wie eine Zuckerstange, mit Weihnachtsmütze. Hält sich am liebsten an der Mistelzweig-Alge fest.' },
@@ -603,6 +643,14 @@
       info: 'Weiß mit rosa-blauen Tupfen und Scheren wie Blütenblätter. Tut nichts – außer umwerfend auszusehen.' },
     { id: 'fireshrimp', name: 'Feuergarnele', cat: 'critter', job: 'doctor', lvl: 25, price: 160, w: 86, sink: 2, crawl: ['walk', 15], eats: true,
       info: 'Blutrot mit weißen Punkten. Die edelste Putzerstation, die es gibt.' },
+    /* ----- Runde 20b: Gift-Krabbler. harpoon = schießt ab und zu den Rüssel raus · punch = schlägt zurück, wenn man ans Glas klopft (Glas-Riss) ·
+       octo = Kraken-Rig (Mantel atmet, Arme wellen sich, Ringe pulsieren und blitzen beim Klopfen) ----- */
+    { id: 'cone', name: 'Kegelschnecke', cat: 'critter', lvl: 20, price: 100, w: 78, sink: 2, crawl: ['snail', 4], venom: true, harpoon: true,
+      info: 'Ein Schneckenhaus wie ein Kunstwerk – und ein Rüssel mit Giftharpune. Kriecht gemütlich herum und schießt ab und zu die Harpune raus.' },
+    { id: 'mantis', name: 'Fangschreckenkrebs', cat: 'critter', lvl: 34, price: 150, w: 106, sink: 2, crawl: ['walk', 13], punch: true,
+      info: 'Pfauenbunt, mit Augen, die sich unabhängig drehen – und dem schnellsten Schlag im Tierreich. Klopf bloß nicht ans Glas: Er schlägt zurück!' },
+    { id: 'bluering', name: 'Blauring-Krake', cat: 'critter', lvl: 38, price: 180, w: 110, sink: 2, crawl: ['octo', 6], sym: true, venom: true,
+      info: 'Klein, gelb und voller blauer Ringe, die sanft pulsieren – klopfst du in ihrer Nähe, blitzen sie hell auf. Krabbelt mit wellenden Armen über den Boden.' },
     /* Runde 10: 30 Steine, 10 Wurzeln und Äste, 3 Steinköpfe, 3 Schätze im Atlantis-Stil, das Ufo, 5 Korallen, 2 pinke Anemonen, 6 Krabbler */
     { id: 'pebbles3', name: 'Kiesel-Trio', cat: 'rock', lvl: 2, price: 12, w: 110, sink: 5, info: 'Drei glatte Flusskiesel, die sich aneinanderkuscheln.' },
     { id: 'heartstone', name: 'Herzstein', cat: 'rock', lvl: 3, price: 18, w: 100, sink: 6, info: 'Ein Stein in Herzform. Kitschig? Ja. Schön? Auch ja.' },
@@ -1107,6 +1155,10 @@
       deco: ['posidonia', 'pinna', 'amphora', 'caulerpa', 'halimeda', 'ulva', 'rock_grey', 'roundboulder', 'pebblepile', 'limeslab', 'anchor', 'columns', 'seaweed_lime', 'redkelp'],
       fish: ['scorpionfish', 'weever', 'bream', 'medmoray', 'garfish', 'dorade', 'seahorse', 'sepia', 'squid', 'jellyfish', 'seal'] }
   ];
+  /* Runde 20b: die neuen Arten in ihren Biotopen (zählen damit auch in den Regionen der Themen-Sets) */
+  [['reef', ['flamegoby', 'pyjama', 'rabbitfish', 'cowfish', 'titan', 'yellowangler']], ['adria', ['moonjelly', 'compass', 'gurnard']], ['amazon', ['ghostknife']]].forEach(function (x) {
+    const b = AA.BIOTOPES.find(function (q) { return q.id === x[0]; }); x[1].forEach(function (id) { if (b.fish.indexOf(id) < 0) b.fish.push(id); });
+  });
   /* Räuber (pred: true an der Art – unten gesetzt): Wird einer richtig hungrig (unter `hungry`), jagt er einen Fisch, der höchstens `ratio` so lang ist wie er selbst
      (Jungfische zählen mit ihrer aktuellen Größe; die eigene Art frisst er nie). Die Jagd dauert `chase` echte Sekunden – wer in der Zeit füttert, rettet die Beute.
      Ein gefressener Fisch macht `fill` satt. Unter `warn` gibt es vorher eine Warnung. Mit Futterautomat oder Pfleger werden Räuber nie so hungrig.
@@ -1167,7 +1219,9 @@
     { id: 'live', kind: 'coll', name: 'Lebendgebärende', ico: '🐣', title: 'Nachwuchs-Profi', fx: 'hearts', list: ['guppy', 'platy', 'molly', 'swordtail', 'swordplaty'] },
     { id: 'cats', kind: 'coll', name: 'Welse und Sauger', ico: '🐟', title: 'Wels-Flüsterer', fx: 'sandpuffs',
       list: ['oto', 'whiptail', 'cory', 'ancistrus', 'sturisoma', 'zebrapleco', 'upsidedown', 'goldnugget', 'gibbiceps', 'greenphantom', 'bluephantom', 'wels', 'redtail', 'royalpleco', 'scarletpleco'] },
-    { id: 'spiky', kind: 'coll', name: 'Lieber nicht anfassen', ico: '⚡', title: 'Stachel-Profi', fx: 'sparks', list: ['weever', 'scorpionfish', 'stonefish', 'puffer', 'piranha', 'lion', 'eleel', 'jellyfish'] },
+    { id: 'spiky', kind: 'coll', name: 'Lieber nicht anfassen', ico: '⚡', title: 'Stachel-Profi', fx: 'sparks',      // Runde 20b: + Gift-Tiere und Gift-Krabbler
+      list: ['weever', 'scorpionfish', 'stonefish', 'puffer', 'piranha', 'lion', 'eleel', 'jellyfish', 'rabbitfish', 'compass', 'titan', 'boxjelly', 'irukandji', 'manowar', 'bluedragon', 'lionsmane', 'cone', 'mantis', 'bluering'] },
+    { id: 'jellies', kind: 'coll', name: 'Quallen-Ballett', ico: '🎐', title: 'Quallen-Dirigent', fx: 'jellyglow', list: ['moonjelly', 'compass', 'jellyfish', 'boxjelly', 'irukandji', 'combjelly', 'manowar', 'lionsmane'] },
     { id: 'fossil', kind: 'coll', name: 'Lebende Fossilien', ico: '🦴', title: 'Zeitreisender', fx: 'ammonite', list: ['sturgeon', 'arowana', 'beluga', 'arapaima', 'chimaera', 'frilledshark', 'coelacanth'] },
     { id: 'sharks', kind: 'coll', name: 'Haie und Rochen', ico: '🦈', title: 'Hai-Flüsterer', fx: 'shark',
       list: ['reticulatus', 'bambooshark', 'epaulette', 'leopoldi', 'ray', 'hornshark', 'catshark', 'sawfish', 'shark', 'hammerhead', 'thresher', 'tigershark', 'manta', 'greatwhite', 'frilledshark', 'whaleshark'] },
@@ -1192,7 +1246,7 @@
   ];
   AA.THEME_FX = { sunspots: 'Sonnenkringel', colorbubbles: 'Bunte Blasen', manta: 'Manta-Schatten', rain: 'Regen', leaves: 'Treibende Blätter', blossoms: 'Kirschblüten',
     autumn: 'Herbstlaub', spray: 'Gischt', wavelight: 'Wellenlicht', plankton: 'Leuchtplankton', marinesnow: 'Meeresschnee', hearts: 'Herzchen-Blasen', sandpuffs: 'Sandwölkchen',
-    sparks: 'Funken', ammonite: 'Ammoniten-Schatten', shark: 'Hai-Schatten', ink: 'Tintenwölkchen', trails: 'Leuchtspuren', whale: 'Walhai in der Ferne', snow: 'Schneeflocken' };
+    sparks: 'Funken', ammonite: 'Ammoniten-Schatten', shark: 'Hai-Schatten', ink: 'Tintenwölkchen', trails: 'Leuchtspuren', whale: 'Walhai in der Ferne', snow: 'Schneeflocken', jellyglow: 'Leuchtende Quallen' };
   AA.THEME_BY = {};
   AA.THEMES.forEach(function (T) {
     AA.THEME_BY[T.id] = T;

@@ -260,14 +260,29 @@
 
   /* ================= Einstellungen ================= */
   UI.lifeSetting = function () {                     // Runde 11: nur noch die neuen Klänge – der Schalter Neu/Klassisch ist weg
-    const amb = AA.state.settings.amb !== false;
+    const s = AA.state, amb = s.settings.amb !== false, bite = s.settings.bite !== false;
+    const titan = AA.FISH_BY.titan, show = titan && (s.level >= titan.lvl || s.tanks.some(function (t) { return t.fish.some(function (f) { return f.sp === 'titan'; }); }));
     return '<div class="set"><div><b>Blubbern im Hintergrund</b><small>Alle paar Sekunden steigen leise ein paar Blasen auf.</small></div>' +
-      '<div class="row"><button class="seg' + (amb ? ' active' : '') + '" data-act="ambset" data-id="1">An</button><button class="seg' + (!amb ? ' active' : '') + '" data-act="ambset" data-id="0">Aus</button></div></div>';
+      '<div class="row"><button class="seg' + (amb ? ' active' : '') + '" data-act="ambset" data-id="1">An</button><button class="seg' + (!amb ? ' active' : '') + '" data-act="ambset" data-id="0">Aus</button></div></div>' +
+      (show ? '<div class="set"><div><b>Titan-Drückerfisch beißt</b><small>Alle paar Minuten schießt er auf den Mauszeiger (am Handy: den letzten Fingertipp) zu und beißt rein – höchstens alle 3 Minuten.</small></div>' +      // Runde 20b
+      '<div class="row"><button class="seg' + (bite ? ' active' : '') + '" data-act="biteset" data-id="1">An</button><button class="seg' + (!bite ? ' active' : '') + '" data-act="biteset" data-id="0">Aus</button></div></div>' : '');
+  };
+  /* Runde 20b: Irukandji-Qualle angetippt – erst jetzt kommt sie ins Sammelbuch */
+  AA.findFish = function (f) {
+    const sp = f.d.sp, def = AA.FISH_BY[sp];
+    if (!def || AA.bookHas(sp)) return;
+    AA.bookSee(sp, f.d.v, true);
+    for (let i = 0; i < 10; i++) V.twinkle(f.x + AA.rand(-40, 40), f.y + AA.rand(-50, 30), '#ffd6ec', AA.rand(9, 16));
+    V.floatText(f.x, f.y - 60, '🔎 Gefunden!', '#fff3a6');
+    AA.audio.play('win');
+    UI.toast('🔎 <b>Gefunden: ' + esc(def.name) + '!</b> Jetzt steht sie im Sammelbuch.', 'gold');
+    AA.save();
   };
 
   /* ================= Klicks ================= */
   UI.lifeClick = function (act, id) {
     const s = AA.state;
+    if (act === 'biteset') { s.settings.bite = id === '1'; AA.save(); UI.openSettings(); return true; }      // Runde 20b: Titan-Drückerfisch
     if (act === 'x-open') { UI.openCross(id, null); return true; }
     if (act === 'x-pure') { if (!UI.openPlanner || !UI.openPlanner({ sp: id })) fail('Reinzucht geht gerade nicht.'); return true; }
     if (act === 'x-m' || act === 'x-f') {
@@ -324,6 +339,10 @@
     AA.on('title', function (T) { if (!live()) return; UI.toast(T.ico + ' <b>Neuer Titel: ' + esc(T.name) + '!</b> ' + esc(T.info) + '. +' + T.pearls + ' Perlen<br><small>Im Sammelbuch unter „Titel“ wählst du, welchen du trägst.</small>', 'big'); AA.audio.play('win'); UI.refresh(); });
     AA.on('setDone', function (id) { if (!live()) return; UI.toast('👑 <b>Set komplett: ' + esc(sp(id).name) + '</b> – alle Farbvarianten entdeckt. Jeder ' + esc(sp(id).name) + ' ist ab jetzt ' + pct(AA.SETBONUS) + ' % mehr wert.', 'big'); AA.audio.play('chest'); });
     AA.on('cleaned', function (f, healed, by) { if (live() && healed && AA.tankOf(f) === AA.tank()) UI.toast('🩺 ' + (by ? esc(by) : 'Die Putzergarnele') + ' hat <b>' + esc(f.name) + '</b> gesund geputzt.', 'gold'); });
+    AA.on('fishAdded', function (f, how) {             // Runde 20b: Irukandji gekauft – erst suchen, dann steht sie im Buch
+      const def = sp(f.sp); if (!live() || !def.find || how !== 'buy' || AA.bookHas(f.sp)) return;
+      setTimeout(function () { UI.toast('🔎 <b>' + esc(def.name) + '</b> ist winzig und fast unsichtbar. Finde sie im Becken und tipp sie an – erst dann kommt sie ins Sammelbuch!', 'big'); }, 900);
+    });
     AA.on('fishAdded', function (f) {                  // Schwarmfisch gekauft: einmal je Art erklären, was er braucht
       const def = sp(f.sp); if (!live() || !def.school || toldSchool[f.sp]) return;
       const st = AA.schoolState(f);

@@ -31,6 +31,7 @@
       const chk = function (x) {
         if (x.v === undefined) return;
         if (!AA.VAR_BY[x.v] || !AA.varFits(x.sp, x.v)) { delete x.v; return; }
+        if (AA.FISH_BY[x.sp].find && !o.book[x.sp]) return;           // Runde 20b: Irukandji – erst im Becken finden
         const b = o.book[x.sp] || (o.book[x.sp] = { n: 1, v: {} });
         if (x.id && x.age !== undefined && !b.v[x.v]) b.v[x.v] = 1;         // nur geschlüpfte Fische zählen als entdeckt, Eier noch nicht
       };
@@ -82,9 +83,10 @@
   AA.fishTitle = function (f) { return AA.speciesName(f.sp, f.v); };
 
   /* ---------- Sammelbuch: s.book[art] = { n: 1|2, v: { variante: 1|2 } } – 1 = entdeckt (Belohnung wartet), 2 = abgeholt ---------- */
-  AA.bookSee = function (sp, v) {
+  AA.bookSee = function (sp, v, found) {
     const s = S();
     if (!AA.FISH_BY[sp]) return false;
+    if (AA.FISH_BY[sp].find && !found && !(s.book[sp] && s.book[sp].n)) return false;      // Runde 20b: Irukandji – kommt erst ins Buch, wenn man sie antippt (AA.findFish)
     const b = s.book[sp] || (s.book[sp] = { n: 0, v: {} });
     let fresh = false;
     if (!b.n) { b.n = 1; fresh = true; }

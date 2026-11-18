@@ -373,6 +373,26 @@
       px = x; py = y; psx = sx;
     }
   };
+  /* Runde 20b: Geistermesserfisch – der Körper bleibt steif, über die lange Saumflosse unter dem Bauch (unterhalb rig.split) läuft eine Welle.
+     Läuft sie vom Kopf zum Schwanz, schwimmt er vorwärts; AA.ribbonDir = −1 (js/fish.js: rückwärts, ohne sich zu drehen) kehrt sie um.
+     Jeder senkrechte Streifen der Flosse wird nach unten gestreckt bzw. gestaucht – vorn am Kopf und an der Schwanzspitze nicht. */
+  AA.ribbonDir = 1;
+  AA.drawRibbon = function (ctx, img, w, h, phase, rig, amp) {
+    const iw = img.width, ih = img.height, sp = rig.split || 0.56, N = 40, sy0 = Math.round(sp * ih);
+    const A = 0.15 + 0.12 * Math.min(1.4, amp), ph = phase * (AA.ribbonDir < 0 ? -1 : 1), y0 = -h / 2 + sp * h, fh = (1 - sp) * h;
+    const kOf = function (u) { const e = AA.clamp((u - 0.08) / 0.2, 0, 1) * AA.clamp((0.86 - u) / 0.18, 0, 1); return fh * (1 + A * e * Math.sin(ph + u * 11)); };
+    let pk = kOf(0);
+    for (let i = 0; i < N; i++) {                      // zuerst die Flosse: Streifen geschert, damit die Unterkante durchgehend bleibt
+      const u0 = i / N, u1 = (i + 1) / N, sx = Math.round(u0 * iw), sw = Math.round(u1 * iw) - sx, k1 = kOf(u1), dw = (u1 - u0) * w, D = k1 - pk, t0 = Math.min(0, -D);
+      if (sw > 0) {                                    // die Oberkante kippt mit, bleibt aber über der Trennlinie – der Körper deckt sie gleich zu
+        ctx.save(); ctx.transform(1, D / dw, 0, 1, -w / 2 + u0 * w, y0 + t0);
+        ctx.drawImage(img, sx, sy0, sw, ih - sy0, 0, 0, dw + 0.75, pk - t0);
+        ctx.restore();
+      }
+      pk = k1;
+    }
+    ctx.drawImage(img, 0, 0, iw, sy0, -w / 2, -h / 2, w, sp * h + 0.6);      // darüber der steife Körper
+  };
   /* Rochen: Flügelschlag. Jeder senkrechte Streifen wird um die Körperachse herum gestaucht und gestreckt (am stärksten dort,
      wo die Flügel sitzen), als Welle von vorn nach hinten; der lange Schwanz pendelt leicht nach.
      rig.axis = Höhe der Körperachse im Bild, rig.wing = Mitte der Flügel, rig.tail = bis hierhin reicht der Schwanz. */
@@ -567,6 +587,7 @@
     else if (k === 'eel') AA.drawEel(ctx, img, w, h, phase * 0.62, rig, amp);
     else if (k === 'flap') AA.drawFlap(ctx, img, w, h, phase * 0.42, rig, amp);
     else if (k === 'whip') AA.drawWhip(ctx, img, w, h, phase * 0.8, rig, amp);
+    else if (k === 'ribbon') AA.drawRibbon(ctx, img, w, h, phase * 0.9, rig, amp);
     else AA.drawWavy(ctx, img, w, h, phase, rig, amp);
   }
 
@@ -616,6 +637,88 @@
     AA.audio.play('knock');
     AA.state.stats.taps++;
     for (let i = 0; i < V.fish.length; i++) V.fish[i].onKnock(x, y);
+    const deco = AA.tank().deco;                        // Runde 20b: Krabbler, die aufs Klopfen reagieren
+    for (let i = 0; i < deco.length; i++) {
+      const o = deco[i], def = AA.DECO_BY[o.type];
+      if (!def || !def.crawl) continue;
+      const c = crawlState(o), b = V.decoBox(o);
+      if (def.crawl[0] === 'octo' && Math.hypot(b.cx - x, b.by - b.h * 0.5 - y) < 340) c.flash = 1;      // Blauring-Krake: Ringe blitzen hell auf
+      if (def.punch && !(c.punchAt > 0) && V.time - (c.punched || -99) > 2.5) { c.punchAt = V.time + 0.3; c.px = x; c.py = y; }   // Fangschreckenkrebs: schlägt zurück
+    }
+  };
+  /* Runde 20b: Glas-Riss – ein Stern aus Zickzack-Linien, der nach 3 Sekunden wieder verheilt (Fangschreckenkrebs) */
+  V.cracks = [];
+  V.crack = function (x, y) {
+    const L = [];
+    for (let k = 0; k < 7; k++) {
+      let a = k / 7 * TAU + AA.rand(-0.3, 0.3), px = x, py = y;
+      const pts = [[px, py]], n = AA.randi(3, 5);
+      for (let j = 0; j < n; j++) { a += AA.rand(-0.5, 0.5); const d = AA.rand(10, 26); px += Math.cos(a) * d; py += Math.sin(a) * d; pts.push([px, py]); }
+      L.push(pts);
+    }
+    V.cracks.push({ x: x, y: y, t: V.time, L: L });
+    if (V.cracks.length > 4) V.cracks.shift();
+  };
+  function drawCracks(ctx) {
+    for (let i = V.cracks.length - 1; i >= 0; i--) {
+      const q = V.cracks[i], age = V.time - q.t;
+      if (age > 3.2 || age < 0) { V.cracks.splice(i, 1); continue; }
+      const a = age < 2.4 ? 1 : 1 - (age - 2.4) / 0.8, grow = Math.min(1, age / 0.12);
+      ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      [[3.2, 'rgba(40,70,90,' + (0.35 * a).toFixed(3) + ')'], [1.4, 'rgba(255,255,255,' + (0.95 * a).toFixed(3) + ')']].forEach(function (S2) {
+        ctx.strokeStyle = S2[1]; ctx.lineWidth = S2[0];
+        q.L.forEach(function (pts) {
+          const n = Math.max(2, Math.round(pts.length * grow));
+          ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+          for (let j = 1; j < n; j++) ctx.lineTo(pts[j][0], pts[j][1]);
+          ctx.stroke();
+        });
+      });
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * a).toFixed(3) + ')'; ctx.beginPath(); ctx.arc(q.x, q.y, 4, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+  }
+  /* Runde 20b: Titan-Drückerfisch – Ziel ist der Mauszeiger im Wasser (am Handy der letzte Fingertipp, höchstens 40 s alt) */
+  const BT = { x: 0, y: 0 };
+  AA.biteTarget = function () {
+    const P = V.pointer, lt = V.lastTap;
+    if (V.photoMode || V.tool === 'deco' || document.hidden || AA.visit) return null;      // nicht im Foto- und Deko-Modus, nicht beim Besuch
+    if (P.inside && !P.touch) { BT.x = P.x; BT.y = P.y; }
+    else if (lt && V.time - lt.t < 40 && V.time >= lt.t) { BT.x = lt.x; BT.y = lt.y; }
+    else return null;
+    if (BT.y < G.top + 30 || BT.y > AA.floorY(1, BT.x) - 10 || BT.x < 30 || BT.x > W - 30) return null;
+    return BT;
+  };
+  AA.titanBite = function (f, x, y) {
+    AA.audio.play('chomp');
+    V.biteFx = { x: x, y: y, t: V.time };
+    V.floatText(x, y - 36, 'Autsch!', '#ffd6d6');
+    V.puff('spark', x, y, 3);
+    f.say('😈', 1.3);
+    try { if (navigator.vibrate) navigator.vibrate(30); } catch (e) { /* egal */ }
+    AA.state.stats.bites = (AA.state.stats.bites || 0) + 1;
+    if (Math.random() < 0.01) {                         // 1 % Schmerzensgeld
+      AA.addCoins(50, false); AA.audio.play('coin');
+      V.puff('coin', x, y, 3); V.floatText(x, y - 64, '+50 Schmerzensgeld', '#ffe066');
+    }
+  };
+  function drawBite(ctx) {
+    const q = V.biteFx, age = q ? V.time - q.t : 9;
+    if (age > 0.9 || age < 0) return;
+    const a = 1 - age / 0.9;
+    ctx.save(); ctx.translate(q.x, q.y); ctx.strokeStyle = 'rgba(255,255,255,' + (0.9 * a).toFixed(3) + ')'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    for (let k = 0; k < 2; k++) {                       // Bissspur: zwei Zahnreihen
+      ctx.beginPath();
+      for (let j = 0; j < 5; j++) { const xx = -12 + j * 6, yy = (k ? 7 : -7) + (j % 2 ? 0 : (k ? 4 : -4)); if (j) ctx.lineTo(xx, yy); else ctx.moveTo(xx, yy); }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  /* Runde 20b: der Partner eines Tiers im selben Becken (Blauer Drache → Portugiesische Galeere) – der nächste */
+  AA.seaPartner = function (f, sp) {
+    let best = null, bd = 1e9;
+    for (let i = 0; i < V.fish.length; i++) { const o = V.fish[i]; if (o === f || o.ghost || o.d.sp !== sp) continue; const dd = Math.hypot(o.x - f.x, o.y - f.y); if (dd < bd) { bd = dd; best = o; } }
+    return best;
   };
   V.scrubFx = function (x, y) {
     for (let i = 0; i < 6; i++) V.addBubble(x + AA.rand(-46, 46), y + AA.rand(-34, 34), AA.rand(1.5, 4));
@@ -936,6 +1039,18 @@
   function crawlStep(o, def, dt) {
     const c = crawlState(o), kind = def.crawl[0];
     c.ph += dt;
+    if (c.flash > 0) c.flash = Math.max(0, c.flash - dt * 0.8);                 // Runde 20b: Blauring-Krake – Ringe leuchten nach
+    if (c.punchAt > 0 && V.time >= c.punchAt) {         // Runde 20b: Fangschreckenkrebs schlägt ans Glas
+      c.punchAt = 0; c.punched = V.time; c.hit = 0.35;
+      V.crack(c.px, c.py); AA.audio.play('hit');
+      const b = V.decoBox(o); V.floatText(b.cx, b.y - 8, '👊', '#ffffff');
+    }
+    if (c.hit > 0) c.hit -= dt;
+    if (def.harpoon && !V.photoMode) {                 // Runde 20b: Kegelschnecke schießt ab und zu die Harpune raus
+      c.jabW = (c.jabW === undefined ? AA.rand(8, 20) : c.jabW) - dt;
+      if (c.jabW <= 0) { c.jabW = AA.rand(16, 36); c.jab = 0.5; }
+    }
+    if (c.jab > 0) c.jab -= dt;
     if (kind === 'glide') {                          // Runde 12: Scholle – Tempo und Flossenwelle weich nachführen (vorher sprang die Phase bei jedem Tempowechsel: Zittern)
       const mvRaw = Math.min(1, (c.v || 0) / (def.crawl[1] * 0.5 + 0.01));
       c.mvs = (c.mvs || 0) + (mvRaw - (c.mvs || 0)) * Math.min(1, dt * 1.2);
@@ -997,7 +1112,7 @@
       }
       if (c.wait <= 0) {                               // neues Ziel in der Nähe; Seesterne und Seeigel trödeln länger
         c.waved = false;
-        const slow = kind === 'star' || kind === 'urchin' || kind === 'glide', far = kind === 'crab' ? 420 : (kind === 'glide' ? 120 : (slow ? 150 : 280));      // glide = Scholle: gleitet ein Stück, liegt dann lange still
+        const slow = kind === 'star' || kind === 'urchin' || kind === 'glide' || kind === 'octo', far = kind === 'crab' ? 420 : (kind === 'glide' ? 120 : (kind === 'octo' ? 220 : (slow ? 150 : 280)));      // glide = Scholle: gleitet ein Stück, liegt dann lange still
         c.tx = AA.clamp(o.x + AA.rand(-far, far), lim[0] + 50, lim[1] - 50);
         c.tz = AA.clamp(o.z + AA.rand(-0.32, 0.32), 0.04, 1);
         c.wait = kind === 'glide' ? AA.rand(25, 70) : (slow ? AA.rand(4, 16) : AA.rand(1.2, 7));
@@ -1010,6 +1125,7 @@
     else if (kind === 'walk') gait = 0.55 + 0.45 * Math.abs(Math.sin(c.ph * 5));
     else if (kind === 'glide') gait = 0.9 + 0.1 * Math.sin(c.ph * 0.9);
     else if (kind === 'snowman') gait = 0.2 + 0.8 * Math.max(0, Math.sin(c.ph * 2.2));      // Runde 18: gleitet in Schüben
+    else if (kind === 'octo') gait = 0.2 + 0.8 * Math.max(0, Math.sin(c.ph * 1.5));         // Runde 20b: Krake – zieht sich in Schüben voran
     const step = Math.min(dist, speed * gait * dt);
     o.x = AA.clamp(o.x + dx / dist * step, lim[0] + 20, lim[1] - 20);
     o.z = AA.clamp(o.z + dz / dist * step / ZPX, 0.02, 1);
@@ -1040,9 +1156,55 @@
     ctx.scale(Math.max(0.05, Math.min(1, sx)) * (1 + q), 1 - q * 0.8);
     ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h);
   }
+  /* Runde 20b: Kraken-Rig (Blauring-Krake, von vorn gemalt, Arme flach zur Seite). Senkrechte Streifen: Die Arme heben sich in Wellen,
+     die nach außen laufen (Unterkante folgt der Welle, wie beim Aal geschert), der Mantel in der Mitte atmet (wird höher und flacher).
+     Die blauen Ringe (aus dem Bild herausgefiltert, ringMask) leuchten darüber – sanft pulsierend, nach dem Klopfen hell (c.flash). */
+  const RINGC = new WeakMap();
+  function ringMask(img) {
+    let m = RINGC.get(img);
+    if (m !== undefined) return m;
+    try {
+      const cv = mk(img.width, img.height), g = cv.getContext('2d');
+      g.drawImage(img, 0, 0);
+      const id = g.getImageData(0, 0, cv.width, cv.height), a = id.data;
+      for (let i = 0; i < a.length; i += 4) { const r = a[i], gg = a[i + 1], bb = a[i + 2]; if (!(bb > 110 && bb > r + 50 && bb > gg + 10)) a[i + 3] = 0; }
+      g.putImageData(id, 0, 0); m = cv;
+    } catch (e) { m = null; }
+    RINGC.set(img, m);
+    return m;
+  }
+  function octoPass(ctx, img, b, c, mv) {
+    const iw = img.width, ih = img.height, N = 26, br = Math.sin(c.ph * 1.6) * 0.035;
+    const lift = function (u) { const r = Math.abs(2 * u - 1), k = Math.pow(Math.max(0, r - 0.22) / 0.78, 1.25); return -b.h * k * (0.07 + 0.05 * mv) * (0.5 + 0.5 * Math.sin(c.ph * 2.4 - r * 6.5)); };
+    const sc = function (u) { return 1 + br * Math.max(0, 1 - Math.abs(2 * u - 1) / 0.45); };
+    let px = -b.w / 2, py = lift(0);
+    for (let i = 1; i <= N; i++) {
+      const u = i / N, x = -b.w / 2 + u * b.w, y = lift(u), sx0 = Math.round((i - 1) / N * iw), sx1 = Math.round(u * iw), dw = x - px;
+      if (sx1 > sx0 && dw > 0.01) {
+        ctx.save(); ctx.transform(1, (y - py) / dw, 0, sc(u - 0.5 / N), px, py);
+        ctx.drawImage(img, sx0, 0, sx1 - sx0, ih, 0, -b.h, dw + 0.75, b.h);
+        ctx.restore();
+      }
+      px = x; py = y;
+    }
+  }
+  function drawOcto(ctx, img, b, c, mv) {
+    octoPass(ctx, img, b, c, mv);
+    const m = ringMask(img);
+    if (!m) return;
+    const night = !!AA.state.settings.night, fl = c.flash || 0;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = Math.min(1, (0.16 + 0.14 * Math.sin(c.ph * 2.1)) * (night ? 1.7 : 1) + fl * 0.9);
+    octoPass(ctx, m, b, c, mv);
+    if (fl > 0.3) { ctx.globalAlpha = fl - 0.3; octoPass(ctx, m, b, c, mv); }
+    ctx.restore();
+  }
   function drawCrawler(ctx, o, def, img, b) {
     const c = crawlState(o), kind = def.crawl[0], mv = Math.min(1, c.v / (def.crawl[1] * 0.5 + 0.01));
     if (kind === 'snowman') { drawSnowman(ctx, o, def, img, b, c, mv); return; }
+    if (kind === 'octo') { drawOcto(ctx, img, b, c, mv); return; }
+    if (c.hit > 0) ctx.translate(Math.sin((0.35 - c.hit) / 0.35 * Math.PI) * b.w * 0.14, 0);       // Fangschreckenkrebs: Schlag nach vorn
+    if (c.jab > 0) { const e = Math.sin((0.5 - c.jab) / 0.5 * Math.PI); ctx.translate(e * b.w * 0.05, 0); ctx.scale(1 + e * 0.07, 1 - e * 0.02); }      // Kegelschnecke: Harpune
     if (kind === 'snail') { const q = Math.sin(c.ph * 2.4) * 0.055 * (0.25 + 0.75 * mv); ctx.scale(1 + q, 1 - q * 0.8); }
     else if (kind === 'star') { const q = Math.sin(c.ph * 0.9) * 0.02; ctx.translate(0, -b.h / 2); ctx.rotate(Math.sin(c.ph * 0.45) * 0.07); ctx.scale(1 + q, 1 + q); ctx.translate(0, b.h / 2); }
     else if (kind === 'urchin') { const q = Math.sin(c.ph * 1.7) * 0.022; ctx.scale(1 + q, 1 + q * 1.4); }
@@ -1144,6 +1306,8 @@
     }
     if (rot) AA.rotFood(tank, rot);
     updateLive(dt, t);
+    V.venoms = V.venoms || []; V.venoms.length = 0;       // Runde 20b: Gift-Tiere – die anderen halten Abstand (js/fish.js)
+    for (let i = 0; i < V.fish.length; i++) { const f = V.fish[i]; if (f.def.venom && !f.ghost) V.venoms.push(f); }
     for (let i = 0; i < V.fish.length; i++) V.fish[i].update(dt, V, tank);
     // Blasen
     V.bubT -= dt;
@@ -1936,6 +2100,8 @@
     if (AA.lightFx) AA.lightFx(ctx, tank, t);          // Runde 12: Licht-Studio (js/extras.js)
     drawRips(ctx);
     ctx.drawImage(glassLayer(tank), 0, 0, W, H);      // Scheibe – bei Schmutz mit Trübung und Algen in einem Rutsch (Runde 14)
+    if (V.cracks.length) drawCracks(ctx);              // Runde 20b: Glas-Riss (Fangschreckenkrebs)
+    if (V.biteFx) drawBite(ctx);                       // Runde 20b: Bissspur (Titan-Drückerfisch)
     if (!V.photoMode) {
       if (V.tool !== 'deco') for (let i = 0; i < V.fish.length; i++) V.fish[i].drawOverlay(ctx, t);
       else if (V.drawDecoMode) V.drawDecoMode(ctx, t);            // Raster, Seitenscheiben-Grenze (js/decorui.js)
@@ -1952,6 +2118,8 @@
       if (V.tool !== 'hand' && p.inside) {
         ctx.save();
         ctx.translate(p.x, p.y);
+        const ba = V.biteFx ? V.time - V.biteFx.t : 9;
+        if (ba >= 0 && ba < 0.45) ctx.translate(Math.sin(ba * 70) * 5 * (1 - ba / 0.45), Math.cos(ba * 55) * 3 * (1 - ba / 0.45));      // Runde 20b: gebissen – der Zeiger wackelt
         ctx.shadowColor = 'rgba(0,30,50,0.4)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 3;
         if (V.tool === 'food') {
           const can = AA.assets.get('prop/foodcan');
