@@ -21,7 +21,7 @@
     out.push({ me: true, name: my.name, avatar: my.avatar, user: C && C.user && C.profile ? C.user.id : null, photo: C && C.profile ? C.profile.photo || 0 : 0, level: me.level, species: me.species, beauty: me.beauty, title: pub.title, badges: pub.badges, gold: pub.gold });
     if (C && C.friends) C.friends.forEach(function (f) {
       if (f.status !== 'accepted') return;
-      out.push({ name: f.name, avatar: f.avatar, user: f.user, photo: f.photo || 0, level: f.level || 1, species: f.species === undefined || f.species === null ? null : f.species, beauty: f.beauty === undefined || f.beauty === null ? null : f.beauty, title: f.title || null, badges: f.badges || [], gold: f.gold | 0 });
+      out.push({ name: f.name, username: f.username || '', avatar: f.avatar, user: f.user, photo: f.photo || 0, level: f.level || 1, species: f.species === undefined || f.species === null ? null : f.species, beauty: f.beauty === undefined || f.beauty === null ? null : f.beauty, title: f.title || null, badges: f.badges || [], gold: f.gold | 0 });
     });
     if (AA.testOn()) { const t = AA.testStats(); out.push({ test: true, name: AA.TEST.name + ' 🧪', avatar: AA.TEST.avatar, level: t.level, species: t.species, beauty: t.beauty }); }
     return out;
@@ -35,7 +35,7 @@
     const html = rows.map(function (p, i) {
       if (p[k] !== prev) { place = i + 1; prev = p[k]; }
       const medal = place === 1 ? '🥇' : (place === 2 ? '🥈' : (place === 3 ? '🥉' : place + '.'));
-      return '<div class="rk-row' + (p.me ? ' me' : '') + '"><span class="rk-pl">' + medal + '</span>' + (UI.face ? UI.face(p) : av(p.avatar)) + '<b class="rk-nm">' + esc(p.name) + (p.me ? ' <small>(du)</small>' : '') + (UI.themeBadges ? UI.themeBadges(p.badges) : '') + (UI.titleLine && p.title ? '<small class="rk-ttl">' + UI.titleLine(p.title) + '</small>' : '') + '</b><span class="rk-v">' + col[2](p[k]) + '</span></div>';
+      return '<div class="rk-row' + (p.me ? ' me' : '') + '"><span class="rk-pl">' + medal + '</span>' + (UI.face ? UI.face(p) : av(p.avatar)) + '<b class="rk-nm">' + esc(p.name) + (p.me ? ' <small>(du)</small>' : '') + (p.username ? ' <small class="cl-handle">@' + esc(p.username) + '</small>' : '') + (UI.themeBadges ? UI.themeBadges(p.badges) : '') + (UI.titleLine && p.title ? '<small class="rk-ttl">' + UI.titleLine(p.title) + '</small>' : '') + '</b><span class="rk-v">' + col[2](p[k]) + '</span></div>';
     }).join('');
     const miss = P.filter(function (p) { return p[k] === null || p[k] === undefined; });
     const tabs = Object.keys(COLS).map(function (c) { return '<button class="tab' + (c === k ? ' active' : '') + '" data-act="rk-tab" data-id="' + c + '">' + COLS[c][0] + ' ' + COLS[c][1] + '</button>'; }).join('');
@@ -109,7 +109,8 @@
   };
   UI.familySetting = function () {
     const on = AA.testOn();
-    return '<div class="set"><div><b>Testfreund Testi 🧪</b><small>Ein Probe-Freund mit eigenem Aquarium – zum Besuchen und für die Rangliste. Wohnt nur auf diesem Gerät.</small></div>' +
+    if (AA.testReal()) return '<div class="set"><div><b>Testfreund Testi 🧪</b><small>Hat sich verabschiedet – du hast jetzt echte Freunde. 😊</small></div></div>';
+    return '<div class="set"><div><b>Testfreund Testi 🧪</b><small>Ein Probe-Freund mit eigenem Aquarium – zum Besuchen und für die Rangliste. Wohnt nur auf diesem Gerät, bis du deinen ersten echten Freund hast.</small></div>' +
       '<div class="row"><button class="btn ' + (on ? 'grey' : 'green') + '" data-act="test-toggle">' + (on ? 'Ausblenden' : 'Einblenden') + '</button></div></div>';
   };
 

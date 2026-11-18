@@ -93,6 +93,7 @@
         const dx = hd0.side * sb.w / 2 / s0, dy = (sb.y - fy) / s0;
         drag = { size: true, o: so, s0: s0, ax: sb.cx, ay: fy, dx: dx, dy: dy, gx: p.x - (sb.cx + dx * s0), gy: p.y - (fy + dy * s0) };
         V.sizing = so; V.sizeT = V.time;
+        if (AA.undoBegin) AA.undoBegin('size', false);
         return;
       }
       const o = V.hitDeco(p.x, p.y), f = deco ? null : (V.hitFish(p.x, p.y) || (p.touch && !o ? V.hitFishNear(p.x, p.y, 34 * (V.ui || 1)) : null));
@@ -131,7 +132,7 @@
           e2.x = Math.round(x); e2.z = Math.round(AA.clamp(z, 0.02, 1) * 1000) / 1000;
         }
       } else if (drag) {
-        if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 5) { drag.moved = true; V.dragDeco = drag.o; }
+        if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 5) { drag.moved = true; V.dragDeco = drag.o; if (AA.undoBegin) AA.undoBegin('move', false); }
         if (drag.moved) {
           const o = drag.o, fx = p.x - drag.ox, fy = p.y - drag.oy, spot = V.stackSpot(o, fx, fy);
           V.dropSpot = spot;
@@ -166,6 +167,7 @@
     if (drag) {
       if (drag.size) { V.sizing = null; V.sizeT = V.time; if (AA.decoScale(drag.o) !== drag.s0) { AA.audio.play('pop'); AA.save(); } }
       else if (drag.moved) { V.dragDeco = null; V.dropSpot = null; AA.audio.play(drag.o.on ? 'click' : 'pop'); AA.save(); UI.updateCard(); }
+      if ((drag.size || drag.moved) && AA.undoCommit) AA.undoCommit();
       drag = null;
     }
   }
@@ -198,16 +200,34 @@
   };
 
   function onKey(e) {
-    if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'range') return;      // Textfeld: tippen lassen (der Größen-Regler ist keins)
+    const tg = e.target && e.target.tagName;
+    if ((tg === 'INPUT' && e.target.type !== 'range') || tg === 'TEXTAREA') return;      // Textfeld: tippen lassen (der Größen-Regler ist keins)
+    if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && (e.key || '').toLowerCase() === 'z') {      // Runde 20a: Deko rückgängig (js/undo.js)
+      if (!UI.modalKind && !AA.visit && UI.decoUndo) { e.preventDefault(); UI.decoUndo(); }
+      return;
+    }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = (e.key || '').toLowerCase();
+    if (k === 'enter' && UI.modalKind) {                // Runde 20a: Enter = Hauptknopf im Dialog (Knöpfe im Fenster lösen sich selbst aus)
+      if (!e.defaultPrevented && !((tg === 'BUTTON' || tg === 'A' || tg === 'SELECT') && e.target.closest('#modal')) && UI.modalEnter) UI.modalEnter(e);
+      return;
+    }
+    if (k === '?' && UI.openKeys && UI.modalKind !== 'keys') { if (UI.modalKind && !UI.lockModal) UI.close(); if (!UI.modalKind) UI.openKeys(); return; }
     if (k === 'escape') {
       if (UI.modalKind) { if (!UI.lockModal) UI.close(); }
       else { const had = V.sel || V.selDeco; V.select(null); V.selectDeco(null); if (V.tool !== 'deco') UI.setTool('hand'); else if (!had && UI.decoMode) UI.decoMode(false); }   // im Deko-Modus: erst abwählen, dann raus
       return;
     }
     if (UI.modalKind) return;
-    if (AA.visit) { if (k === 'f') UI.photo(); else if (k === 'l') UI.toggleNight(); return; }      // zu Besuch: nur gucken (Foto und Licht gehen)
+    if (AA.visit) { if (k === 'f') UI.photo(); else if (k === 'l') UI.toggleNight(); else if (k === 'n') UI.toggleSound(); return; }      // zu Besuch: nur gucken (Foto, Licht, Ton gehen)
+    if (k === 'arrowleft' || k === 'arrowright') {      // Runde 20a: Becken wechseln wie mit den Pfeilen am Rand
+      e.preventDefault();
+      if (AA.state.tanks.length > 1 && !V.dragDeco) { AA.audio.play('click'); AA.switchTank(AA.state.active + (k === 'arrowleft' ? -1 : 1)); }
+      return;
+    }
+    if (k === 'n') { UI.toggleSound(); UI.toast(AA.state.settings.sound ? '🔊 Ton an' : '🔇 Ton aus'); return; }
+    if (k === ',') { AA.audio.play('click'); UI.openSettings(); return; }
+    if (k === 'tab' && !e.shiftKey && UI.openMenu) { e.preventDefault(); AA.audio.play('click'); UI.openMenu(true); return; }
     if (V.selDeco && (k === '+' || k === '=' || k === '-' || k === '_') && AA.decoRange(AA.DECO_BY[V.selDeco.type])) { V.stepDeco(V.selDeco, k === '+' || k === '=' ? 1 : -1); e.preventDefault(); return; }
     if (k === '1') UI.setTool('hand'); else if (k === '2') UI.setTool('food'); else if (k === '3') UI.setTool('sponge'); else if (k === '4') UI.setTool('tap');
     else if (k === '5' && UI.decoMode) UI.decoMode();
@@ -415,6 +435,8 @@
       UI.init();
       if (UI.xmasInit) UI.xmasInit();                  // Runde 18: Adventskalender-Knopf (js/xmas.js)
       if (UI.themesInit) UI.themesInit();              // Runde 19: Themen-Sets – Ziel-Chip, Hinweise (js/themesui.js)
+      if (AA.undoInit) AA.undoInit();                  // Runde 20a: Deko rückgängig (js/undo.js)
+      if (UI.keysInit) UI.keysInit();                  // Runde 20a: Spickzettel, Enter im Dialog, Langdruck am Handy (js/keysui.js)
       lastWall = Date.now();
       requestAnimationFrame(function (ts) { last = ts; requestAnimationFrame(frame); });
       if (V.prewarm) V.prewarm();                      // Runde 14: Nachbarbecken im Leerlauf vorbereiten

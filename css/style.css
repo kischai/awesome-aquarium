@@ -1030,3 +1030,30 @@ img.av.gold { border-color: #ffd34d; box-shadow: 0 0 0 2px #e0a800, 0 2px 0 #b07
 .lite .grid .card, .lite .grid .bcard, .lite .ts-item, .lite .tset { content-visibility: auto; contain-intrinsic-size: auto 220px; }
 .lite .grid .bcard, .lite .ts-item { contain-intrinsic-size: auto 120px; }
 .lite .tset { contain-intrinsic-size: auto 90px; }
+
+/* ---------- Runde 20a: Freunde 2.0 – Anfragen-Karte, @benutzername, Suche, Blockieren/Melden, Rettungs-Code ---------- */
+.fcard.reqs { background: linear-gradient(#fff6dc, #ffd98a); box-shadow: 0 3px 0 #dfb955; animation: reqPulse 2.4s ease-in-out infinite; }
+@keyframes reqPulse { 0%, 100% { transform: none; } 50% { transform: translateY(-2px); } }
+.lite .fcard.reqs { animation: none; }
+.cl-handle { display: block; font-size: 12px; font-weight: 800; color: #1668a8; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-handle.big { font-size: 16px; text-align: center; margin: -4px 0 8px; }
+.cl-me .cl-handle { margin-top: 4px; }
+.rk-nm .cl-handle { display: inline; font-size: 11px; }
+.cl-sec { display: block; font-size: 13px; margin: 10px 2px 0; opacity: .8; }
+.cl-tag { display: inline-block; font: 800 12px var(--font); padding: 5px 10px; border-radius: 999px; background: #fff3cf; color: #8a6400; white-space: nowrap; }
+.cl-tag.ok { background: #dcf7e3; color: #1d7a3a; }
+.cl-results { margin-top: 8px; min-height: 40px; }
+.cl-find input[type=search] { width: 100%; -webkit-appearance: none; appearance: none; }
+.btn.more { padding-left: 10px; padding-right: 10px; }
+.cl-um { display: flex; flex-direction: column; gap: 8px; margin: 6px 0; }
+.cl-rcode { font: 900 26px var(--font); letter-spacing: .12em; text-align: center; background: #fff8d9; border: 2px dashed #f2b83a; border-radius: 14px; padding: 10px 8px; margin: 10px 0 4px; user-select: all; -webkit-user-select: all; }
+/* Runde 20a: Spickzettel und Langdruck-Blase */
+.keys-sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 14px; align-items: start; }
+.ks-col { display: flex; flex-direction: column; gap: 10px; }
+.ks-grp { background: #f1fbfd; border: 2px solid #d5eef4; border-radius: 14px; padding: 8px 10px; }
+.ks-grp > b { display: block; font-size: 15px; margin-bottom: 4px; }
+.ks-row { display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 2px 0; }
+.ks-row kbd { flex: none; min-width: 34px; text-align: center; font: 800 13px var(--font); background: #fff; border: 2px solid #b8dce6; border-bottom-width: 3px; border-radius: 8px; padding: 1px 7px; }
+.ks-fine { grid-column: 1 / -1; font-size: 13px; opacity: .7; margin: 2px 0 0; }
+body.touchdev .ks-fine { opacity: .9; }
+.lp-tip { position: fixed; z-index: 9999; max-width: 70vw; background: rgba(12, 40, 58, .94); color: #fff; font: 800 14px var(--font); padding: 7px 12px; border-radius: 12px; pointer-events: none; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }

@@ -145,8 +145,8 @@
     err(''); busy(true);
     C.saveProfile(name, pick || (C.profile && C.profile.avatar) || 'clown').then(function (r) {
       busy(false);
-      if (!r || !r.ok) { err(r && r.error === 'name' ? 'Der Name muss 2 bis 20 Zeichen lang sein.' : 'Das hat nicht geklappt. Versuch es nochmal.'); return; }
-      if (first) { waiting('Fast fertig …'); if (r.friends_added > 0) setTimeout(function () { UI.toast('🎉 Du bist jetzt mit deiner Familie verbunden – schau oben rechts unter 👥.', 'gold'); }, 2500); }
+      if (!r || !r.ok) { err(r && r.error === 'name' ? 'Der Name muss 2 bis 20 Zeichen lang sein.' : (r && r.error === 'rude' ? 'Diesen Namen kann ich leider nicht nehmen – such dir einen anderen aus.' : 'Das hat nicht geklappt. Versuch es nochmal.')); return; }
+      if (first) { gate.newCode = true; waiting('Fast fertig …'); if (r.friends_added > 0) setTimeout(function () { UI.toast('🎉 Du bist jetzt mit deiner Familie verbunden – schau oben rechts unter 👥.', 'gold'); }, 2500); }
       else { UI.toast('✅ Profil gespeichert.'); UI.openProfile(); refreshBar(); }
     }, function (e) { busy(false); err(authMsg(e)); });
   }
@@ -182,15 +182,23 @@
     if (C.pending) return '☁️ Wartet auf deine Entscheidung.';
     return '☁️ In der Wolke gesichert' + (C.syncedAt ? ' – ' + C.ago(C.syncedAt) : '') + '.';
   }
+  function handle(f) { return f && f.username ? '<small class="cl-handle">@' + esc(f.username) + '</small>' : ''; }
   function friendRows() {
-    if (!C.friends.length) return '<div class="cl-empty">Noch keine Freunde. Gib deinen Code weiter – oder tipp den Code von jemandem ein.</div>';
-    return C.friends.map(function (f) {
+    if (!C.friends.length) return '<div class="cl-empty">Noch keine Freunde. Such jemanden über 🔍 – oder gib deinen Code weiter.</div>';
+    const acc = C.friends.filter(function (f) { return f.status === 'accepted'; }), inc = C.friends.filter(function (f) { return f.status !== 'accepted' && f.incoming; }),
+      out = C.friends.filter(function (f) { return f.status !== 'accepted' && !f.incoming; });
+    return (acc.length ? rowsOf(acc) : '<div class="cl-empty">Noch keine Freunde – aber es läuft was. 😊</div>') +
+      (inc.length ? '<b class="cl-sec">📨 Anfragen an dich</b>' + rowsOf(inc) : '') + (out.length ? '<b class="cl-sec">📤 Gesendet</b>' + rowsOf(out) : '');
+  }
+  function rowsOf(L) {
+    return L.map(function (f) {
       const sub = f.status === 'accepted' ? ('Level ' + (f.level || 1) + ' · ' + (f.fish || 0) + ' 🐟' + (f.updated_at ? ' · ' + C.ago(f.updated_at) : '')) : (f.incoming ? 'möchte dein Freund sein' : 'Anfrage läuft – wartet auf Antwort');
       const btn = f.status === 'accepted' ? '<button class="btn sm green" data-act="fr-visit" data-id="' + f.id + '">👀 Besuchen</button><button class="btn sm grey" data-act="fr-remove" data-id="' + f.id + '" title="Freundschaft beenden">✕</button>'
         : (f.incoming ? '<button class="btn sm green" data-act="fr-accept" data-id="' + f.id + '">✔ Annehmen</button><button class="btn sm grey" data-act="fr-remove" data-id="' + f.id + '" title="Ablehnen">✕</button>'
           : '<button class="btn sm grey" data-act="fr-remove" data-id="' + f.id + '">Zurückziehen</button>');
+      const more = '<button class="btn sm grey more" data-act="fr-more" data-id="' + f.id + '" title="Blockieren oder melden">⋯</button>';
       const extra = f.status === 'accepted' && UI.titleLine ? (UI.titleLine(f.title) + (UI.themeBadges ? UI.themeBadges(f.badges) : '')) : '';      // Runde 19: Titel und Abzeichen
-      return '<div class="cl-friend' + (f.status !== 'accepted' ? ' pending' : '') + '">' + face(f) + '<div class="cl-fn"><b>' + esc(f.name) + '</b>' + (extra ? '<span class="cl-tb">' + extra + '</span>' : '') + '<small>' + sub + '</small></div><div class="row">' + btn + '</div></div>';
+      return '<div class="cl-friend' + (f.status !== 'accepted' ? ' pending' : '') + '">' + face(f) + '<div class="cl-fn"><b>' + esc(f.name) + '</b>' + (extra ? '<span class="cl-tb">' + extra + '</span>' : '') + handle(f) + '<small>' + sub + '</small></div><div class="row">' + btn + (f.status === 'accepted' || f.incoming ? more : '') + '</div></div>';
     }).join('');
   }
   UI.openProfile = function () {
@@ -200,7 +208,8 @@
     const p = C.profile, share = !!navigator.share;
     pick = p.avatar;
     UI.open('profile', head('👥 Profil &amp; Freunde') + '<div class="list settings cl-prof">' +
-      '<div class="set col"><div class="cl-me">' + face(me(), 'big') + '<div class="cl-fn"><b>Dein Name</b><div class="row"><input id="cl-name" class="cl-in sm" type="text" maxlength="20" value="' + esc(p.name) + '"><button class="btn sm" data-act="pf-save">Speichern</button></div></div></div>' +
+      '<div class="set col"><div class="cl-me">' + face(me(), 'big') + '<div class="cl-fn"><b>Dein Name</b><div class="row"><input id="cl-name" class="cl-in sm" type="text" maxlength="20" value="' + esc(p.name) + '"><button class="btn sm" data-act="pf-save">Speichern</button></div>' +
+        (p.username ? '<small class="cl-handle">@' + esc(p.username) + ' – dein Benutzername, so findet man dich</small>' : '') + '</div></div>' +
       '<div class="cl-photo"><div><b>📸 Profilfoto</b><small>' + (p.photo ? 'Deine Freunde sehen dein Foto statt des Fischs.' : 'Lade ein Foto von dir hoch – das sehen nur du und deine Freunde.') + '</small></div>' +
       '<div class="row"><button class="btn sm green" data-act="ph-pick">' + (p.photo ? 'Anderes Foto' : 'Foto hochladen') + '</button>' + (p.photo ? '<button class="btn sm grey" data-act="ph-del">Entfernen</button>' : '') + '</div></div>' +
       '<small class="cl-sub">' + (p.photo ? 'Oder ein Fisch, wenn das Foto mal nicht lädt:' : 'Bis dahin dein Fisch:') + '</small>' +
@@ -210,9 +219,14 @@
       '<div class="set col"><div><b>🎟️ Familie einladen</b><small>Neue Spieler brauchen einen Einladungscode. Wer sich mit deinem Code registriert, ist danach automatisch dein Freund.</small></div>' +
       '<div class="cl-invites" id="cl-invites"><div class="cl-empty">Einen Moment …</div></div>' +
       '<div class="row"><input id="cl-invnote" class="cl-in sm" type="text" maxlength="40" placeholder="Für wen? (z. B. Oma)"><button class="btn sm green" data-act="inv-new">Code erstellen</button></div></div>' +
-      '<div class="set"><div><b>Freund hinzufügen</b><small>Code von jemand anderem eintippen.</small></div>' +
-      '<div class="row"><input id="cl-fcode" class="cl-in sm code" type="text" maxlength="9" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH"><button class="btn sm green" data-act="fr-add">Anfragen</button></div></div>' +
+      '<div class="set"><div><b>Freund hinzufügen</b><small>Nach @benutzername suchen – oder den Code von jemand anderem eintippen.</small></div>' +
+      '<div class="row"><button class="btn sm green" data-act="fr-find">🔍 Suchen</button><input id="cl-fcode" class="cl-in sm code" type="text" maxlength="9" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH"><button class="btn sm green" data-act="fr-add">Anfragen</button></div></div>' +
       '<div class="set col"><div><b>Freunde</b></div><div class="cl-friends" id="cl-friends">' + friendRows() + '</div></div>' +
+      (p.username ? '<div class="set"><div><b>🔍 In der Suche auffindbar</b><small>' + (p.searchable !== false ? 'Andere können dich über @' + esc(p.username) + ' finden und dir eine Anfrage schicken.' : 'Aus: Dich findet niemand über die Suche – Freunde kommen nur noch über deinen Code.') + '</small></div>' +
+        '<div class="row"><button class="btn sm ' + (p.searchable !== false ? 'green' : 'grey') + '" data-act="pf-search">' + (p.searchable !== false ? '✔ An' : 'Aus') + '</button></div></div>' : '') +
+      (p.recovery !== undefined ? '<div class="set"><div><b>🔐 Rettungs-Code</b><small>' + (p.recovery ? 'Angelegt am ' + new Date(p.recovery).toLocaleDateString('de-DE') + '. Damit setzt du selbst ein neues Passwort, falls du es vergisst.' : '<b>Noch keiner!</b> Mit dem Code setzt du selbst ein neues Passwort, falls du es mal vergisst.') + '</small></div>' +
+        '<div class="row"><button class="btn sm ' + (p.recovery ? '' : 'green') + '" data-act="rc-new">' + (p.recovery ? 'Neuen erstellen' : 'Jetzt erstellen') + '</button></div></div>' : '') +
+      (p.username ? '<div class="set col"><div><b>🚫 Blockiert</b><small>Blockierte schicken dir keine Anfragen und finden dich nicht in der Suche.</small></div><div class="cl-blocks" id="cl-blocks"><div class="cl-empty">Einen Moment …</div></div></div>' : '') +
       '<div class="set"><div><b>Wolke</b><small id="cl-sync">' + syncLine() + '</small><small>Angemeldet als <b>' + esc(C.userName()) + '</b></small></div>' +
       '<div class="row"><button class="btn sm" data-act="pf-push">Jetzt sichern</button><button class="btn sm grey" data-act="pf-logout">Abmelden</button></div></div>' +
       '<div class="set"><div><b>🔑 Passwort ändern</b><small>Mindestens 8 Zeichen. Das alte brauchst du dafür nicht.</small></div><div class="row">' +
@@ -220,6 +234,7 @@
       fileRow() + '</div>', 'mid');
     C.loadFriends().catch(function () { /* die Liste von eben reicht */ });
     loadInvites();
+    if (p.username) loadBlocks();
     UI.fillPhotos();
   };
 
@@ -319,14 +334,8 @@
     const i = $('#cl-fcode'), code = String(i ? i.value : '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     if (code.length !== 8) { UI.toast('Der Code hat 8 Zeichen, zum Beispiel ABCD-EFGH.', 'warn'); AA.audio.play('error'); return; }
     C.addFriend(code).then(function (r) {
-      if (r && r.ok) {
-        AA.audio.play('sparkle');
-        UI.toast(r.status === 'accepted' ? '🎉 Du und <b>' + esc(r.name) + '</b> seid jetzt Freunde!' : (r.already ? 'Die Anfrage an <b>' + esc(r.name) + '</b> läuft schon.' : '📨 Anfrage an <b>' + esc(r.name) + '</b> geschickt.'), 'gold');
-        if (i) i.value = '';
-        return;
-      }
-      const why = { unknown_code: 'Diesen Code gibt es nicht. Stimmt jedes Zeichen?', self: 'Das ist dein eigener Code. 😄', too_many: 'Du hast schon viele offene Anfragen – warte, bis jemand antwortet.', no_profile: 'Leg erst dein Profil an.' };
-      UI.toast('⚠️ ' + (why[r && r.error] || 'Das hat nicht geklappt.'), 'warn'); AA.audio.play('error');
+      if (r && !r.ok && r.error === 'self') { UI.toast('⚠️ Das ist dein eigener Code. 😄', 'warn'); AA.audio.play('error'); return; }
+      if (reqResult(r) && i) i.value = '';
     }, function () { UI.toast('⚠️ Keine Verbindung.', 'warn'); });
   }
   function byId(id) { return C.friends.filter(function (f) { return String(f.id) === String(id); })[0]; }
@@ -339,6 +348,172 @@
       UI.close();
       UI.toast(r && r.why === 'empty' ? '🫧 <b>' + esc(f.name) + '</b> hat noch kein Aquarium in der Wolke.' : (r && r.why === 'update' ? '🔄 ' + esc(f.name) + ' spielt schon mit einer neueren Version – lade die Seite neu.' : '⚠️ Der Besuch hat nicht geklappt.'), 'warn');
     }, function () { UI.close(); UI.toast('⚠️ Keine Verbindung – der Besuch muss warten.', 'warn'); });
+  }
+
+  /* ---------- Runde 20a: Freunde 2.0 – Anfragen, Suche nach @benutzername, Blockieren & Melden, Rettungs-Code ---------- */
+  const WHY = { unknown: 'Diese Person gibt es nicht (mehr) – oder sie ist nicht auffindbar.', unknown_code: 'Diesen Code gibt es nicht. Stimmt jedes Zeichen?', self: 'Das bist du selbst. 😄',
+    too_many: 'Du hast schon 20 offene Anfragen – warte, bis jemand antwortet.', too_many_today: 'Für heute sind es genug Anfragen – morgen geht es weiter.',
+    full: 'Einer von euch hat schon 200 Freunde – mehr passen nicht in die Liste.', no_profile: 'Leg erst dein Profil an.' };
+  function reqResult(r, back) {
+    if (r && r.ok) {
+      AA.audio.play('sparkle');
+      UI.toast(r.status === 'accepted' ? '🎉 Du und <b>' + esc(r.name) + '</b> seid jetzt Freunde!' : (r.already ? 'Die Anfrage an <b>' + esc(r.name) + '</b> läuft schon.' : '📨 Anfrage an <b>' + esc(r.name) + '</b> geschickt.'), 'gold');
+      return true;
+    }
+    UI.toast('⚠️ ' + (WHY[r && r.error] || 'Das hat nicht geklappt.'), 'warn'); AA.audio.play('error');
+    return false;
+  }
+  /* Eingehende Anfragen: eigene Karte in der Leiste → diese Liste */
+  function reqHtml() {
+    const L = C.friends.filter(function (f) { return f.status === 'pending' && f.incoming; });
+    return L.length ? rowsOf(L) : '<div class="cl-empty">Gerade keine offenen Anfragen. 👍</div>';
+  }
+  UI.openRequests = function () {
+    if (!C.user) return;
+    UI.open('freq', head('📨 Freundschafts-Anfragen') + '<div class="list cl-reqs"><div class="cl-friends" id="cl-reqlist">' + reqHtml() + '</div>' +
+      '<p class="cl-fine">Kennst du jemanden nicht? Einfach ✕ – oder über ⋯ blockieren und melden.</p></div>', 'mid');
+    UI.fillPhotos();
+  };
+  /* Freund finden: Suche nach @benutzername + Freundes-Code */
+  let srch = { q: '', n: 0, t: 0, res: null, msg: '' };
+  function srRow(u) {
+    const f = C.friends.filter(function (x) { return x.user === u.user; })[0];
+    const rel = f ? (f.status === 'accepted' ? 'friends' : (f.incoming ? 'in' : 'out')) : u.rel;
+    const btn = rel === 'friends' ? '<span class="cl-tag ok">✔ Ihr seid Freunde</span>' : (rel === 'out' ? '<span class="cl-tag">📤 Anfrage läuft</span>'
+      : (rel === 'in' && f ? '<button class="btn sm green" data-act="fr-accept" data-id="' + f.id + '">✔ Annehmen</button>' : '<button class="btn sm green" data-act="sr-add" data-id="' + esc(u.user) + '">＋ Hinzufügen</button>'));
+    return '<div class="cl-friend">' + av(u.avatar) + '<div class="cl-fn"><b>' + esc(u.name) + '</b><small class="cl-handle">@' + esc(u.username) + '</small></div><div class="row">' + btn +
+      '<button class="btn sm grey more" data-act="sr-more" data-id="' + esc(u.user) + '" title="Blockieren oder melden">⋯</button></div></div>';
+  }
+  function srHtml() {
+    if (srch.msg) return '<div class="cl-empty">' + srch.msg + '</div>';
+    if (!srch.res) return '<div class="cl-empty">' + (srch.q.length >= 3 ? 'Sucht …' : 'Tipp mindestens 3 Buchstaben.') + '</div>';
+    if (!srch.res.length) return '<div class="cl-empty">Niemand gefunden. Stimmt die Schreibweise? (Manche lassen sich auch nicht finden – dann hilft nur der Code.)</div>';
+    return srch.res.map(srRow).join('');
+  }
+  function srPaint() { const b = $('#cl-results'); if (b && UI.modalKind === 'fadd') { b.innerHTML = srHtml(); } }
+  function srGo(now) {
+    clearTimeout(srch.t);
+    const i = $('#cl-search'), q = C.normUser(i ? i.value : '').replace(/^@+/, '');
+    srch.q = q; srch.msg = ''; srch.res = null;
+    if (q.length < 3) { srPaint(); return; }
+    srPaint();
+    srch.t = setTimeout(function () {
+      const n = ++srch.n;
+      C.searchUsers(q).then(function (r) {
+        if (n !== srch.n) return;                       // inzwischen weitergetippt
+        if (r && r.ok) srch.res = r.users || [];
+        else srch.msg = r && r.error === 'slow' ? 'Puh, ganz schön viele Suchen – kurz durchatmen, in einer Minute geht es weiter.' : (r && r.error === 'short' ? 'Tipp mindestens 3 Buchstaben.' : 'Das hat nicht geklappt.');
+        srPaint();
+      }, function () { if (n === srch.n) { srch.msg = 'Gerade keine Verbindung.'; srPaint(); } });
+    }, now ? 0 : 350);
+  }
+  UI.openFind = function () {
+    if (!C.user) { after = null; UI.openLogin(); return; }
+    if (!C.profile) { openOnboard(); return; }
+    const p = C.profile, share = !!navigator.share;
+    srch = { q: '', n: srch.n, t: 0, res: null, msg: '' };
+    UI.open('fadd', head('＋ Freund finden') + '<div class="list settings cl-find">' +
+      '<div class="set col"><div><b>🔍 Nach Benutzername suchen</b><small>Zum Beispiel findet <i>oma</i> auch @oma-rosi. Es erscheinen nur Name, @benutzername und Fisch.</small></div>' +
+      '<input id="cl-search" class="cl-in" type="search" maxlength="30" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="@benutzername">' +
+      '<div class="cl-friends cl-results" id="cl-results">' + srHtml() + '</div></div>' +
+      '<div class="set"><div><b>Oder per Freundes-Code</b><small>Den Code findet jeder unter 👥 → Profil.</small></div>' +
+      '<div class="row"><input id="cl-fcode" class="cl-in sm code" type="text" maxlength="9" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCD-EFGH"><button class="btn sm green" data-act="fr-add">Anfragen</button></div></div>' +
+      '<div class="set"><div><b>Dein Code</b><small>' + (p.username ? 'Oder sag einfach: Such mich als <b>@' + esc(p.username) + '</b>.' : 'Gib ihn weiter – wer ihn eintippt, schickt dir eine Anfrage.') + '</small></div>' +
+      '<div class="row"><span class="cl-code sm">' + esc(C.fmtCode(p.code)) + '</span><button class="btn sm" data-act="pf-copy">Kopieren</button>' + (share ? '<button class="btn sm" data-act="pf-share">Teilen</button>' : '') + '</div></div>' +
+      '</div>', 'mid');
+    const i = $('#cl-search'); if (i && !UI.touch) i.focus();
+  };
+  function srAdd(user) {
+    C.requestFriend(user).then(function (r) {
+      if (reqResult(r) && srch.res) srch.res.forEach(function (u) { if (u.user === user) u.rel = r.status === 'accepted' ? 'friends' : 'out'; });
+      srPaint();
+    }, function () { UI.toast('⚠️ Keine Verbindung.', 'warn'); });
+  }
+  /* ⋯ Blockieren oder melden */
+  let um = null;
+  function userMenu(u, back) {
+    if (!u || !u.user) return;
+    um = { u: u, back: back };
+    UI.open('umenu', head(esc(u.name)) + '<div class="confirm cl-ask">' + (u.username ? '<p class="cl-handle big">@' + esc(u.username) + '</p>' : '') +
+      '<div class="cl-um">' + '<button class="btn" data-act="um-report" data-id="name">⚑ Namen melden</button>' + (u.photo > 0 ? '<button class="btn" data-act="um-report" data-id="photo">⚑ Foto melden</button>' : '') +
+      '<button class="btn red" data-act="um-block">🚫 Blockieren</button><button class="btn grey" data-act="um-back">Zurück</button></div>' +
+      '<p class="cl-fine">Blockieren: <b>' + esc(u.name) + '</b> kann dir keine Anfragen mehr schicken und findet dich nicht in der Suche – und umgekehrt. Eine Freundschaft endet dabei. Aufheben kannst du das unter 👥 → Profil. Melden geht an Damian.</p></div>', 'small');
+  }
+  function umBack() { const b = um && um.back; um = null; if (b === 'freq') UI.openRequests(); else if (b === 'fadd') { const keep = srch; UI.openFind(); srch = keep; const i = $('#cl-search'); if (i) i.value = keep.q; srPaint(); } else UI.openProfile(); }
+  function umBlock() {
+    if (!um) return; const u = um.u;
+    C.blockUser(u.user).then(function (r) {
+      if (r && r.ok) { AA.audio.play('pop'); if (srch.res) srch.res = srch.res.filter(function (x) { return x.user !== u.user; }); umBack(); UI.toast('🚫 <b>' + esc(u.name) + '</b> ist blockiert.'); }
+      else UI.toast('⚠️ Das hat nicht geklappt.', 'warn');
+    }, function () { UI.toast('⚠️ Keine Verbindung.', 'warn'); });
+  }
+  function umReport(why) {
+    if (!um) return; const u = um.u;
+    C.reportUser(u.user, why).then(function (r) {
+      if (r && r.ok) { umBack(); UI.toast('⚑ Danke! Damian schaut sich das an.'); }
+      else UI.toast('⚠️ ' + (r && r.error === 'too_many_today' ? 'Für heute sind es genug Meldungen.' : 'Das hat nicht geklappt.'), 'warn');
+    }, function () { UI.toast('⚠️ Keine Verbindung.', 'warn'); });
+  }
+  /* Blockiert-Liste im Profil */
+  function loadBlocks() {
+    C.myBlocks().then(function (l) {
+      const b = $('#cl-blocks'); if (!b) return;
+      b.innerHTML = l.length ? l.map(function (u) { return '<div class="cl-friend pending">' + av(u.avatar) + '<div class="cl-fn"><b>' + esc(u.name) + '</b><small class="cl-handle">@' + esc(u.username) + '</small></div><div class="row"><button class="btn sm" data-act="bl-un" data-id="' + esc(u.user) + '">Freigeben</button></div></div>'; }).join('')
+        : '<div class="cl-empty">Niemand. 😊</div>';
+    }, function () { const b = $('#cl-blocks'); if (b) b.innerHTML = '<div class="cl-empty">Gerade keine Verbindung.</div>'; });
+  }
+  /* Rettungs-Code anzeigen (genau einmal) */
+  let shownCode = '';
+  function fmt12(c) { c = String(c || ''); return c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8, 12); }
+  function showCode(code, renewed) {
+    shownCode = fmt12(code);
+    UI.open('rcode', head('🔐 Dein Rettungs-Code') + '<div class="confirm cl-ask"><p>Vergisst du mal dein Passwort, setzt du damit <b>selbst</b> ein neues – unter „Passwort vergessen?“ beim Anmelden.</p>' +
+      '<div class="cl-rcode">' + esc(shownCode) + '</div><p class="cl-fine"><b>Fotografier ihn ab</b> oder schreib ihn auf – er wird nur dieses eine Mal angezeigt.' + (renewed ? ' Dein alter Code gilt nicht mehr.' : '') + '</p>' +
+      '<div class="row end"><button class="btn" data-act="rc-copy">Kopieren</button><button class="btn green" data-act="close">Hab ihn notiert</button></div></div>', 'small', true);
+  }
+  /* nach Anmelden / erstem Profil: neuen Code zeigen – oder einmal je Gerät darauf hinweisen, dass es Rettungs-Codes gibt */
+  function pendingCode() {
+    const c = gate.newCode; gate.newCode = null;
+    if (window.AA_NO_RCODE && c !== '' && typeof c !== 'string') return;      // Tests: kein Rettungs-Code-Fenster von allein (wie AA_NO_RITUAL)
+    if (c === true) { whenFree(function () { makeCode(false); }); return; }
+    if (c) { whenFree(function () { showCode(c, true); }); return; }
+    const p = C.profile, key = 'aa-rc-hint-' + (C.user && C.user.id);
+    if (p && p.recovery === null && C.user) {
+      let seen = false; try { seen = !!localStorage.getItem(key); localStorage.setItem(key, '1'); } catch (e) { seen = true; }
+      if (!seen) setTimeout(function () { UI.toast('🔐 Neu: Leg dir unter 👥 → Profil einen <b>Rettungs-Code</b> an – damit setzt du ein vergessenes Passwort selbst zurück.', 'big'); }, 4000);
+    }
+  }
+  function makeCode(renew) {
+    C.newRecoveryCode().then(function (r) {
+      if (r && r.ok && r.code) showCode(r.code, renew);
+      else if (renew) UI.toast('⚠️ ' + (r && r.error === 'too_many_today' ? 'Für heute sind es genug neue Codes.' : 'Das hat nicht geklappt.'), 'warn');
+    }, function () { if (renew) UI.toast('⚠️ Keine Verbindung.', 'warn'); });
+  }
+  /* Passwort vergessen → Rettungs-Code */
+  UI.openRecover = function () {
+    gate.busy = false;
+    UI.open('lrec', '<div class="hero cl-hero"><div class="logo">Awesome <br>Aquarium</div>' +
+      '<form class="cl-box" id="cl-rform" novalidate><b>Passwort vergessen?</b><small>Mit deinem Rettungs-Code setzt du selbst ein neues. Keinen Code? Dann sag Damian Bescheid.</small>' +
+      '<input id="cl-user" class="cl-in" type="text" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="24" placeholder="Benutzername" value="' + esc(gate.user || '') + '">' +
+      '<input id="cl-rc" class="cl-in code" type="text" maxlength="14" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Rettungs-Code XXXX-XXXX-XXXX">' +
+      '<input id="cl-rpass" class="cl-in" type="password" name="password" autocomplete="new-password" maxlength="72" placeholder="Neues Passwort (mindestens 8 Zeichen)">' +
+      '<div class="note warn hidden" id="cl-err"></div><button type="submit" class="btn green lg" id="cl-go">Neues Passwort setzen</button>' +
+      '<div class="cl-links"><button type="button" class="lnk" data-act="lg-have">Zurück zum Anmelden</button></div></form></div>', 'small hero-m', !!after);
+    const i = $(gate.user ? '#cl-rc' : '#cl-user'); if (i && !UI.touch) i.focus();
+  };
+  function recover() {
+    if (gate.busy) return;
+    const u = C.normUser(($('#cl-user') || {}).value), code = String(($('#cl-rc') || {}).value || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase(), pw = String(($('#cl-rpass') || {}).value || '');
+    if (!C.validUser(u)) { err('Den Benutzernamen gibt es so nicht. Er hat 3 bis 20 Zeichen: Buchstaben, Zahlen, - und _.'); return; }
+    if (code.length !== 12) { err('Der Rettungs-Code hat 12 Zeichen, zum Beispiel ABCD-EFGH-JKLM.'); return; }
+    if (pw.length < 8) { err('Das neue Passwort braucht mindestens 8 Zeichen.'); return; }
+    gate.user = u; err(''); busy(true);
+    C.recoverPassword(u, code, pw).then(function (r) {
+      if (r && r.ok && r.signed) { gate.busy = false; gate.newCode = r.code || null; waiting('Neues Passwort gesetzt – du wirst angemeldet …'); return; }
+      if (r && r.ok) { busy(false); if (r.code) showCode(r.code, true); UI.toast('🔑 Neues Passwort gesetzt – melde dich jetzt damit an.', 'big'); return; }
+      busy(false);
+      err(r && r.error === 'slow' ? 'Zu viele Versuche. Warte eine Stunde und versuch es dann nochmal – oder frag Damian.' : (r && r.error === 'pass' ? 'Das neue Passwort braucht mindestens 8 Zeichen.' : 'Benutzername oder Rettungs-Code stimmt nicht.'));
+    }, function (e) { busy(false); err(authMsg(e)); });
   }
 
   /* ---------- Spielstand als Datei ---------- */
@@ -388,16 +563,14 @@
   function barHtml() {
     const here = AA.visit ? AA.visit.user : null;
     let h = '';
+    const nIn = C.requests();      // Runde 20a: eingehende Anfragen als eine Karte ganz vorne, ausgehende stehen im Profil unter „Gesendet“
+    if (!AA.visit && C.user && nIn) h += '<button class="fcard reqs" data-fb="reqs"><span class="fc-ico">📨</span><b>Anfragen (' + nIn + ')</b><small>antippen zum Antworten</small></button>';
     if (AA.visit) h += '<button class="fcard home" data-fb="home"><span class="fc-ico">🏠</span><b>Nach Hause</b><small>zu deinem Aquarium</small></button>';
     else if (C.profile) h += '<button class="fcard me" data-fb="profile">' + face(me()) + '<b>' + esc(C.profile.name) + '</b><small>Profil &amp; Code</small></button>';
     C.friends.forEach(function (f) {
       if (f.status === 'accepted') {
         h += '<button class="fcard' + (f.user === here ? ' here' : '') + '" data-fb="visit" data-id="' + f.id + '">' + face(f) + '<b>' + esc(f.name) + (UI.themeBadges ? UI.themeBadges(f.badges) : '') + '</b><small>Level ' + (f.level || 1) + ' · ' + (f.fish || 0) + ' 🐟</small>' +
           '<small class="ago">' + (f.user === here ? 'du bist hier' : (f.updated_at ? C.ago(f.updated_at) : 'noch kein Aquarium')) + '</small>' + (UI.giftBadge ? UI.giftBadge(f) : '') + '</button>';
-      } else if (f.incoming) {
-        h += '<div class="fcard req">' + av(f.avatar) + '<b>' + esc(f.name) + '</b><small>möchte dein Freund sein</small><span class="fc-btns"><button data-fb="accept" data-id="' + f.id + '" title="Annehmen">✔</button><button data-fb="remove" data-id="' + f.id + '" title="Ablehnen">✕</button></span></div>';
-      } else {
-        h += '<div class="fcard wait">' + av(f.avatar) + '<b>' + esc(f.name) + '</b><small>Anfrage läuft …</small></div>';
       }
     });
     const test = UI.testCard ? UI.testCard(here) : '';      // Runde 10: Testfreund Testi (js/familyui.js)
@@ -433,7 +606,9 @@
     AA.audio.play('click');
     if (k === 'left' || k === 'right') { const t = $('#fb-track'); if (t) t.scrollBy({ left: (k === 'left' ? -1 : 1) * 360, behavior: 'smooth' }); }
     else if (k === 'home') { waiting('Ab nach Hause …'); C.home(); }
-    else if (k === 'profile' || k === 'add') { UI.openProfile(); if (k === 'add') setTimeout(function () { const i = $('#cl-fcode'); if (i) { i.scrollIntoView({ block: 'center' }); if (!UI.touch) i.focus(); } }, 60); }
+    else if (k === 'profile') UI.openProfile();
+    else if (k === 'add') UI.openFind();
+    else if (k === 'reqs') UI.openRequests();
     else if (k === 'login') { after = null; UI.openLogin(); }
     else if (k === 'gift') { if (UI.giftFriend) UI.giftFriend(id === 'test' ? 'test' : byId(id)); }      // Runde 12: Geschenk (js/extrasui.js)
     else if (k === 'visit') visit(byId(id));
@@ -466,7 +641,7 @@
       case 'menu-go': UI.close(); { const t = $('#' + id); if (t && (!AA.visit || id === 'btn-photo' || id === 'btn-light' || id === 'btn-sound')) t.click(); } return true;
       case 'lg-inv': switchLogin(true); return true;
       case 'lg-have': switchLogin(false); return true;
-      case 'lg-forgot': note('Kein Problem: Sag Damian Bescheid, er setzt dir ein neues Passwort. Danach kannst du es unter 👥 → Profil selbst ändern.'); return true;
+      case 'lg-forgot': keepUser(); UI.openRecover(); return true;
       case 'pw-save': savePassword(); return true;
       case 'inv-new': newInvite(); return true;
       case 'inv-copy': copy(inviteText(id)); return true;
@@ -484,7 +659,7 @@
       case 'pf-copy': copy(C.fmtCode(C.profile.code)); return true;
       case 'pf-share': try { navigator.share({ title: 'Awesome Aquarium', text: 'Mein Freundes-Code für Awesome Aquarium: ' + C.fmtCode(C.profile.code) + (location.protocol !== 'file:' ? '\n' + location.origin + location.pathname : '') }).catch(function () { /* abgebrochen */ }); } catch (e) { copy(C.fmtCode(C.profile.code)); } return true;
       case 'pf-push': AA.save(); C.push(true).then(function (ok) { UI.toast(ok ? '☁️ Gesichert.' : '⚠️ Gerade keine Verbindung – wird nachgeholt.', ok ? '' : 'warn'); const s = $('#cl-sync'); if (s) s.innerHTML = syncLine(); }); return true;
-      case 'pf-logout': C.logout().then(function () { UI.close(); barOpen = false; refreshBar(); UI.toast('👋 Abgemeldet. Dein Aquarium bleibt in der Wolke und auf diesem Gerät.', 'big'); }); return true;
+      case 'pf-logout': C.logout().then(function () { UI.close(); barOpen = false; gate.showInv = false; refreshBar(); UI.toast('👋 Abgemeldet. Dein Aquarium bleibt in der Wolke und auf diesem Gerät.', 'big'); }); return true;
       case 'pf-export': exportFile(); return true;
       case 'pf-import': importFile(); return true;
       case 'imp-ok': importNow(); return true;
@@ -492,6 +667,17 @@
       case 'fr-accept': C.acceptFriend(+id).then(function (r) { if (r && r.ok) { AA.audio.play('sparkle'); UI.toast('🎉 Ihr seid jetzt Freunde!', 'gold'); } }); return true;
       case 'fr-remove': C.removeFriend(+id); return true;
       case 'fr-visit': visit(byId(id)); return true;
+      case 'fr-find': UI.openFind(); return true;
+      case 'fr-more': { const f = byId(id); if (f) userMenu({ user: f.user, name: f.name, username: f.username, photo: f.photo }, UI.modalKind); } return true;
+      case 'sr-add': srAdd(id); return true;
+      case 'sr-more': { const u = (srch.res || []).filter(function (x) { return x.user === id; })[0]; if (u) userMenu(u, 'fadd'); } return true;
+      case 'um-block': umBlock(); return true;
+      case 'um-report': umReport(id); return true;
+      case 'um-back': umBack(); return true;
+      case 'bl-un': C.unblockUser(id).then(function () { UI.toast('👍 Freigegeben.'); loadBlocks(); }, function () { UI.toast('⚠️ Keine Verbindung.', 'warn'); }); return true;
+      case 'pf-search': C.setSearchable(!(C.profile && C.profile.searchable !== false)).then(function (r) { if (r && r.ok && UI.modalKind === 'profile') UI.openProfile(); }, function () { UI.toast('⚠️ Keine Verbindung.', 'warn'); }); return true;
+      case 'rc-new': makeCode(!!(C.profile && C.profile.recovery)); return true;
+      case 'rc-copy': copy(shownCode); return true;
       case 'ask-cloud': waiting('Dein Aquarium wird aus der Wolke geholt …'); C.resolve('cloud').then(function (ok) { if (!ok) { UI.close(); UI.toast('⚠️ Das Laden hat nicht geklappt – versuch es gleich nochmal über 👥.', 'warn'); } }); return true;
       case 'ask-local': UI.close(); C.resolve('local').then(function (ok) { UI.toast(ok ? '☁️ Das Aquarium von diesem Gerät ist jetzt in der Wolke.' : '⚠️ Gerade keine Verbindung – wird nachgeholt.', ok ? 'big' : 'warn'); }); proceed(); return true;
       case 'ask-fresh': waiting('Neues Aquarium wird eingerichtet …'); C.resolve('fresh'); return true;
@@ -517,11 +703,13 @@
   }
   /* Im Menü steht nur, was gerade nicht als Knopf zu sehen ist (Handy: fast alles; Rechner mit enger Leiste: die seltenen Knöpfe) */
   function hiddenNow(id) { const b = $('#' + id); return !!b && (!b.offsetParent || getComputedStyle(b).display === 'none'); }
-  UI.openMenu = function () {
+  UI.openMenu = function (all) {           // all (Taste Tab, Runde 20a): am Rechner, wo alles als Knopf da ist, trotzdem alle Kacheln
     const vis = AA.visit ? { 'btn-photo': 1, 'btn-light': 1, 'btn-sound': 1 } : null;
-    UI.open('menu', head('☰ Menü') + '<div class="menu-grid">' + MENU.filter(function (m) { return vis ? vis[m[0]] && $('#' + m[0]) : hiddenNow(m[0]); }).map(function (m) {
+    let L = MENU.filter(function (m) { return vis ? vis[m[0]] && $('#' + m[0]) : hiddenNow(m[0]); });
+    if (all && !vis && !L.length) L = MENU.filter(function (m) { return $('#' + m[0]); });
+    UI.open('menu', head('☰ Menü') + '<div class="menu-grid">' + L.map(function (m) {
       return '<button class="menu-tile" data-act="menu-go" data-id="' + m[0] + '"><span>' + (m[0] === 'btn-sound' ? $('#btn-sound').textContent : m[1]) + '</span>' + m[2] + mark(m[3]) + '</button>';
-    }).join('') + '</div>', 'mid');
+    }).join('') + (UI.touch ? '' : '<button class="menu-tile" data-act="keys"><span>⌨️</span>Tasten</button>') + '</div>', 'mid');
   };
   function menuDot() {
     const d = $('#menu-dot'); if (!d) return;
@@ -538,25 +726,35 @@
     $('#modal').addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       const k = UI.modalKind, id = e.target && e.target.id;
-      if (k === 'login') {
-        const nx = id === 'cl-user' ? $('#cl-pass') : (id === 'cl-pass' ? $('#cl-inv') : null);
+      if (k === 'login' || k === 'lrec') {
+        const nx = k === 'lrec' ? (id === 'cl-user' ? $('#cl-rc') : (id === 'cl-rc' ? $('#cl-rpass') : null)) : (id === 'cl-user' ? $('#cl-pass') : (id === 'cl-pass' ? $('#cl-inv') : null));
         if (nx && !nx.value) { e.preventDefault(); nx.focus(); }
         return;
       }
+      if (k === 'fadd' && id === 'cl-search') { e.preventDefault(); srGo(true); return; }
+      if (k === 'fadd' && id === 'cl-fcode') { e.preventDefault(); UI.cloudClick('fr-add'); return; }
       const act = (k === 'onboard' ? 'ob-save' : (k === 'profile' ? (id === 'cl-fcode' ? 'fr-add' : (id === 'cl-name' ? 'pf-save' : (id === 'cl-invnote' ? 'inv-new' : (id === 'cl-newpass' ? 'pw-save' : null)))) : null));
       if (act) { e.preventDefault(); UI.cloudClick(act); }
     });
     $('#modal').addEventListener('submit', function (e) {   // Anmelde-Formular: Enter oder Knopf – nie die Seite neu laden
       e.preventDefault();
       if (e.target && e.target.id === 'cl-form' && UI.modalKind === 'login') { AA.audio.play('click'); if (gate.showInv) register(); else login(); }
+      if (e.target && e.target.id === 'cl-rform' && UI.modalKind === 'lrec') { AA.audio.play('click'); recover(); }
     });
     $('#modal').addEventListener('input', function (e) {
       if (e.target.id === 'cl-user' || e.target.id === 'cl-pass') { const er = $('#cl-err'); if (er && !er.classList.contains('hidden')) err(''); }
       if (e.target.id === 'cl-fcode' || e.target.id === 'cl-inv') { const v = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8); e.target.value = v.length > 4 ? v.slice(0, 4) + '-' + v.slice(4) : v; }
+      if (e.target.id === 'cl-rc') { const v = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 12); e.target.value = v.replace(/(.{4})(?=.)/g, '$1-'); }
+      if (e.target.id === 'cl-search') srGo(false);
+      if (e.target.id === 'cl-rc' || e.target.id === 'cl-rpass') { const er = $('#cl-err'); if (er && !er.classList.contains('hidden')) err(''); }
     });
     AA.on('assets', function () { document.querySelectorAll('img.av[data-av]').forEach(function (im) { const s = AA.assets.thumb(im.dataset.av); if (im.getAttribute('src') !== s) im.src = s; }); });
     if (!C.on) return;
-    AA.on('friends', function () { refreshBar(); const l = $('#cl-friends'); if (l && UI.modalKind === 'profile') { l.innerHTML = friendRows(); UI.fillPhotos(); } });
+    AA.on('friends', function () {
+      refreshBar(); const l = $('#cl-friends'); if (l && UI.modalKind === 'profile') { l.innerHTML = friendRows(); UI.fillPhotos(); }
+      const q = $('#cl-reqlist'); if (q && UI.modalKind === 'freq') { q.innerHTML = reqHtml(); UI.fillPhotos(); }
+      if (UI.modalKind === 'fadd') srPaint();
+    });
     AA.on('photos', applyPhotos);
     AA.on('cloud', function () {
       const s = $('#cl-sync'); if (s) s.innerHTML = syncLine();
@@ -567,7 +765,7 @@
     AA.on('cloudAsk', function (q) { whenFree(function () { if (C.pending === q) openAsk(q); }); });
     AA.on('cloudReload', function () { if (UI.modalKind !== 'cwait') waiting('Dein Aquarium wird geladen …'); });
     AA.on('cloudNote', function (k) { if (k === 'saved') UI.toast('☁️ Dein Aquarium ist jetzt in deinem Konto gesichert.', 'big'); });
-    AA.on('cloudLinked', function () { if (UI.modalKind === 'cwait' && !C.reloading && !C.pending) UI.close(); if (!UI.modalKind) proceed(); else if (after) whenFree(function () { if (!C.reloading && !C.pending) proceed(); }); });
+    AA.on('cloudLinked', function () { setTimeout(pendingCode, 400); if (UI.modalKind === 'cwait' && !C.reloading && !C.pending) UI.close(); if (!UI.modalKind) proceed(); else if (after) whenFree(function () { if (!C.reloading && !C.pending) proceed(); }); });
     setInterval(function () {                              // Freundesliste ab und zu auffrischen (neue Anfragen), solange das Spiel offen ist
       if (document.hidden || !C.user || !C.profile) return;
       if (++tickT % (barOpen || AA.visit ? 4 : 20) === 0) C.loadFriends().catch(function () { /* egal */ });

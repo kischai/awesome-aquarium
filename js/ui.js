@@ -455,7 +455,7 @@
       (UI.lifeSetting ? UI.lifeSetting() : '') +
       (UI.cloudSetting ? UI.cloudSetting() : '') + (UI.familySetting ? UI.familySetting() : '') +
       '<div class="set"><div><b>Deine Bilanz</b><small>' + fmt(st.bought) + ' Fische gekauft · ' + fmt(st.raised) + ' großgezogen · ' + fmt(st.eggs) + ' Eier · ' + fmt(st.trained) + ' Tricks beigebracht · ' + fmt(st.sold) + ' verkauft (' + fmt(st.soldCoins) + ' Münzen) · ' + fmt(st.cleans) + ' Bürstenstriche</small></div></div>' +
-      '<div class="set kbd-only"><div><b>Tastenkürzel</b><small>1 Auswahl · 2 Füttern · 3 Putzen · 4 Tricks/Klopfen · 5 Deko · S Shop · K Büro · A Aufträge · B Sammelbuch · E Erfolge · G Geschenk · T Schatzsuche · U Becken-Übersicht · H Alle füttern · F Foto · L Licht · M Musik · Esc Schließen</small></div></div>' +
+      '<div class="set kbd-only"><div><b>Tastenkürzel</b><small>1 Auswahl · 2 Füttern · 3 Putzen · 4 Tricks/Klopfen · 5 Deko · S Shop · K Büro · A Aufträge · B Sammelbuch · E Erfolge · G Geschenk · T Schatzsuche · U Becken-Übersicht · H Alle füttern · F Foto · L Licht · M Musik · N Ton · ← → Becken · , Einstellungen · Tab Menü · Strg/⌘+Z Deko rückgängig · Esc Schließen</small></div><div class="row"><button class="btn sm" data-act="keys">⌨️ Alle (?)</button></div></div>' +
       '<div class="set"><div><b>Neu anfangen</b><small>Gespeichert wird automatisch im Browser' + (AA.cloud && AA.cloud.user ? ' und in der Wolke' : '') + '. Hier fängst du ganz von vorn an.</small></div><div class="row"><button class="btn red" data-act="reset">Neu anfangen</button></div></div>' +
       '</div>', 'mid');
   };
@@ -867,6 +867,7 @@
       const f = AA.tank().fish.find(function (x) { return x.id === id; });
       if (f && !AA.hunt.start(f)) UI.toast('⚠️ Heute keine Schatzsuche mehr.', 'warn');
     }
+    else if (act === 'keys') { if (UI.openKeys) UI.openKeys(); }
     else if (act === 'sellyes') { const p = UI.pending; UI.close(); if (p && p.kind === 'sell') AA.sellFish(p.obj); UI.pending = null; }
     else if (act === 'moveto') {
       const p = UI.pending; UI.close(); UI.pending = null;

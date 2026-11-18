@@ -392,6 +392,23 @@
   C.addFriend = function (code) { return rpc('add_friend', { p_code: code }).then(function (r) { C.loadFriends().catch(function () { /* egal */ }); return r; }); };
   C.acceptFriend = function (id) { return rpc('accept_friend', { p_id: id }).then(function (r) { return C.loadFriends().then(function () { return r; }); }); };
   C.removeFriend = function (id) { return rpc('remove_friend', { p_id: id }).then(function (r) { return C.loadFriends().then(function () { return r; }); }); };
+  /* Runde 20a: Freunde 2.0 (supabase/migrations/20261118120000_friends2.sql) – Suche nach @benutzername, Blockieren, Melden, Rettungs-Code */
+  C.searchUsers = function (q) { return rpc('search_users', { p_q: String(q || '') }, 8000); };
+  C.requestFriend = function (user) { return rpc('request_friend', { p_user: user }).then(function (r) { C.loadFriends().catch(function () { /* egal */ }); return r; }); };
+  C.setSearchable = function (on) { return rpc('set_searchable', { p_on: !!on }).then(function (r) { if (r && r.ok && C.profile) { C.profile.searchable = !!on; emit('cloud'); } return r; }); };
+  C.blockUser = function (user) { return rpc('block_user', { p_user: user }).then(function (r) { return C.loadFriends().then(function () { return r; }); }); };
+  C.unblockUser = function (user) { return rpc('unblock_user', { p_user: user }); };
+  C.myBlocks = function () { return rpc('my_blocks', {}, 10000).then(function (l) { return Array.isArray(l) ? l : []; }); };
+  C.reportUser = function (user, reason, note) { return rpc('report_user', { p_user: user, p_reason: reason, p_note: note || null }); };
+  C.newRecoveryCode = function () { return rpc('new_recovery_code').then(function (r) { if (r && r.ok && C.profile) { C.profile.recovery = new Date().toISOString(); emit('cloud'); } return r; }); };
+  /* Passwort vergessen: geht ohne Anmeldung; danach gleich mit dem neuen Passwort anmelden. Antwort: { ok, code } (der neue Rettungs-Code) */
+  C.recoverPassword = function (user, code, pass) {
+    const u = C.normUser(user);
+    return rpc('recover_password', { p_user: u, p_code: String(code || ''), p_pass: String(pass || '') }, 20000).then(function (r) {
+      if (!r || !r.ok) return r || { ok: false };
+      return C.signIn(u, pass).then(function () { r.signed = true; return r; }, function () { r.signed = false; return r; });
+    });
+  };
   /* Runde 12: Becken-Hilfe und Geschenke (supabase/migrations/20261112130000_help_gifts.sql) */
   C.helpFriend = function (user, kind) { return rpc('help_friend', { p_user: user, p_kind: kind }).then(function (r) { C.loadCounts(); return r; }); };
   C.myHelps = function () { return rpc('my_helps', {}, 10000).then(function (l) { return Array.isArray(l) ? l : []; }); };

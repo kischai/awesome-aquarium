@@ -46,9 +46,9 @@
         <button id="btn-hunt" title="Schatzsuche – zweimal pro Tag (T)">🧭<i class="badge hidden" id="hunt-badge">2</i></button>
         <button id="btn-photo" title="Foto (F)">📷</button>
         <button id="btn-light" title="Licht an/aus (L)">🌙</button>
-        <button id="btn-sound" title="Ton">🔊</button>
-        <button id="btn-settings" title="Einstellungen">⚙️</button>
-        <button id="btn-menu" title="Menü">☰<i class="dot hidden" id="menu-dot"></i></button>
+        <button id="btn-sound" title="Ton an/aus (N) – Musik: M">🔊</button>
+        <button id="btn-settings" title="Einstellungen (,)">⚙️</button>
+        <button id="btn-menu" title="Menü (Tab) – alle Tasten: ?">☰<i class="dot hidden" id="menu-dot"></i></button>
       </div>
     </div>
 
@@ -63,16 +63,16 @@
       </div>
       <div class="panel tools">
         <button data-tool="hand" class="tool active" title="Auswählen &amp; Deko verschieben (1)">✋<small>Auswahl</small></button>
-        <button data-tool="food" class="tool" title="Füttern: oben ins Becken klicken – eine Prise pro Klick (2)"><img data-ic="prop/foodcan" alt="" height="30"><small>Füttern</small><i class="count" id="food-n">0</i></button>
+        <button data-tool="food" class="tool" title="Füttern: oben ins Becken klicken – eine Prise pro Klick. Alle Becken auf einmal: H (2)"><img data-ic="prop/foodcan" alt="" height="30"><small>Füttern</small><i class="count" id="food-n">0</i></button>
         <button data-tool="sponge" class="tool" title="Putzen: klicken, klicken, klicken – 10 XP pro Strich (3)">🧽<small>Putzen</small></button>
         <button data-tool="tap" class="tool" title="Ans Glas klopfen: trainierte Fische zeigen Tricks. Gedrückt halten: „Folge der Hand“ (4)">👆<small>Tricks</small></button>
         <button data-tool="deco" class="tool" title="Deko-Modus: Raster, Drehen, Ebenen, Farben, Duplizieren und dein Lager (5)">✏️<small>Deko</small></button>
       </div>
       <div class="panel tankswitch">
         <button id="btn-tanks" title="Alle Becken auf einen Blick (U)">🗂️<i class="badge hidden" id="tanks-badge">0</i></button>
-        <button id="tank-prev" title="Vorheriges Aquarium">◀</button>
+        <button id="tank-prev" title="Vorheriges Aquarium (←)">◀</button>
         <div id="tank-label"><b id="tank-name">Aquarium 1</b><small id="tank-count">0 / 10 🐟</small></div>
-        <button id="tank-next" title="Nächstes Aquarium">▶</button>
+        <button id="tank-next" title="Nächstes Aquarium (→)">▶</button>
       </div>
     </div>
 
@@ -130,6 +130,8 @@
 <script src="js/socialui.js"></script>
 <script src="js/touch.js"></script>
 <script src="js/cloudui.js"></script>
+<script src="js/undo.js"></script>
+<script src="js/keysui.js"></script>
 <script src="js/extras.js"></script>
 <script src="js/extrasui.js"></script>
 <script src="js/themesui.js"></script>

@@ -84,7 +84,9 @@
 
   /* ---------- Testfreund ---------- */
   AA.TEST = { user: 'test', name: 'Testi', avatar: 'axolotl', since: Date.UTC(2026, 10, 12), seed: 4711 };
-  AA.testOn = function () { return !!(S() && S().settings && S().settings.testFriend !== false); };
+  /* Runde 20a: Testi nur, solange es keinen einzigen echten Freund gibt – danach verschwindet er von selbst */
+  AA.testReal = function () { const C = AA.cloud; return !!(C && C.user && Array.isArray(C.friends) && C.friends.some(function (f) { return f.status === 'accepted'; })); };
+  AA.testOn = function () { return !!(S() && S().settings && S().settings.testFriend !== false) && !AA.testReal(); };
   function testLevel() { const days = Math.max(0, Math.floor((Date.now() - AA.TEST.since) / 86400000)); return Math.min(AA.MAX_LEVEL || 60, 14 + Math.floor(days * 0.5)); }
   /* Sein Aquarium: zwei Becken (Riff und Amazonas), Deko aus allen Runden, ein paar Farbvarianten – alles aus einem festen Startwert */
   AA.testState = function () {
