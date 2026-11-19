@@ -369,6 +369,30 @@
         ctx.restore();
       }
     },
+    champagne: {                                       // Runde 20d: Paris – Champagner-Perlen: feine goldene Perlenketten steigen vom Grund auf
+      step: function (dt, tank, t) {
+        if (!st.init) { st.init = true; st.src = []; for (let i = 0; i < 6; i++) st.src.push({ x: rnd(70, W - 70), z: rnd(0.2, 0.9), next: rnd(0, 0.2), life: rnd(4, 9) }); }
+        st.src.forEach(function (q) {                  // Quellen: wandern ab und zu, jede spuckt in kurzen Abständen eine Perle
+          q.life -= dt; if (q.life <= 0) { q.x = rnd(70, W - 70); q.z = rnd(0.2, 0.9); q.life = rnd(4, 9); }
+          q.next -= dt;
+          if (q.next <= 0 && P.length < 160) { q.next = rnd(0.06, 0.14); P.push({ x: q.x + rnd(-2, 2), y: floorAt(q.z, q.x) - 6, r: rnd(1.4, 3.2), vy: rnd(70, 110), ph: Math.random() * TAU }); }
+        });
+        for (let i = P.length - 1; i >= 0; i--) { const p = P[i]; p.y -= p.vy * dt; p.vy += 12 * dt; p.x += Math.sin(t * 6 + p.ph) * 6 * dt; if (p.y < G.top + 6) P.splice(i, 1); }
+      },
+      front: function (ctx) {
+        ctx.save();
+        P.forEach(function (p) {
+          ctx.globalAlpha = 0.75; ctx.fillStyle = '#ffd86a'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
+          ctx.globalAlpha = 0.9; ctx.fillStyle = '#fff8d8'; ctx.beginPath(); ctx.arc(p.x - p.r * 0.35, p.y - p.r * 0.35, p.r * 0.38, 0, TAU); ctx.fill();
+        });
+        ctx.restore();
+      },
+      glow: function (ctx) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25;
+        P.forEach(function (p) { if (p.r > 2.4) ctx.drawImage(glow('#ffd86a'), p.x - p.r * 3, p.y - p.r * 3, p.r * 6, p.r * 6); });
+        ctx.restore();
+      }
+    },
     jellyglow: {                                       // Runde 20b: Quallen-Ballett – kleine Leucht-Quallen pulsieren langsam nach oben
       step: function (dt) {
         if (!st.init) { st.init = true; for (let i = 0; i < 9; i++) P.push({ x: rnd(40, W - 40), y: rnd(G.top + 60, G.fTop + 40), vx: rnd(-4, 4), vy: rnd(-12, -6), ph: Math.random() * TAU, s: rnd(7, 13), col: pick(['#ffb4f0', '#c8b8ff', '#8ff6ff', '#ffd2a8']) }); }

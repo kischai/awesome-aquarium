@@ -346,6 +346,9 @@
     /* ---------- Runde 12: besondere Tiere – gibt es nur für Perlen (pearlOnly), ab einem Level ---------- */
     { id: 'frog', name: 'Wasserfrosch', lvl: 15, water: 'fresh', special: true, pearlOnly: true, pearls: 12, price: 120, sell: 136, hours: 30, len: 120, speed: 32, egg: '#7ad63a',
       info: 'Paddelt mit kräftigen Beinstößen durchs Becken. Als Baby ist er eine kleine Kaulquappe mit ersten Beinchen.' },
+    { id: 'frenchfrog', name: 'Grenouille', lvl: 21, water: 'fresh', special: true, pearlOnly: true, pearls: 15, price: 160, sell: 181, hours: 32, len: 92, speed: 30, egg: '#7ad63a',
+      hab: 'bottom', hop: true,
+      info: 'Ein Wasserfrosch mit Baskenmütze und Ringel-Shirt. Hüpft in kleinen Sätzen über den Grund und strampelt dabei mit den Beinen. Oh là là!' },
     { id: 'hamster', name: 'Tauch-Hamster', lvl: 20, water: 'both', special: true, pearlOnly: true, pearls: 15, price: 170, sell: 192, hours: 36, len: 110, speed: 30, egg: '#ffb04a',
       info: 'Mit Taucherbrille, Schnorchel und Flossen. Keiner weiß, wie er ins Becken gekommen ist – aber er strampelt fröhlich mit.' },
     { id: 'otter', name: 'Fischotter', lvl: 25, water: 'fresh', special: true, pearlOnly: true, pearls: 20, price: 230, sell: 260, hours: 48, len: 150, speed: 44, egg: '#8a5a30',
@@ -379,6 +382,23 @@
     // Runde 20c: Seeschlangen – eigenes Schlangen-Rig (js/snake.js): der Körper folgt dem Weg des Kopfes; Luftholen, Züngeln, Spurt, Einringeln
     { id: 'snake_laticauda', name: 'Gebänderte Seeschlange', lvl: 30, price: 265, sell: 302, hours: 44, len: 360, speed: 28, egg: '#3a6fd0', snake: true,
       info: 'Blau-schwarz geringelt, mit gelber Schnauze. Taucht alle ein, zwei Minuten zum Luftholen auf, züngelt neugierig und ruht am liebsten zusammengeringelt neben einem Felsen.' },
+    { id: 'snake_belcher', name: 'Belcher-Seeschlange', lvl: 35, price: 660, sell: 742, hours: 46, len: 360, speed: 26, egg: '#e8d27a', snake: true, nosy: true,
+      info: 'Hellgelb mit dunklen Bändern, die Ruhe selbst – und furchtbar neugierig: Immer wieder schlängelt sie sich an einen Fisch heran und züngelt ihn freundlich an.' },
+    { id: 'snake_dubois', name: 'Dubois-Seeschlange', lvl: 39, price: 1060, sell: 1190, hours: 50, len: 360, speed: 28, egg: '#7a4a2a', snake: true, crevice: true,
+      info: 'Braun-cremig gefleckt, eine Bodenjägerin: Sie schwimmt dicht über dem Grund und steckt den Kopf in jede Felsspalte – vielleicht versteckt sich da ja ein Snack.' },
+    { id: 'snake_platurus', name: 'Gelbbauch-Seeschlange', lvl: 43, price: 2180, sell: 2450, hours: 54, len: 360, speed: 16, egg: '#ffd21f', snake: true, surface: true,
+      info: 'Oben schwarz, unten knallgelb, der Ruderschwanz gefleckt – die einzige echte Hochsee-Schlange. Sie treibt faul an der Oberfläche und lässt sich von der Strömung schieben.' },
+    // Runde 20d: Paris – fünf Fische von der französischen Speisekarte (Petersfisch, Seeteufel, Dorade, Seezunge, Steinbutt gibt es schon)
+    { id: 'sardine', name: 'Sardine', lvl: 7, price: 36, sell: 42, hours: 16, len: 92, speed: 52, egg: '#7ab0d6', school: true,
+      info: 'Silber-blau und nie allein: Sardinen schwimmen nur im Schwarm. In Frankreich kommen sie in die schönsten Dosen.' },
+    { id: 'seabass', name: 'Wolfsbarsch (Loup de mer)', lvl: 11, price: 48, sell: 55, hours: 20, len: 132, speed: 46, egg: '#b8c4cc',
+      info: 'Der Klassiker auf jeder Pariser Karte: „Loup de mer“. Silbern, schnell und immer ein bisschen hungrig.' },
+    { id: 'redmullet', name: 'Rotbarbe (Rouget)', lvl: 13, price: 55, sell: 63, hours: 22, len: 118, speed: 34, egg: '#ff6a5a', hab: 'bottom',
+      info: 'Rosa-rot mit zwei langen Barteln am Kinn. Gründelt damit im Sand nach Leckereien – überall, wo sie war, staubt es.' },
+    { id: 'redgurnard', name: 'Roter Knurrhahn (Grondin)', lvl: 17, price: 78, sell: 90, hours: 26, len: 122, speed: 22, egg: '#ff4a2a', hab: 'bottom',
+      info: 'Pflicht für jede echte Bouillabaisse. Er „läuft“ auf seinen Flossenfingern über den Grund und knurrt dabei leise.' },
+    { id: 'zander', name: 'Zander (Sandre)', lvl: 19, water: 'fresh', price: 90, sell: 104, hours: 28, len: 140, speed: 40, egg: '#c8c890', eyeshine: '#d8ffb0',
+      info: 'Ein Raubfisch aus der Seine mit großen Glasaugen. Nachts leuchten sie im Licht – damit sieht er auch im Trüben alles.' },
     { id: 'titan', name: 'Titan-Drückerfisch', lvl: 31, price: 290, sell: 330, hours: 48, len: 140, speed: 46, egg: '#9a9a2a', biter: true,
       info: 'Der Rambo des Riffs. Alle paar Minuten schießt er auf deinen Mauszeiger zu und beißt rein – Autsch! (Abschaltbar in ⚙️.) Manchmal lässt er Schmerzensgeld fallen.' },
     { id: 'yellowangler', name: 'Gelber Anglerfisch', lvl: 33, price: 430, sell: 486, hours: 36, len: 116, speed: 14, egg: '#ffd21f', hab: 'bottom', still: true, front: true, yawn: true,
@@ -650,6 +670,8 @@
        octo = Kraken-Rig (Mantel atmet, Arme wellen sich, Ringe pulsieren und blitzen beim Klopfen) ----- */
     { id: 'cone', name: 'Kegelschnecke', cat: 'critter', lvl: 20, price: 100, w: 78, sink: 2, crawl: ['snail', 4], venom: true, harpoon: true,
       info: 'Ein Schneckenhaus wie ein Kunstwerk – und ein Rüssel mit Giftharpune. Kriecht gemütlich herum und schießt ab und zu die Harpune raus.' },
+    { id: 'escargot', name: 'Escargot', cat: 'critter', lvl: 10, price: 90, w: 96, sink: 2, crawl: ['snail', 5],
+      info: 'Eine Weinbergschnecke im Mini-Taucherhelm – so traut sie sich auch unter Wasser. Kriecht gemütlich herum und schaut durch ihr Bullauge.' },
     { id: 'mantis', name: 'Fangschreckenkrebs', cat: 'critter', lvl: 34, price: 150, w: 106, sink: 2, crawl: ['walk', 13], punch: true,
       info: 'Pfauenbunt, mit Augen, die sich unabhängig drehen – und dem schnellsten Schlag im Tierreich. Klopf bloß nicht ans Glas: Er schlägt zurück!' },
     { id: 'bluering', name: 'Blauring-Krake', cat: 'critter', lvl: 38, price: 180, w: 110, sink: 2, crawl: ['octo', 6], sym: true, venom: true,
@@ -728,6 +750,25 @@
     { id: 'aponogeton', name: 'Gitterpflanze', cat: 'plant', lvl: 22, price: 120, w: 110, sink: 5, home: 'fresh', sway: 0.05, size: [0.5, 2.2], info: 'Blätter wie feine Spitze: nur Adern, dazwischen Löcher. Eine Rarität aus Madagaskar.' },
     { id: 'kelpforest', name: 'Kelpwald', cat: 'plant', lvl: 24, price: 160, w: 140, sink: 5, home: 'salt', sway: 0.05, size: [0.5, 1.4], info: 'Drei Riesentang-Stämme mit unzähligen Blättern – ein Stück Kelpwald für dein Meeresbecken.' },
     { id: 'pinna', name: 'Steckmuschel', cat: 'prop', lvl: 9, price: 60, w: 110, sink: 9, info: 'Die größte Muschel des Mittelmeers steckt mit der Spitze im Sand. In der Adria streng geschützt – hier darf sie stehen.' },
+    // Runde 20d: Paris – Wahrzeichen und Straßen-Deko (Eiffelturm funkelt nachts zu jeder vollen Stunde, Laterne und Métro leuchten nachts)
+    { id: 'frenchsign', name: 'Schild „Beware of the French!“', cat: 'prop', lvl: 5, price: 150, w: 130, sink: 6,
+      info: '„Frogs and snails, beware of the French!“ – Frösche und Schnecken, Vorsicht vor den Franzosen!' },
+    { id: 'petanque', name: 'Pétanque-Kugeln', cat: 'prop', lvl: 6, price: 120, w: 100, sink: 4, info: 'Drei Kugeln und das Schweinchen. Wer liegt am nächsten dran?' },
+    { id: 'montmartre', name: 'Laterne vom Montmartre', cat: 'prop', lvl: 8, price: 220, w: 58, sink: 5, size: [0.6, 1.8], glow: [0.5, 0.86, '#ffd27a', 1.7],
+      info: 'Eine alte Gaslaterne vom Künstlerhügel. Nachts leuchtet sie warm.' },
+    { id: 'cafe', name: 'Café-Tisch', cat: 'prop', lvl: 10, price: 300, w: 160, sink: 5, info: 'Croissant und Espresso – bitte nicht vom Seeteufel klauen lassen.' },
+    { id: 'frogbaguette', name: 'Frosch mit Baguette', cat: 'prop', lvl: 11, price: 420, w: 106, sink: 5, wobble: true, info: 'Eine Froschstatue mit Baguette. Sie wackelt – vor Freude über das frische Brot.' },
+    { id: 'morris', name: 'Litfaßsäule', cat: 'prop', lvl: 12, price: 380, w: 74, sink: 5, size: [0.6, 1.8], info: 'Mit Plakaten fürs Kabarett. Welche Vorstellung schauen wir uns an?' },
+    { id: 'metro', name: 'Métro-Eingang', cat: 'prop', lvl: 14, price: 520, w: 140, sink: 5, size: [0.6, 1.8], hide: [0, 0.3],
+      glows: [[0.12, 0.92, '#ffb347', 0.5], [0.88, 0.92, '#ffb347', 0.5]], info: 'Jugendstil-Bogen mit zwei Laternen. Nachts gehen sie an – nächster Zug nach Pigalle.' },
+    { id: 'winebarrel', name: 'Bordeaux-Fass', cat: 'prop', lvl: 16, price: 650, w: 170, sink: 7, hide: [0.2, 0.42], info: 'Ein Fass mit Flasche – die Fische verstecken sich gern darin.' },
+    { id: 'pontneuf', name: 'Pont Neuf', cat: 'prop', lvl: 18, price: 900, w: 300, sink: 6, size: [0.5, 1.6], hide: [0, 0.2], info: 'Die älteste Brücke von Paris – unter den Bögen schwimmt es sich wie auf der Seine.' },
+    { id: 'louvre', name: 'Louvre-Pyramide', cat: 'prop', lvl: 20, price: 1200, w: 200, sink: 7, size: [0.5, 2.0], info: 'Glas und Stahl vor dem größten Museum der Welt.' },
+    { id: 'arc', name: 'Triumphbogen', cat: 'prop', lvl: 22, price: 1500, w: 200, sink: 8, size: [0.5, 2.0], hide: [0, 0.3], info: 'Mitten auf dem Kreisverkehr – durch den Bogen passt jeder Fisch.' },
+    { id: 'eiffel', name: 'Eiffelturm', cat: 'prop', lvl: 24, price: 1800, w: 150, sink: 6, size: [0.5, 2.2], sparkle: true, glow: [0.5, 0.42, '#ffcf6a', 0.95],
+      info: 'Nachts goldgelb beleuchtet – und zu jeder vollen Stunde glitzert er fünf Minuten lang, wie das Original.' },
+    { id: 'monalisa', name: 'Mona Lisa', cat: 'prop', lvl: 26, price: 2000, w: 104, sink: 5, size: [0.6, 2.0], info: 'Im Goldrahmen auf der Staffelei. Ihr Lächeln folgt dir durchs ganze Becken.' },
+    { id: 'notredame', name: 'Notre-Dame', cat: 'prop', lvl: 28, price: 2400, w: 180, sink: 7, size: [0.5, 2.0], info: 'Die Kathedrale mit der großen Rosette – frisch renoviert und jetzt unter Wasser.' },
     { id: 'trophy_bronze', name: 'Bronzepokal', cat: 'prop', lvl: 1, price: 0, w: 86, sink: 4, trophy: 3, info: 'Platz 3 in der Wochen-Rangliste. Gibt es nicht zu kaufen – nur zu gewinnen.' },
     { id: 'trophy_silver', name: 'Silberpokal', cat: 'prop', lvl: 1, price: 0, w: 90, sink: 4, trophy: 2, info: 'Platz 2 in der Wochen-Rangliste. Gibt es nicht zu kaufen – nur zu gewinnen.' },
     { id: 'trophy_gold', name: 'Goldpokal', cat: 'prop', lvl: 1, price: 0, w: 96, sink: 4, trophy: 1, info: 'Platz 1 in der Wochen-Rangliste! Gibt es nicht zu kaufen – nur zu gewinnen.' },
@@ -854,7 +895,9 @@
     { id: 'olymp', name: 'Olymp-Marmor', lvl: 34 },
     /* Runde 18: zwei Winterböden – nicht an die Weihnachtszeit gebunden */
     { id: 'powder', name: 'Pulverschnee', lvl: 1 },
-    { id: 'winterwood', name: 'Winterwald-Boden', lvl: 3 }
+    { id: 'winterwood', name: 'Winterwald-Boden', lvl: 3 },
+    /* Runde 20d: Paris */
+    { id: 'cobble', name: 'Kopfsteinpflaster (Paris)', lvl: 12 }
   ];
   /* ---------- Boden-Formen (Runde 7): 10 Anordnungen, gratis, jederzeit wechselbar. f(u) = Höhe 0…1 an der Stelle u (0 = links, 1 = rechts);
      an der höchsten Stelle liegt der Boden AA.LIFT_MAX Pixel höher. Deko, Eier, Krabbler und Futter folgen der Form von allein. ---------- */
@@ -927,6 +970,7 @@
     { id: 'crystalcave', name: 'Kristallhöhle', pearls: 8, img: 'bg/crystalcave', home: 'fresh', cols: ['#83b3fc', '#6087f9', '#506ff0', '#4a57db'], far: '#6a72ec', ray: '255,255,235' },
     /* Runde 12: Adria-Biotop und fünf „lebende Kulissen“ (live: im Hintergrund ziehen Silhouetten vorbei – js/tankview.js drawLive) */
     { id: 'krka', name: 'Krka-Wasserfälle', pearls: 8, img: 'bg/krka', home: 'fresh', special: true, cols: ['#6deead', '#2cddca', '#63dccf', '#09bbb8'], far: '#8ad1a3', ray: '255,255,235' },
+    { id: 'paris', name: 'Paris – Seine bei Nacht', pearls: 8, img: 'bg/paris', home: 'fresh', special: true, cols: ['#3e7061', '#126675', '#085967', '#32655b'], far: '#0f5c6c', ray: '255,226,150' },      // Runde 20d
     { id: 'adria', name: 'Adria-Felsküste', pearls: 8, img: 'bg/adria', home: 'salt', special: true, cols: ['#1ac9fd', '#09aef9', '#22bceb', '#55a170'], far: '#68b0c7', ray: '255,255,235' },
     { id: 'whale', name: 'Offener Ozean', pearls: 10, img: 'bg/whale', home: 'salt', live: 'whale', cols: ['#2ae8fd', '#0bbef6', '#059fed', '#0293e6'], far: '#079cec', ray: '230,245,255' },
     { id: 'shoal', name: 'Riffkante', pearls: 10, img: 'bg/shoal', home: 'salt', live: 'shoal', cols: ['#17ecfd', '#03b5fb', '#0186f2', '#0879e9'], far: '#4487d6', ray: '255,255,235' },
@@ -1159,7 +1203,7 @@
       fish: ['scorpionfish', 'weever', 'bream', 'medmoray', 'garfish', 'dorade', 'seahorse', 'sepia', 'squid', 'jellyfish', 'seal'] }
   ];
   /* Runde 20b: die neuen Arten in ihren Biotopen (zählen damit auch in den Regionen der Themen-Sets) */
-  [['reef', ['flamegoby', 'pyjama', 'rabbitfish', 'cowfish', 'titan', 'yellowangler', 'snake_laticauda']], ['adria', ['moonjelly', 'compass', 'gurnard']], ['amazon', ['ghostknife']]].forEach(function (x) {
+  [['reef', ['flamegoby', 'pyjama', 'rabbitfish', 'cowfish', 'titan', 'yellowangler', 'snake_laticauda', 'snake_belcher', 'snake_dubois', 'snake_platurus']], ['adria', ['moonjelly', 'compass', 'gurnard', 'sardine', 'seabass', 'redmullet', 'redgurnard']], ['amazon', ['ghostknife']], ['river', ['zander']]].forEach(function (x) {
     const b = AA.BIOTOPES.find(function (q) { return q.id === x[0]; }); x[1].forEach(function (id) { if (b.fish.indexOf(id) < 0) b.fish.push(id); });
   });
   /* Räuber (pred: true an der Art – unten gesetzt): Wird einer richtig hungrig (unter `hungry`), jagt er einen Fisch, der höchstens `ratio` so lang ist wie er selbst
@@ -1224,6 +1268,9 @@
       list: ['oto', 'whiptail', 'cory', 'ancistrus', 'sturisoma', 'zebrapleco', 'upsidedown', 'goldnugget', 'gibbiceps', 'greenphantom', 'bluephantom', 'wels', 'redtail', 'royalpleco', 'scarletpleco'] },
     { id: 'spiky', kind: 'coll', name: 'Lieber nicht anfassen', ico: '⚡', title: 'Stachel-Profi', fx: 'sparks',      // Runde 20b: + Gift-Tiere und Gift-Krabbler
       list: ['weever', 'scorpionfish', 'stonefish', 'puffer', 'piranha', 'lion', 'eleel', 'jellyfish', 'rabbitfish', 'compass', 'titan', 'boxjelly', 'irukandji', 'manowar', 'bluedragon', 'lionsmane', 'cone', 'mantis', 'bluering'] },
+    { id: 'paris', kind: 'coll', name: 'Paris', ico: '🗼', title: 'Bon Vivant', fx: 'champagne',      // Runde 20d (Pokal: der goldene Eiffelturm)
+      list: ['sardine', 'seabass', 'redmullet', 'dorade', 'redgurnard', 'zander', 'johndory', 'monkfish', 'frenchfrog', 'escargot', 'sole', 'turbot'] },
+    { id: 'snakes', kind: 'coll', name: 'Seeschlangen', ico: '🐍', title: 'Schlangenbeschwörer', list: ['snake_laticauda', 'snake_belcher', 'snake_dubois', 'snake_platurus'] },      // Runde 20c
     { id: 'jellies', kind: 'coll', name: 'Quallen-Ballett', ico: '🎐', title: 'Quallen-Dirigent', fx: 'jellyglow', list: ['moonjelly', 'compass', 'jellyfish', 'boxjelly', 'irukandji', 'combjelly', 'manowar', 'lionsmane'] },
     { id: 'fossil', kind: 'coll', name: 'Lebende Fossilien', ico: '🦴', title: 'Zeitreisender', fx: 'ammonite', list: ['sturgeon', 'arowana', 'beluga', 'arapaima', 'chimaera', 'frilledshark', 'coelacanth'] },
     { id: 'sharks', kind: 'coll', name: 'Haie und Rochen', ico: '🦈', title: 'Hai-Flüsterer', fx: 'shark',
@@ -1249,7 +1296,7 @@
   ];
   AA.THEME_FX = { sunspots: 'Sonnenkringel', colorbubbles: 'Bunte Blasen', manta: 'Manta-Schatten', rain: 'Regen', leaves: 'Treibende Blätter', blossoms: 'Kirschblüten',
     autumn: 'Herbstlaub', spray: 'Gischt', wavelight: 'Wellenlicht', plankton: 'Leuchtplankton', marinesnow: 'Meeresschnee', hearts: 'Herzchen-Blasen', sandpuffs: 'Sandwölkchen',
-    sparks: 'Funken', ammonite: 'Ammoniten-Schatten', shark: 'Hai-Schatten', ink: 'Tintenwölkchen', trails: 'Leuchtspuren', whale: 'Walhai in der Ferne', snow: 'Schneeflocken', jellyglow: 'Leuchtende Quallen' };
+    sparks: 'Funken', ammonite: 'Ammoniten-Schatten', shark: 'Hai-Schatten', ink: 'Tintenwölkchen', trails: 'Leuchtspuren', whale: 'Walhai in der Ferne', snow: 'Schneeflocken', jellyglow: 'Leuchtende Quallen', champagne: 'Champagner-Perlen' };
   AA.THEME_BY = {};
   AA.THEMES.forEach(function (T) {
     AA.THEME_BY[T.id] = T;
@@ -1271,6 +1318,11 @@
       info: 'Für „' + T.name + '“: alle Tiere gleichzeitig in deinen Becken. Gibt es nicht zu kaufen – nur zu verdienen.' };
     AA.DECO.push(d); AA.DECO_BY[d.id] = d;
   });
+  (function () {                                     // Runde 20d: Paris bekommt keinen Kelch, sondern einen goldenen Eiffelturm (eigenes Bild, ohne Set-Zeichen)
+    const d = AA.DECO_BY.trophy_paris; if (!d) return;
+    delete d.as; d.name = 'Goldener Eiffelturm'; d.w = 96; d.sink = 6; d.noMark = true; d.sparkle = true; d.glow = [0.5, 0.42, '#ffe08a', 0.9];
+    d.info = 'Für „Paris“: alle Tiere gleichzeitig in deinen Becken. Pures Gold – und nachts glitzert er wie der echte.';
+  })();
   /* Optik: Textur-Maßstab je Beckengröße (Kies und Kulisse werden mit wachsendem Becken feiner, damit sie zur Größe passen),
      Tiefe der Seitenscheiben in Pixeln. Das Meeresbecken ist extra weit: alles darin ist kleiner gezeichnet (OCEAN_SPR). */
   AA.TEX = [1.08, 0.93, 0.82, 0.72]; AA.TEX_OCEAN = 0.5; AA.OCEAN_SPR = 0.78;

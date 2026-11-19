@@ -20,6 +20,7 @@
   const M = N + 3;                 // Punkte: [0] Schnauze, [1 … N+1] Hals bis Schwanzansatz, [N+2] Schwanzspitze
   const pcache = new WeakMap();
   const AS = new Float32Array(M), RAW = new Float32Array(2 * M), SP = new Float32Array(2 * M);
+  const OWN = { breathe: 1, coil: 1, visit: 1, crevice: 1, dive: 1 };      // eigene Zustände der Schlangen (behave liefert dann ihr Ziel)
 
   function wrap(a) { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; }
 
@@ -274,9 +275,10 @@
   function step(f, dt, V) {
     const sn = st(f), s = f.size();
     if (!(s > 1) || !(dt > 0)) return;
-    if (f.state !== 'breathe' && f.state !== 'coil') { sn.D = null; sn.br = null; sn.cl = null; sn.ride = null; sn.back = 0; }
+    if (!OWN[f.state]) { sn.D = null; sn.br = null; sn.cl = null; sn.ride = null; sn.back = 0; sn.vi = null; sn.cv = null; sn.dv = null; }
     const off = s * 0.49;
     let Dx = f.x + f.dir * off, Dy = f.y;
+    if (f.def.surface && (f.state === 'wander' || f.state === 'nibble')) Dy = G.top + s * 0.03;   // Gelbbauch: liegt lang an der Oberfläche (der Körper-Mittelpunkt f.y hängt am Bildformat, nicht an der Schlange)
     if (sn.D) { Dx = sn.D.x; Dy = sn.D.y; }
     if (f.state === 'leave') { Dx = f.x; Dy = f.y - s * 0.3; }
     if (sn.ride && sn.tr.length > 1) {               // Einringeln: der Kopf fährt die Ringel-Linie ab, der Körper folgt
@@ -317,7 +319,7 @@
     if (f.state !== 'leave') {                       // im Wasser bleiben – nur beim Luftholen darf die Schnauze hinaus
       const lim = AA.xLimits(f.z), m = s * 0.02;
       H.x = AA.clamp(H.x, lim[0] + m, lim[1] - m);
-      H.y = AA.clamp(H.y, f.state === 'breathe' ? G.top - s * 0.075 : G.top + s * 0.02, AA.floorY(f.z, H.x) - s * 0.03);
+      H.y = AA.clamp(H.y, f.state === 'breathe' ? G.top - s * 0.075 : G.top + s * (f.def.surface ? -0.015 : 0.02), AA.floorY(f.z, H.x) - s * 0.03);
     }
     keep(sn, s);
     // Züngeln: alle paar Sekunden, öfter beim Fressen und Erkunden
@@ -449,15 +451,117 @@
     }
     return { tx: c.x, ty: floor - s * 0.1, b: 1, r: 4, z: c.z };
   }
+  /* Belcher: schwimmt an einen Fisch heran, schaut ihm ins Gesicht und züngelt (der Fisch guckt verdutzt) */
+  function startVisit(f, sn, V, s) {
+    let best = null, bd = 520;
+    for (let i = 0; i < V.fish.length; i++) {
+      const o = V.fish[i];
+      if (o === f || o.ghost || o.def.snake || o.def.venom || o.state === 'hide' || o.state === 'den' || o.state === 'enter' || o.state === 'leave') continue;
+      const q = Math.hypot(o.x - sn.tr[0].x, o.y - sn.tr[0].y);
+      if (q < bd) { bd = q; best = o; }
+    }
+    sn.nosyW = AA.rand(18, 40);
+    if (!best) return false;
+    f.state = 'visit'; sn.vi = { o: best, t: 0, at: 0, hold: AA.rand(2.2, 3.6) };
+    return true;
+  }
+  function visit(f, sn, dt, V, s) {
+    const v = sn.vi, H = sn.tr[0];
+    if (!v || !H || V.fish.indexOf(v.o) < 0 || v.o.ghost) return endState(f, sn);
+    const o = v.o, os = o.size(), fx = o.x + o.dir * (os * 0.5 + s * 0.05), fy = o.y;
+    v.t += dt;
+    sn.D = { x: fx, y: fy };
+    if (Math.hypot(H.x - fx, H.y - fy) < s * 0.07) {
+      if (!v.at) { f.say('👀', 1.4); o.say('😳', 1.2); }
+      v.at += dt; sn.tongW = Math.min(sn.tongW, 0.5);
+      if (v.at > v.hold) return endState(f, sn);
+    }
+    if (v.t > 14) return endState(f, sn);
+    return { tx: fx - Math.cos(sn.th) * s * 0.45, ty: fy - Math.sin(sn.th) * s * 0.45, b: 1.5, r: 8, z: o.z };
+  }
+  /* Dubois: steckt den Kopf in einen Felsen (sie schwimmt dafür hinter ihn), zieht ihn wieder heraus – manchmal mit Snack */
+  function startCrevice(f, sn, V, tank, s) {
+    let best = null, bd = 1e9;
+    for (let i = 0; i < tank.deco.length; i++) {        // ein Felsen, hoch genug, dass der Kopf dahinter verschwindet (sonst andere große Deko)
+      const o = tank.deco[i], dd = AA.DECO_BY[o.type];
+      if (!dd || dd.crawl || dd.path || dd.flat) continue;
+      const rock = dd.cat === 'rock';
+      if (!rock && (dd.w || 0) < 90) continue;
+      const b = V.decoBox(o);
+      if (b.h < s * 0.14 || b.w < s * 0.2) continue;
+      const q = Math.abs(o.x - f.x) * (rock ? 1 : 1.8);
+      if (q < bd) { bd = q; best = o; }
+    }
+    sn.crevW = AA.rand(25, 55);
+    if (!best) return false;
+    const b = V.decoBox(best), side = sn.tr[0].x < b.cx ? -1 : 1, y = b.by - b.h * 0.42;
+    f.state = 'crevice';
+    sn.cv = { o: best, ph: 'go', t: 0, z: AA.clamp(best.z - 0.08, 0.01, 1),
+      P: { x: b.cx + side * (b.w * 0.5 + s * 0.16), y: y }, I: { x: b.cx + side * b.w * 0.08, y: y }, hold: AA.rand(3, 5) };
+    return true;
+  }
+  function crevice(f, sn, dt, V, tank, s) {
+    const c = sn.cv, H = sn.tr[0];
+    if (!c || !H || tank.deco.indexOf(c.o) < 0) return endState(f, sn);
+    c.t += dt;
+    if (c.ph === 'go') {                             // davor, auf Höhe der Spalte (dahinter, damit der Fels den Kopf verdeckt)
+      sn.D = c.P;
+      if ((Math.hypot(H.x - c.P.x, H.y - c.P.y) < s * 0.06 && Math.abs(f.z - c.z) < 0.05) || c.t > 18) { c.ph = 'in'; c.t = 0; }
+      return { tx: c.P.x - Math.cos(sn.th) * s * 0.45, ty: c.P.y, b: 1.3, r: 6, z: c.z };
+    }
+    if (c.ph === 'in') {                             // Kopf hinein und eine Weile suchen
+      sn.D = c.I;
+      if (Math.hypot(H.x - c.I.x, H.y - c.I.y) < s * 0.05) c.at = (c.at || 0) + dt;
+      if ((c.at || 0) > c.hold || c.t > c.hold + 4) {
+        c.ph = 'out'; c.t = 0; sn.back = s * 0.3;
+        if (Math.random() < 0.35 && f.d.hunger < 0.99) { f.d.hunger = Math.min(1, f.d.hunger + 0.12); f.chomp = 1; f.say('😋', 1.3); }
+      }
+      return { tx: c.I.x - Math.cos(sn.th) * s * 0.45, ty: c.I.y, b: 1, r: 4, z: c.z };
+    }
+    sn.D = null;                                     // wieder heraus (rückwärts auf der eigenen Spur, in step)
+    if (!(sn.back > 0) || c.t > 2) { sn.back = 0; return endState(f, sn); }
+    return { tx: f.x, ty: f.y, b: 1, r: 6, z: c.z };
+  }
+  /* Gelbbauch: treibt an der Oberfläche; ab und zu taucht sie ein Stück ab (der Auftrieb holt sie wieder hoch) */
+  function dive(f, sn, dt, V, s) {
+    const d = sn.dv, H = sn.tr[0];
+    if (!d || !H) return endState(f, sn);
+    d.t += dt;
+    if (d.t > d.T) return endState(f, sn);
+    sn.D = { x: AA.clamp(d.x, AA.xLimits(f.z)[0] + s * 0.1, AA.xLimits(f.z)[1] - s * 0.1), y: d.y };
+    return { tx: d.x - f.dir * s * 0.45, ty: d.y, b: 1.6, r: 10 };
+  }
   function behave(f, dt, V, tank, night) {
     const sn = st(f), d = f.d, s = f.size(), P = V.pointer;
     if (!sn.tr.length) return null;
     const begging = V.tool === 'food' && P.inside && P.y < G.top + 280 && d.hunger < 0.92;
-    if (f.ghost || d.sick || begging || V.photoMode) { if (f.state === 'breathe' || f.state === 'coil') endState(f, sn); return null; }
+    if (f.ghost || d.sick || begging || V.photoMode) { if (OWN[f.state]) endState(f, sn); return null; }
+    if (f.state === 'visit') return visit(f, sn, dt, V, s);
+    if (f.state === 'crevice') return crevice(f, sn, dt, V, tank, s);
+    if (f.state === 'dive') return dive(f, sn, dt, V, s);
+    if (f.def.surface) {                             // Gelbbauch: kein Luftholen (sie ist ja oben), kein Einringeln, kein Spurt
+      if (f.state !== 'wander') return null;
+      sn.diveW = (sn.diveW === undefined ? AA.rand(20, 45) : sn.diveW) - dt;
+      if (sn.diveW <= 0 && !night) {
+        sn.diveW = AA.rand(30, 70);
+        const bot = AA.floorY(f.z, f.x);
+        f.state = 'dive'; sn.dv = { t: 0, T: AA.rand(3.5, 6), x: f.x + f.dir * AA.rand(160, 320), y: G.top + (bot - G.top) * AA.rand(0.35, 0.65) };
+        return dive(f, sn, dt, V, s);
+      }
+      return null;
+    }
     if (f.state === 'breathe') return breathe(f, sn, dt, V, s);
     sn.airW -= dt;
     if (f.state === 'coil') return coil(f, sn, dt, V, night, s);
     if (f.state !== 'wander') return null;
+    if (f.def.nosy && !night) {
+      sn.nosyW = (sn.nosyW === undefined ? AA.rand(12, 30) : sn.nosyW) - dt;
+      if (sn.nosyW <= 0 && sn.airW > 8 && startVisit(f, sn, V, s)) return visit(f, sn, dt, V, s);
+    }
+    if (f.def.crevice && !night) {
+      sn.crevW = (sn.crevW === undefined ? AA.rand(15, 35) : sn.crevW) - dt;
+      if (sn.crevW <= 0 && sn.airW > 10 && startCrevice(f, sn, V, tank, s)) return crevice(f, sn, dt, V, tank, s);
+    }
     sn.coilW -= dt; sn.sprW -= dt;
     if (sn.airW <= 0) { startBreathe(f, sn, s); return breathe(f, sn, dt, V, s); }
     if (night && sn.coilW > 8) sn.coilW = AA.rand(2, 8);

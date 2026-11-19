@@ -1599,6 +1599,7 @@
     if (o.r) ctx.rotate(o.r * Math.PI / 180);          // Runde 10: gedreht um den Fuß (positiv = lehnt nach rechts, egal ob gespiegelt)
     if (o.flip) ctx.scale(-1, 1);
     if (def.alive) { const br = Math.sin(t * 1.7 + o.x * 0.01); ctx.scale(1 - br * 0.012, 1 + br * 0.025); }
+    if (def.wobble) ctx.rotate(Math.sin(t * 2.3 + o.x * 0.02) * 0.05 + Math.sin(t * 5.1 + o.x) * 0.012);      // Runde 20d: Frosch mit Baguette wackelt (um den Fuß)
     const gl = def.globe ? globeState(o, t) : null;
     if (gl && gl.shake > 0) ctx.rotate(Math.sin(t * 24) * 0.07 * Math.min(1, gl.shake));      // Runde 18: Schneekugel wackelt beim Schütteln
     // groß gezogen? Dann die große Fassung des Bildes nehmen (hd/<id>), sonst würde es unscharf – gleiche Form, nur mehr Pixel
@@ -1611,7 +1612,7 @@
     else ctx.drawImage(im, -b.w / 2, -b.h, b.w, b.h);
     if (gl && img) drawGlobeSnow(ctx, def, b, gl);
     if (def.lights && img) drawLights(ctx, def, b, t);
-    if (def.theme && img && V.trophyMark) V.trophyMark(ctx, o, def, b);      // Runde 19: Pokal eines Themen-Sets – Set-Zeichen auf dem Kelch
+    if (def.theme && img && V.trophyMark && !def.noMark) V.trophyMark(ctx, o, def, b);      // Runde 19: Pokal eines Themen-Sets – Set-Zeichen auf dem Kelch
     ctx.restore();
     // Sockel im Kies versenken: Runde 12 – Sand-Wellen nur auf dem Stück selbst (siehe buildFoot); sonst wie früher die Szene über den Rand
     if (foot && img) cachedFoot(ctx, o, def, b, im);
@@ -2004,8 +2005,40 @@
     g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
     return (glowCv[col] = c);
   }
+  /* Runde 20d: Funkeln (Eiffelturm, goldener Eiffelturm) – nachts in den ersten 5 Minuten jeder vollen Stunde (Uhrzeit des Geräts) und
+     20 Sekunden nach dem Umschalten auf Nacht. Die Lichtpunkte liegen auf dem Bild selbst (einmal je Bild aus der Deckkraft gezogen). */
+  const spkPts = new WeakMap();
+  let spkNight = false, spkUntil = 0;
+  function sparkPoints(img) {
+    let P = spkPts.get(img);
+    if (P) return P;
+    P = [];
+    try {
+      const c = mk(img.width, img.height), g = c.getContext('2d'); g.drawImage(img, 0, 0);
+      const px = g.getImageData(0, 0, img.width, img.height).data;
+      for (let n = 0; n < 6000 && P.length < 150; n++) {
+        const x = Math.floor(Math.random() * img.width), y = Math.floor(Math.random() * img.height * 0.94);
+        if (px[(y * img.width + x) * 4 + 3] > 200) P.push([x / img.width, y / img.height, Math.random() * 10]);
+      }
+    } catch (e) { /* Bild nicht lesbar: dann eben ohne Funkeln */ }
+    spkPts.set(img, P);
+    return P;
+  }
+  function drawSparkle(ctx, o, img, b, t) {           // im Licht-Durchgang (nach dem Nacht-Schleier), Weltkoordinaten
+    const P = sparkPoints(img), gs = glowSprite('#ffffff'), r = Math.max(3, b.w * 0.04);
+    for (let i = 0; i < P.length; i++) {
+      const p = P[i], q = Math.sin(t * 9 + p[2] * 7.3) * Math.sin(t * 3.7 + p[2]);
+      if (q < 0.5) continue;
+      ctx.globalAlpha = Math.min(1, (q - 0.5) * 2.5);
+      ctx.drawImage(gs, o.x - b.w / 2 + (o.flip ? 1 - p[0] : p[0]) * b.w - r, b.by - b.h + p[1] * b.h - r, r * 2, r * 2);
+    }
+  }
+  AA.sparkNow = function (sec) { spkUntil = V.time + (sec || 20); };      // für Tests und den Steckbrief
   /* Leuchtende Tiere (glow an der Art) und Deko (glow am Stück: [x, Höhe, Farbe]) – im Tiefsee-Becken immer, sonst nur nachts */
   function drawGlows(ctx, tank, t, k) {
+    const night = !!AA.state.settings.night;
+    if (night && !spkNight) spkUntil = t + 20;           // Runde 20d: gerade Nacht geworden – der Eiffelturm glitzert zur Begrüßung
+    spkNight = night;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     for (let i = 0; i < V.fish.length; i++) {
       const f = V.fish[i], col = f.def.glow;
@@ -2015,11 +2048,24 @@
       ctx.drawImage(glowSprite(col), f.x - R, f.y - R * 0.8, R * 2, R * 1.6);
     }
     for (let i = 0; i < tank.deco.length; i++) {
-      const o = tank.deco[i], def = AA.DECO_BY[o.type];
-      if (!def.glow || V.onGlass(o)) continue;
-      const b = V.decoBox(o), R = b.w * def.glow[3] * (0.95 + 0.05 * Math.sin(t * 3 + o.x));
-      ctx.globalAlpha = k * 0.85;
-      ctx.drawImage(glowSprite(def.glow[2]), o.x + (o.flip ? -1 : 1) * (def.glow[0] - 0.5) * b.w - R, b.by - def.glow[1] * b.h - R, R * 2, R * 2);
+      const o = tank.deco[i], def = AA.DECO_BY[o.type], gs = def.glows || (def.glow ? [def.glow] : null);      // Runde 20d: glows = mehrere Lichter (Métro)
+      if (!gs || V.onGlass(o)) continue;
+      const b = V.decoBox(o);
+      if (def.sparkle && night && (new Date().getMinutes() < 5 || t < spkUntil)) { const im = AA.assets.get('deco/' + o.type); if (im) drawSparkle(ctx, o, im, b, t); }
+      for (let j = 0; j < gs.length; j++) {
+        const gl = gs[j], R = b.w * gl[3] * (0.95 + 0.05 * Math.sin(t * 3 + o.x + j));
+        ctx.globalAlpha = k * 0.85;
+        ctx.drawImage(glowSprite(gl[2]), o.x + (o.flip ? -1 : 1) * (gl[0] - 0.5) * b.w - R, b.by - gl[1] * b.h - R, R * 2, R * 2);
+      }
+    }
+    for (let i = 0; i < V.fish.length; i++) {          // Runde 20d: Zander – Glasaugen leuchten nachts im Licht
+      const f = V.fish[i], col = f.def.eyeshine;
+      if (!col || f.ghost || f.eyeShut || f.y < -30) continue;
+      const rg = f.rig(), e = rg.eyes && rg.eyes[0];
+      if (!e) continue;
+      const s = f.size(), h = s * f.ar(), x = f.x + f.face * (e[0] - 0.5) * s, y = f.y + (e[1] - 0.5) * h, R = Math.max(7, s * 0.07);
+      ctx.globalAlpha = k * (0.55 + 0.2 * Math.sin(t * 1.7 + f.seed));
+      ctx.drawImage(glowSprite(col), x - R, y - R, R * 2, R * 2);
     }
     ctx.restore();
   }
@@ -2096,7 +2142,7 @@
       mg.addColorStop(0, 'rgba(190,215,255,0.26)'); mg.addColorStop(1, 'rgba(190,215,255,0)');
       ctx.fillStyle = mg; ctx.fillRect(0, 0, W, H);
     }
-    if (tank.deep || night) drawGlows(ctx, tank, t, tank.deep ? 1 : 0.7);
+    if (tank.deep || night) drawGlows(ctx, tank, t, tank.deep ? 1 : 0.7); else spkNight = false;
     if (AA.themeFx) AA.themeFx.glow(ctx, tank, t);     // Runde 19: Becken-Effekt, Leuchten (auch nachts hell)
     if (AA.lightFx) AA.lightFx(ctx, tank, t);          // Runde 12: Licht-Studio (js/extras.js)
     drawRips(ctx);

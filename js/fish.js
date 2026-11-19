@@ -237,6 +237,7 @@
     if ((hab === 'lurk' && !(this.outT > 0)) || hab === 'bottom') { if (Math.random() < 0.6) x = this.x + (Math.random() < 0.5 ? -1 : 1) * AA.rand(60, 240); }   // kurze Wege
     if (this.isLeader) { x = this.x + (Math.random() < 0.75 ? this.dir : -this.dir) * AA.rand(260, 620); if (hab !== 'bottom') y = AA.rand(top + 40, bot - 70); }   // Schwarm-Anführer: weite, ruhige Bahnen
     if (this.def.snake && !night) x = this.x + (Math.random() < 0.72 ? this.dir : -this.dir) * AA.rand(220, 560);   // Runde 20c: Seeschlange – lange Wege, meist geradeaus weiter (jede Wende ist ein großer Bogen)
+    if (this.def.snake && this.def.crevice && !night) y = AA.rand(Math.max(top, bot - 150), bot - 10);         // Dubois: Bodenjägerin, dicht über dem Grund
     let homed = false;
     if (this.def.home && !night && Math.random() < 0.75) {       // Lieblingsplatz (Clownfisch: Anemone): meistens dort in der Nähe
       const hs = V.homes(this.def.home);
