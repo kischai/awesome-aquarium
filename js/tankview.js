@@ -1063,6 +1063,7 @@
   function crawlStep(o, def, dt) {
     const c = crawlState(o), kind = def.crawl[0];
     c.ph += dt;
+    if (def.legs) legTick(o, def, c, dt);                          // 19.11.2026: Bein-Rig (Riesenkrabbe) – Takt aus dem zurückgelegten Weg
     if (c.flash > 0) c.flash = Math.max(0, c.flash - dt * 0.8);                 // Runde 20b: Blauring-Krake – Ringe leuchten nach
     if (c.punchAt > 0 && V.time >= c.punchAt) {         // Runde 20b: Fangschreckenkrebs schlägt ans Glas
       c.punchAt = 0; c.punched = V.time; c.hit = 0.35;
@@ -1096,14 +1097,12 @@
       }
     }
     if (c.mode !== 'floor') { glassStep(o, def, c, dt); return; }
-    if (o === V.dragDeco) { c.tx = o.x; c.tz = o.z; c.wait = 1.5; c.v = 0; c.food = null; c.climb = null; c.lift = 0; c.hop = null; c.perch = null; c.dance = null; c.task = null; c.home = null; return; }      // wird gerade getragen
+    if (o === V.dragDeco) { c.tx = o.x; c.tz = o.z; c.wait = 1.5; c.v = 0; c.food = null; c.climb = null; c.lift = 0; c.dance = null; c.task = null; c.home = null; return; }      // wird gerade getragen
     if (o === V.selDeco) { c.v = 0; return; }                                                          // ausgewählt: hält still
     if (V.service[o.id] > V.time) { c.v = 0; c.wait = Math.max(c.wait, 1.5); return; }                 // Putzerstation: putzt gerade einen Fisch
     if (c.wave) { c.wave.t += dt; c.v = 0; if (c.wave.t >= AA.WAVE_T) c.wave = null; return; }       // Runde 18: Schneemann winkt gerade – steht still
-    if (V.paradeStep && V.paradeStep(o, def, c, dt)) { c.lift = 0; c.hop = null; c.perch = null; c.dance = null; return; }      // Runde 19: Gänsemarsch (js/themefx.js)
-    if (kind === 'skip') { skipStep(o, def, c, dt); return; }                                         // Runde 20f: Schlammspringer hüpft
+    if (V.paradeStep && V.paradeStep(o, def, c, dt)) { c.lift = 0; c.dance = null; return; }      // Runde 19: Gänsemarsch (js/themefx.js)
     if (kind === 'dancer' && danceTick(o, def, c, dt)) return;                                        // Runde 20f: Spanische Tänzerin tanzt frei
-    if (def.pistol && !V.photoMode) pistolTick(o, c, dt);                                             // Runde 20f: Pistolenkrebs gräbt und knallt
     const night = !!AA.state.settings.night;
     let speed = def.crawl[1] * (night ? 0.5 : 1);
     if (def.eats) {                                    // Futterreste: nach liegen gebliebenen Flocken Ausschau halten
@@ -1161,7 +1160,6 @@
     else if (kind === 'glide') gait = 0.9 + 0.1 * Math.sin(c.ph * 0.9);
     else if (kind === 'snowman') gait = 0.2 + 0.8 * Math.max(0, Math.sin(c.ph * 2.2));      // Runde 18: gleitet in Schüben
     else if (kind === 'octo') gait = 0.2 + 0.8 * Math.max(0, Math.sin(c.ph * 1.5));         // Runde 20b: Krake – zieht sich in Schüben voran
-    else if (kind === 'stilt') gait = 0.25 + 0.75 * Math.max(0, Math.sin(c.ph * 2.6));      // Runde 20f: Stelzen-Krabben staksen Schritt für Schritt
     else if (kind === 'dancer') gait = 0.7 + 0.3 * Math.sin(c.ph * 1.4);
     const step = Math.min(dist, speed * gait * dt);
     o.x = AA.clamp(o.x + dx / dist * step, lim[0] + 20, lim[1] - 20);
@@ -1238,10 +1236,10 @@
   }
   function drawCrawler(ctx, o, def, img, b) {
     const c = crawlState(o), kind = def.crawl[0], mv = Math.min(1, c.v / (def.crawl[1] * 0.5 + 0.01));
-    if (c.lift) ctx.translate(0, -c.lift);                                  // Runde 20f: Schlammspringer in der Luft / auf Deko, Tänzerin im freien Wasser
+    if (c.lift) ctx.translate(0, -c.lift);                                  // Runde 20f: Tänzerin im freien Wasser
+    if (def.legs) { drawLegged(ctx, o, def, img, b, c); return; }      // 19.11.2026: Riesenkrabbe mit echten Bein-Gelenken
     if (kind === 'clam') { drawClam(ctx, img, b, c); return; }
     if (kind === 'dancer') { drawDancer(ctx, img, b, c, mv); return; }
-    if (kind === 'skip') { drawSkipper(ctx, img, b, c); return; }
     if (kind === 'snowman') { drawSnowman(ctx, o, def, img, b, c, mv); return; }
     if (kind === 'octo') { drawOcto(ctx, img, b, c, mv); return; }
     if (c.hit > 0) ctx.translate(Math.sin((0.35 - c.hit) / 0.35 * Math.PI) * b.w * 0.14, 0);       // Fangschreckenkrebs: Schlag nach vorn
@@ -1251,88 +1249,100 @@
     else if (kind === 'urchin') { const q = Math.sin(c.ph * 1.7) * 0.022; ctx.scale(1 + q, 1 + q * 1.4); }
     else if (kind === 'crab') { ctx.translate(0, -Math.abs(Math.sin(c.ph * 12)) * 3.2 * mv); ctx.rotate(Math.sin(c.ph * 12) * 0.06 * mv + Math.sin(c.ph * 1.1) * 0.02); }
     else if (kind === 'glide') { const m = c.mvs || 0, q = Math.sin(c.gph || 0) * (0.004 + 0.009 * m); ctx.translate(0, -1.2 * m); ctx.scale(1 + q, 1 - q * 1.1); }      // Scholle: ganz sachte Flossenwelle, liegt sonst flach
-    else if (kind === 'stilt') { const s1 = Math.sin(c.ph * 2.6); ctx.translate(0, -Math.abs(s1) * 5 * mv - 1); ctx.rotate(s1 * 0.03 * mv + Math.sin(c.ph * 0.7) * 0.012); }      // Runde 20f: Stelzen – auf und ab
     else { ctx.translate(0, -Math.abs(Math.sin(c.ph * 7)) * 2.4 * mv); ctx.rotate(Math.sin(c.ph * 7) * 0.04 * mv); }
-    if (def.crown) drawCrownBody(ctx, img, b, c, def.crown);              // Runde 20f: Seegurke – Tentakelkrone fächelt
-    else ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h);
+    ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h);
     if (def.punch && c.eyes) drawMantisEyes(ctx, b, c);
   }
 
+  /* ================= 19.11.2026: Bein-Rig der Japanischen Riesenkrabbe (Daten js/legrig.js, Atlas deco/spidercrab_rig) =================
+     Körper und Beine sind aus dem Bild geschnitten: je Bein Oberschenkel (Hüfte → Knie), Unterschenkel (Knie → Gelenk) und Fuß (Gelenk → Spitze).
+     Gehen im Viererpasso: zwei Gruppen im Wechsel. Ein Bein steht 60 % des Takts und bleibt dabei fest auf dem Boden, während der Körper darüber
+     hinwegzieht; dann hebt es im Bogen ab, krümmt den Fuß ein und setzt ein Stück weiter vorn wieder auf. Die Knie folgen per Zwei-Gelenk-IK
+     (die Längen bleiben), der Takt hängt am zurückgelegten Weg – darum rutscht kein Fuß. Der Körper wippt zweimal je Takt und schwingt mit.
+     Im Stand: Atmen, die zwei hohen Beine wiegen sich, ab und zu tippt ein Bein auf. Gilt für jeden Krabbler mit def.legs = Schlüssel in AA.LEGRIG. */
+  const LEG = { beta: 0.6, stride: 70, lift: 34, curl: 0.22 };
+  function legTick(o, def, c, dt) {
+    const R = AA.LEGRIG && AA.LEGRIG[def.legs]; if (!R) return;
+    if (o.flip) o.flip = false;                                   // von vorn gemalt: nie spiegeln (Krabben laufen ohnehin seitwärts)
+    const g = c.lg || (c.lg = { ph: Math.random(), w: 0, x: o.x, z: o.z, dir: Math.random() < 0.5 ? -1 : 1, t: Math.random() * 9, idle: AA.rand(2, 6), tap: null });
+    const dx = o.x - g.x, dz = (o.z - g.z) * ZPX; g.x = o.x; g.z = o.z;
+    const dist = Math.hypot(dx, dz), sp = dt > 0 ? dist / dt : 0, k = V.decoBox(o).w / R.w;     // k = Bildschirm-Pixel je Rig-Pixel
+    if (Math.abs(dx) > 0.01) g.dir = dx > 0 ? 1 : -1;
+    const on = sp > 0.8 && dist < 60;                            // (ein Satz beim Laden oder Umsetzen ist kein Schritt)
+    g.w += ((on ? 1 : 0) - g.w) * Math.min(1, dt * (on ? 5 : 2.5));
+    if (on && k > 0) g.ph = (g.ph + dist * LEG.beta / (LEG.stride * k)) % 1;
+    g.t += dt;
+    if (g.tap) { g.tap.t += dt; if (g.tap.t >= g.tap.T) g.tap = null; }
+    else if (g.w < 0.05 && !V.photoMode) {
+      g.idle -= dt;
+      if (g.idle <= 0) { g.idle = AA.rand(3, 8); const ks = Object.keys(R.legs).filter(function (n) { return !R.legs[n].air; }); g.tap = { leg: AA.pick(ks), t: 0, T: 0.7 }; }
+    }
+  }
+  function legIK(H, T, L1, L2, side) {                            // Zwei-Gelenk-IK: wo liegt das Knie, wenn Hüfte H und Spitze T feststehen?
+    const dx = T[0] - H[0], dy = T[1] - H[1], d = Math.max(Math.abs(L1 - L2) + 0.01, Math.min(L1 + L2 - 0.01, Math.hypot(dx, dy)));
+    const ang = Math.atan2(dy, dx) + side * Math.acos(AA.clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+    return [H[0] + L1 * Math.cos(ang), H[1] + L1 * Math.sin(ang)];
+  }
+  function legPiece(ctx, atlas, R, key, P0, P1, rot) {             // Teil aus dem Atlas: Drehpunkt P0 (Ruhe) landet auf P1, gedreht um rot
+    const p = R.pieces[key]; if (!p) return;
+    const a = p.a, r = p.r;
+    ctx.save(); ctx.translate(P1[0], P1[1]); if (rot) ctx.rotate(rot);
+    ctx.drawImage(atlas, a[0], a[1], a[2], a[3], r[0] - P0[0], r[1] - P0[1], r[2], r[3]);
+    ctx.restore();
+  }
+  /* Pose aller Beine aus dem Gang-Zustand g (Rig-Pixel): je Bein Hüfte H, Knie K, Gelenk J, Spitze T und die Drehwinkel der drei Teile */
+  function legPose(R, g) {
+    const w = g.w, ph = g.ph, t = g.t, out = [];
+    const bob = (0.5 - 0.5 * Math.cos(ph * TAU * 2)) * 6 * w + Math.sin(t * 1.7) * 1.4 * (1 - w);      // wippt zweimal je Takt (Gruppenwechsel), im Stand atmet sie
+    const sway = Math.sin(ph * TAU) * 3 * w * g.dir;
+    for (const n in R.legs) {
+      const L = R.legs[n], ch = L.c, H0 = ch[0], K0 = ch[1], J0 = ch[2], T0 = ch[3], H = [H0[0] + sway, H0[1] + bob];
+      const p = (ph + (L.g === 'B' ? 0.5 : 0)) % 1, inward = T0[0] < H0[0] ? -1 : 1;
+      let ox = 0, oy = 0, curl = 0;
+      if (!L.air) {
+        if (p < LEG.beta) ox = LEG.stride * (0.5 - p / LEG.beta);                                       // steht: bleibt am Boden, der Körper zieht weiter
+        else { const u = (p - LEG.beta) / (1 - LEG.beta); ox = LEG.stride * (u - 0.5); oy = -LEG.lift * Math.sin(Math.PI * u); curl = Math.sin(Math.PI * u); }      // schwingt im Bogen nach vorn
+        ox *= g.dir * w; oy *= w; curl *= w;
+      } else {                                                    // die zwei hohen Beine: wiegen sich, beim Gehen tastet das vordere voraus
+        const s1 = Math.sin(p * TAU);
+        ox = s1 * 16 * g.dir * w + Math.sin(t * 0.7 + H0[0]) * 5;
+        oy = -Math.max(0, s1) * 12 * w + Math.sin(t * 0.9 + H0[1]) * 4;
+        curl = 0.4 * Math.max(0, s1) * w;
+      }
+      if (g.tap && g.tap.leg === n) { const e = Math.sin(Math.PI * g.tap.t / g.tap.T); oy -= 24 * e; curl += 0.8 * e; }      // tippt auf
+      const T = [T0[0] + ox, T0[1] + oy];
+      const L1 = Math.hypot(K0[0] - H0[0], K0[1] - H0[1]), L2 = Math.hypot(T0[0] - K0[0], T0[1] - K0[1]);
+      const side = ((T0[0] - H0[0]) * (K0[1] - H0[1]) - (T0[1] - H0[1]) * (K0[0] - H0[0])) > 0 ? 1 : -1;
+      const K = legIK(H, T, L1, L2, side);
+      const a0 = Math.atan2(K[1] - H[1], K[0] - H[0]) - Math.atan2(K0[1] - H0[1], K0[0] - H0[0]);
+      const a1 = Math.atan2(T[1] - K[1], T[0] - K[0]) - Math.atan2(T0[1] - K0[1], T0[0] - K0[0]);
+      const cs = Math.cos(a1), sn = Math.sin(a1), jx = J0[0] - K0[0], jy = J0[1] - K0[1], J = [K[0] + jx * cs - jy * sn, K[1] + jx * sn + jy * cs];
+      out.push({ n: n, air: !!L.air, H0: H0, K0: K0, J0: J0, H: H, K: K, J: J, T: T, a0: a0, a1: a1, a2: a1 + curl * LEG.curl * inward, lift: -oy });
+    }
+    return { bob: bob, sway: sway, legs: out };
+  }
+  function drawLegged(ctx, o, def, img, b, c) {
+    const R = AA.LEGRIG && AA.LEGRIG[def.legs], atlas = R && AA.assets.get('deco/' + def.legs + '_rig');
+    if (!atlas) { ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h); return; }
+    const P = legPose(R, c.lg || { ph: 0, w: 0, dir: 1, t: 0 });
+    ctx.save(); ctx.translate(-b.w / 2, -b.h); ctx.scale(b.w / R.w, b.h / R.h);
+    P.legs.forEach(function (L) {
+      legPiece(ctx, atlas, R, L.n + '_2', L.J0, L.J, L.a2);      // Fuß (krümmt sich in der Luft zur Mitte)
+      legPiece(ctx, atlas, R, L.n + '_1', L.K0, L.K, L.a1);
+      legPiece(ctx, atlas, R, L.n + '_0', L.H0, L.H, L.a0);      // Oberschenkel liegt über dem Knie
+    });
+    legPiece(ctx, atlas, R, 'body', [0, 0], [P.sway, P.bob], 0);  // Panzer mit Augen und Bein-Ansätzen obendrauf
+    ctx.restore();
+  }
+  /* Für Tests: wo die Bein-Spitzen gerade im Becken stehen (Bildschirm-Koordinaten des Beckens) */
+  V.legFeet = function (o) {
+    const def = AA.DECO_BY[o.type], R = def && def.legs && AA.LEGRIG && AA.LEGRIG[def.legs], c = V.crawl[o.id];
+    if (!R || !c || !c.lg) return null;
+    const b = V.decoBox(o), k = b.w / R.w, x0 = o.x - b.w / 2, y0 = b.by - b.h;
+    return legPose(R, c.lg).legs.map(function (L) { return { n: L.n, air: L.air, x: x0 + L.T[0] * k, y: y0 + L.T[1] * k, lift: L.lift * k }; });
+  };
+
   /* ================= Runde 20f: neue Krabbler ================= */
-  /* Oberkante eines Bildes an 33 Stellen (Höhe über der Unterkante, Anteil der Bildhöhe) – darauf landet der Schlammspringer */
-  const SKY = new WeakMap();
-  function skyline(img) {
-    let s = SKY.get(img); if (s) return s;
-    s = new Float32Array(33);
-    try {
-      const w = 66, h = Math.max(8, Math.round(img.height / img.width * 66)), cv = mk(w, h), g = cv.getContext('2d');
-      g.drawImage(img, 0, 0, w, h); const d = g.getImageData(0, 0, w, h).data;
-      for (let i = 0; i <= 32; i++) { const x = Math.min(w - 1, Math.round(i / 32 * (w - 1))); let y = 0; while (y < h && d[(y * w + x) * 4 + 3] < 140) y++; s[i] = y >= h ? 0 : 1 - y / h; }
-    } catch (e) { s.fill(0.8); }
-    SKY.set(img, s); return s;
-  }
-  function startHop(o, c, x1, z1, l1, T, h) { c.hop = { t: 0, T: T, x0: o.x, z0: o.z, x1: x1, z1: z1, l0: c.lift || 0, l1: l1, h: h }; }
-  function perchSpot(o) {
-    const tank = AA.tank(), lim = AA.xLimits(); let best = null, bd = 1e9;
-    for (let i = 0; i < tank.deco.length; i++) {
-      const P = tank.deco[i], pd = AA.DECO_BY[P.type];
-      if (!pd || P === o || pd.crawl || pd.path || pd.flat || pd.daily || pd.cat === 'plant' || P.r) continue;
-      const pb = V.decoBox(P); if (pb.h < 34 || pb.h > 430) continue;
-      const dd = Math.abs(pb.cx - o.x) + Math.random() * 180; if (dd > 620 || dd >= bd) continue;
-      const img = V.decoImg(P); if (!img) continue;
-      const u = AA.rand(0.3, 0.7), hh = skyline(img)[Math.round((P.flip ? 1 - u : u) * 32)];
-      if (hh < 0.3) continue;
-      const x = AA.clamp(pb.x + u * pb.w, lim[0] + 24, lim[1] - 24), z = Math.min(1, P.z + 0.006);
-      bd = dd; best = { P: P, x: x, z: z, lift: Math.max(0, AA.floorY(z, x) - (pb.by - hh * pb.h + 3)) };
-    }
-    return best;
-  }
-  /* Schlammspringer: bewegt sich nur in Sprüngen – über den Kies, auf Deko und ab und zu mit einem Satz über die Wasserlinie */
-  function skipStep(o, def, c, dt) {
-    const lim = AA.xLimits(), night = !!AA.state.settings.night;
-    if (c.hop) {
-      const h = c.hop; h.t += dt; const u = Math.min(1, h.t / h.T);
-      o.x = h.x0 + (h.x1 - h.x0) * u; o.z = h.z0 + (h.z1 - h.z0) * u;
-      c.lift = h.l0 + (h.l1 - h.l0) * u + h.h * 4 * u * (1 - u);
-      c.v = 1 + Math.hypot(h.x1 - h.x0, (h.z1 - h.z0) * ZPX) / h.T;
-      if (Math.abs(h.x1 - h.x0) > 2) o.flip = h.x1 < h.x0;
-      if (h.leap) {
-        const surf = AA.floorY(o.z, o.x) - G.top;      // Höhe der Wasserlinie über dem Kies
-        if (!h.up && c.lift > surf - 4) { h.up = true; V.ripple(o.x, G.top + 3); AA.audio.play('splash'); for (let i = 0; i < 4; i++) V.addBubble(o.x + AA.rand(-14, 14), G.top + 10, AA.rand(2, 4)); }
-        else if (h.up && !h.down && u > 0.5 && c.lift < surf - 4) { h.down = true; V.ripple(o.x, G.top + 3); for (let i = 0; i < 6; i++) V.addBubble(o.x + AA.rand(-16, 16), G.top + 14, AA.rand(2, 4.5)); }
-      }
-      if (u >= 1) {
-        c.hop = null; c.lift = h.l1; c.perch = h.perch || null; c.v = 0;
-        c.wait = h.leap ? AA.rand(1.5, 3) : (c.perch ? AA.rand(5, 14) : AA.rand(0.25, 1.3));
-        if (!h.l1) V.puff('dust', o.x, AA.floorY(o.z, o.x) - 4, 1);
-      }
-      return;
-    }
-    c.v = 0;
-    if (c.perch) {                                     // sitzt oben: Stück weg oder verschoben? Dann runter.
-      const P = c.perch.P;
-      if (AA.tank().deco.indexOf(P) < 0 || P === V.dragDeco || Math.abs(V.decoBox(P).cx - c.perch.cx) > 2) { c.perch = null; startHop(o, c, o.x + AA.rand(-40, 40), o.z, 0, 0.55, 24); return; }
-    } else if (c.lift) c.lift = Math.max(0, c.lift - 400 * dt);
-    c.wait -= dt; if (c.wait > 0) return;
-    const r = Math.random();
-    if (!night && !V.photoMode && !c.perch && r < 0.14) {          // ein Satz über die Wasserlinie
-      const surf = AA.floorY(o.z, o.x) - G.top;
-      startHop(o, c, AA.clamp(o.x + AA.rand(-70, 70), lim[0] + 30, lim[1] - 30), o.z, 0, AA.clamp(surf / 260, 1.0, 1.8), surf + AA.rand(30, 55)); c.hop.leap = true;
-      return;
-    }
-    if (!night && !c.perch && r < 0.5) {                           // auf ein Deko-Stück springen
-      const sp = perchSpot(o);
-      if (sp) { startHop(o, c, sp.x, sp.z, sp.lift, 0.75, 34 + sp.lift * 0.18); c.hop.perch = { P: sp.P, cx: V.decoBox(sp.P).cx }; return; }
-    }
-    if (c.perch) { c.perch = null; startHop(o, c, AA.clamp(o.x + AA.rand(-90, 90), lim[0] + 30, lim[1] - 30), AA.clamp(o.z + AA.rand(0.04, 0.12), 0.04, 1), 0, 0.6, 22); return; }
-    startHop(o, c, AA.clamp(o.x + AA.rand(36, 110) * (Math.random() < 0.5 ? -1 : 1), lim[0] + 30, lim[1] - 30), AA.clamp(o.z + AA.rand(-0.08, 0.08), 0.04, 1), 0, 0.42, AA.rand(14, 26));
-  }
-  function drawSkipper(ctx, img, b, c) {
-    const h = c.hop, u = h ? Math.min(1, h.t / h.T) : 1;
-    if (h) { ctx.rotate((u < 0.5 ? -0.22 : 0.18) * Math.sin(Math.PI * u)); const k = Math.sin(Math.PI * u) * 0.06; ctx.scale(1 + k, 1 - k * 0.6); }
-    else { const q = Math.sin(c.ph * 3.1) * 0.015; ctx.scale(1 - q, 1 + q); }      // atmet
-    ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h);
-  }
   /* Spanische Tänzerin: gleitet mit wellendem Rock, ab und zu tanzt sie frei durchs Wasser (steigt auf, Wellen werden groß) */
   function danceTick(o, def, c, dt) {
     const night = !!AA.state.settings.night, mvN = Math.min(1, (c.v || 0) / (def.crawl[1] * 0.5 + 0.01));
@@ -1399,44 +1409,6 @@
       }
     }
     ctx.restore();
-  }
-  /* Seegurke: die Tentakelkrone (rechts ab def.crown, ohne das rechte Auge) fächelt um ihren Ansatz */
-  const CROWN = new WeakMap();
-  function crownParts(img, cx) {
-    let p = CROWN.get(img); if (p !== undefined) return p;
-    try {
-      const w = img.width, h = img.height, body = mk(w, h), crown = mk(w, h), gb = body.getContext('2d'), gc = crown.getContext('2d');
-      gb.drawImage(img, 0, 0); gc.drawImage(img, 0, 0);
-      const x0 = Math.round(w * cx), ex = w * 0.80, ey = h * 0.13, er = w * 0.05;
-      const ib = gb.getImageData(0, 0, w, h), ic = gc.getImageData(0, 0, w, h);
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4, inCrown = x >= x0 && Math.hypot(x - ex, (y - ey) * 1.0) > er;
-        if (inCrown) ib.data[i + 3] = 0; else ic.data[i + 3] = 0;
-      }
-      gb.putImageData(ib, 0, 0); gc.putImageData(ic, 0, 0); p = { body: body, crown: crown };
-    } catch (e) { p = null; }
-    CROWN.set(img, p); return p;
-  }
-  function drawCrownBody(ctx, img, b, c, cx) {
-    const p = crownParts(img, cx);
-    if (!p) { ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h); return; }
-    ctx.drawImage(p.body, -b.w / 2, -b.h, b.w, b.h);
-    const px = -b.w / 2 + b.w * cx, py = -b.h * 0.52, f = Math.sin(c.ph * 2.4), k = 1 + f * 0.12;
-    ctx.save(); ctx.translate(px, py); ctx.rotate(Math.sin(c.ph * 1.3) * 0.07); ctx.scale(1 + (k - 1) * 0.35, k);
-    ctx.drawImage(p.crown, -b.w * cx, -b.h * 0.48, b.w, b.h);
-    ctx.restore();
-  }
-  /* Pistolenkrebs & Wächtergrundel: gräbt (Staubwölkchen), ab und zu ein Knall mit Bläschen – die Fische in der Nähe zucken zusammen */
-  function pistolTick(o, c, dt) {
-    const b = V.decoBox(o), dir = o.flip ? -1 : 1;
-    if (!(c.v > 1) && Math.random() < dt * 0.7) V.puff('dust', b.cx + dir * b.w * 0.1, b.by - 4, 1);
-    c.snapW = (c.snapW === undefined ? AA.rand(10, 28) : c.snapW) - dt;
-    if (c.snapW > 0) return;
-    c.snapW = AA.rand(25, 55); c.hit = 0.22;
-    const x = b.cx + dir * b.w * 0.04, y = b.by - b.h * 0.6;
-    AA.audio.play('pop'); V.floatText(x, b.y - 12, '💥', '#ffffff');
-    for (let i = 0; i < 9; i++) V.addBubble(x + AA.rand(-10, 10), y + AA.rand(-8, 8), AA.rand(1.5, 4.2));
-    for (let i = 0; i < V.fish.length; i++) { const f = V.fish[i]; if (!f.ghost && f.onKnock && Math.hypot(f.x - x, f.y - y) < 240) f.onKnock(x, y); }
   }
   /* Fangschreckenkrebs: wohnt in einer Höhle und schaut heraus, knackt ab und zu leere Schneckenhäuser (manchmal liegt eine Perle drin) */
   const SHELLS = { conch: 1, scallop: 1 };

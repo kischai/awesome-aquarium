@@ -505,6 +505,11 @@
       const its = Object.keys(n.gone.items || {}).map(function (k) { const c = n.gone.items[k]; return (c > 1 ? c + '× ' : '') + esc(k); }).join(', ');
       li.push('🧹 <b>Aufgeräumt:</b> Steinkopf mit Hut, Brücken und Wege gibt es nicht mehr. Für ' + (its || 'deine Stücke') + ' bekommst du den vollen Kaufpreis zurück: <b>' + fmt(n.gone.coins) + ' Münzen</b>.');
     }
+    if (n.gone20) {                                    // 19.11.2026: Damian hat aufgeräumt (AA.GONE20, js/state.js AA.dropGone20)
+      const G = n.gone20, its = Object.keys(G.items || {}).map(function (k) { const c = G.items[k]; return (c > 1 ? c + '× ' : '') + esc(k); }).join(', ');
+      const back = [G.coins ? '<b>' + fmt(G.coins) + ' Münzen</b>' : '', G.pearls ? '<b>' + G.pearls + (G.pearls === 1 ? ' Perle' : ' Perlen') + '</b>' : ''].filter(Boolean).join(' und ');
+      li.push('🧹 <b>Aufgeräumt:</b> Ein paar Tiere, Krabbler, Deko-Stücke und Böden gibt es nicht mehr. Für ' + (its || 'deine Stücke') + ' bekommst du ' + back + ' zurück.');
+    }
     if (n.present) {                                   // 17.11.2026: ein Fisch als Geschenk (js/social.js, giveFish)
       const P = n.present, def = AA.FISH_BY[P.sp], V = P.v && AA.VAR_BY[P.v];
       li.push('🎁 <b>Geschenk' + (P.from ? ' von ' + esc(P.from) : '') + ':</b> ' + esc(P.name) + ', ein ' + (V ? esc(V.name) + '-' : '') + esc(def ? def.name : P.sp) +

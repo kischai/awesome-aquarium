@@ -8,7 +8,7 @@
 
   AA.PROFILE = { nameMax: 20, bioMax: 160 };
   /* Fische, die man als Profilbild nehmen kann (dieselben wie beim Konto-Anlegen in js/cloudui.js) */
-  AA.AVATARS = ['clown', 'guppy', 'goldfish', 'koi', 'neon', 'skalar', 'betta', 'discus', 'puffer', 'seahorse', 'axolotl', 'bluetang'];
+  AA.AVATARS = ['clown', 'guppy', 'goldfish', 'koi', 'neon', 'skalar', 'betta', 'discus', 'boxfish', 'seahorse', 'axolotl', 'bluetang'];
   function cleanName(v) { return String(v || '').replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, AA.PROFILE.nameMax); }
   function cleanBio(v) { return String(v || '').replace(/[\u0000-\u0009\u000b-\u001f<>]/g, '').replace(/\n{3,}/g, '\n\n').replace(/[ \t]+/g, ' ').trim().slice(0, AA.PROFILE.bioMax); }
   AA.cleanName = cleanName; AA.cleanBio = cleanBio;

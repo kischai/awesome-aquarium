@@ -75,7 +75,7 @@
     const mx = Math.max(1, Math.max.apply(null, days.map(function (x) { return Math.abs(x.p); })));
     const bars = days.map(function (x) { const h = Math.round(Math.abs(x.p) / mx * 60);
       return '<div class="bday"><div class="bcol"><i class="' + (x.p < 0 ? 'neg' : '') + '" style="height:' + h + 'px" title="Einnahmen ' + fmt(x.i) + ' · Ausgaben ' + fmt(x.o) + '"></i></div><small>' + (x.k === 0 ? 'heute' : '−' + x.k) + '</small><b>' + (x.p < 0 ? '−' : '') + fmt(Math.abs(x.p)) + '</b></div>'; }).join('');
-    const best = Object.keys(d7.sp).map(function (sp) { return { sp: sp, n: d7.sp[sp][0], c: d7.sp[sp][1] }; }).sort(function (a, b) { return b.c - a.c; }).slice(0, 3);
+    const best = Object.keys(d7.sp).filter(function (sp) { return AA.FISH_BY[sp]; }).map(function (sp) { return { sp: sp, n: d7.sp[sp][0], c: d7.sp[sp][1] }; }).sort(function (a, b) { return b.c - a.c; }).slice(0, 3);
     const col = function (L, t) { return '<div class="pl"><b>' + t + '</b><div><span>Einnahmen</span><b>' + fmt(L.i) + '</b></div><div class="sub"><span>davon Fischverkauf</span><b>' + fmt(L.sales) + '</b></div>' +
       '<div class="sub"><span>davon Kunden</span><b>' + fmt(L.orders) + '</b></div><div><span>Ausgaben</span><b>−' + fmt(L.o) + '</b></div><div class="sum ' + (L.profit < 0 ? 'neg' : '') + '"><span>Gewinn</span><b>' + (L.profit < 0 ? '−' : '') + fmt(Math.abs(L.profit)) + ' ' + coin() + '</b></div></div>'; };
     return '<div class="firm"><div class="f-ico">' + R.ico + '</div><div><small>Firmenstufe</small><b>' + esc(R.name) + '</b></div><div class="f-stock"><small>Lagerwert (alle Fische, heutiger Kurs)</small><b>' + fmt(AA.stockValue()) + ' ' + coin() + '</b></div></div>' +

@@ -4,7 +4,7 @@
    Ohne eingetragene Wolke (js/config.js leer) bleibt davon nur „Spielstand als Datei sichern / laden“ in den Einstellungen. */
 (function (AA) {
   const UI = AA.ui, C = AA.cloud, $ = AA.$, esc = AA.esc;
-  const AVATARS = ['clown', 'guppy', 'goldfish', 'koi', 'neon', 'skalar', 'betta', 'discus', 'puffer', 'seahorse', 'axolotl', 'bluetang'];
+  const AVATARS = ['clown', 'guppy', 'goldfish', 'koi', 'neon', 'skalar', 'betta', 'discus', 'boxfish', 'seahorse', 'axolotl', 'bluetang'];
   let after = null, gate = { user: '', busy: false, invite: '', showInv: false, seenReg: false }, pick = null, barOpen = false, tickT = 0;
 
   function head(title) { return '<div class="m-head"><div class="m-title">' + title + '</div><button class="x" data-act="close" title="Schließen">✕</button></div>'; }

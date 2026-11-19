@@ -242,6 +242,18 @@
     if (Array.isArray(o.storage)) o.storage.forEach(one);
     return coins ? { coins: coins, items: items } : null;
   };
+  /* 19.11.2026: drei Tiere, drei Krabbler, drei Deko-Stücke sind raus (AA.GONE20). Zählt, was davon in Becken und Lager liegt, und was es zurückgibt. */
+  AA.dropGone20 = function (o) {
+    const G = AA.GONE20; let coins = 0, pearls = 0; const items = {};
+    const add = function (g) { coins += g[1] || 0; pearls += g[2] || 0; items[g[0]] = (items[g[0]] || 0) + 1; };
+    (o.tanks || []).forEach(function (t) {
+      if (!t) return;
+      if (Array.isArray(t.fish)) t.fish.forEach(function (f) { const g = f && G.fish[f.sp]; if (g) add(g); });
+      if (Array.isArray(t.deco)) t.deco.forEach(function (d) { const g = d && G.deco[d.type]; if (g) add(g); });
+    });
+    if (Array.isArray(o.storage)) o.storage.forEach(function (d) { const g = d && G.deco[d.type]; if (g) add(g); });
+    return coins || pearls ? { coins: coins, pearls: pearls, items: items } : null;
+  };
   /* Runde 18: Mistelzweig-Alge im Becken – { hatch, pause } (Faktoren auf Brutzeit und Paarungspause), sonst null. Im Brutbecken wirkt sie nicht; mehrere zählen wie eine. */
   AA.mistle = function (t) {
     if (!t || t.role === 'brut' || !Array.isArray(t.deco)) return null;
@@ -258,6 +270,7 @@
       const o = JSON.parse(raw);
       if (!o || !Array.isArray(o.tanks) || !o.tanks.length) throw new Error('kein Becken im Spielstand');
       const gone = guest ? null : AA.dropGone(o);      // Runde 18: entfernte Deko zählen, bevor fixTank (Becken) und decorFix (Lager) sie still wegwerfen
+      const gone20 = guest || o.g20 ? null : AA.dropGone20(o);      // 19.11.2026: entfernte Tiere, Krabbler und Deko (AA.GONE20) – ebenso vorher zählen
       o.tanks = o.tanks.slice(0, AA.MAX_TANKS + 1 + (AA.OCEAN.max || 1) + (AA.DEEP.max || 1)).map(fixTank);      // 8 Becken + Süßwasser-Sonderangebot + bis zu 3 Meeresbecken + 2 Tiefsee-Becken (Runde 20f)
       if ((o.v | 0) < 3) { o.news = { water: migrateWater(o) }; o.v = 3; }      // Umzug + einmaliger Hinweis auf das, was neu ist (zeigt die Oberfläche)
       const ds = defaultStats(); o.stats = o.stats || {};
@@ -271,6 +284,8 @@
       o.coins = Math.max(0, Math.round(+o.coins || 0)); o.pearls = Math.max(0, Math.round(+o.pearls || 0));
       o.food = Math.max(0, Math.round(+o.food || 0)); o.xp = Math.max(0, Math.round(+o.xp || 0));
       if (gone && !o.r18) { o.r18 = 1; o.coins += gone.coins; o.news = o.news || {}; o.news.gone = gone; }      // Merker r18: ein noch offenes altes Spiel erstattet nicht ein zweites Mal
+      if (!guest) o.g20 = 1;                           // 19.11.2026: Merker – die Rückgabe (AA.GONE20) gibt es nur einmal
+      if (gone20) { o.coins += gone20.coins; o.pearls += gone20.pearls; o.news = o.news || {}; o.news.gone20 = gone20; }
       if (!guest && !o.x18 && AA.season().xmas) { o.x18 = 1; o.news = o.news || {}; o.news.xmas18 = 1; }      // Runde 18: einmal Bescheid sagen, was es zu Weihnachten Neues gibt
       if (!guest && !o.r19) { o.r19 = 1; o.news = o.news || {}; o.news.r19 = 1; }      // Runde 19: einmal Bescheid sagen (Reiter „Specials“)
       const was = Math.max(0, Math.round(+o.level || 0));

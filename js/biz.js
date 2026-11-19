@@ -205,6 +205,7 @@
     o.orderNext = +o.orderNext || 0;
     if (!o.market || typeof o.market !== 'object' || !o.market.k) o.market = null;
     if (!o.ledger || typeof o.ledger !== 'object') o.ledger = {};
+    for (const d in o.ledger) { const L = o.ledger[d]; if (L && L.sp) for (const sp in L.sp) if (!AA.FISH_BY[sp]) delete L.sp[sp]; }      // Arten, die es nicht mehr gibt (AA.GONE20)
     return o;
   };
   AA.bizStart = function () {                          // nach dem Laden / bei neuem Spiel: Tageskurs; ein Betrieb ohne Aufträge bekommt gleich alle drei

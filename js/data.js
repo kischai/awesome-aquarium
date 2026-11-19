@@ -69,7 +69,7 @@
 
   /* ---------- Fische ----------
      lvl/price/sell/hours stammen aus der Arten-Tabelle des Vorbilds – bei Arten, die es dort nicht gibt, aus der jeweils freien Stufe
-     dieser Tabelle (Kalmar, Küssender Gurami, Riffhai und Schildkröte: eigene Werte). Genaue Zuordnung: docs/MECHANIK.md.
+     dieser Tabelle (Kalmar, Riffhai und Schildkröte: eigene Werte). Genaue Zuordnung: docs/MECHANIK.md.
      hours = Stunden bis erwachsen im Vorbild – seit Runde 15 nur noch Herkunft: die echten Zeiten kommen aus AA.TEMPO (nach Level, siehe unten).
      Paarung kostet den halben Kaufpreis.
      len   = Breite des erwachsenen Sprites im Becken in Pixeln, speed = Schwimmtempo. */
@@ -124,8 +124,6 @@
       info: 'Schleierflossen wie ein Ballkleid. Ein kleiner Angeber.' },
     { id: 'discus', name: 'Diskus', lvl: 14, water: 'fresh', price: 62, sell: 75, hours: 36, len: 108, speed: 32, egg: '#ff4a1f',
       info: 'Rund wie eine Scheibe, mit türkisen Wellen. Der König des Amazonas.' },
-    { id: 'kissing', name: 'Küssender Gurami', lvl: 15, water: 'fresh', price: 125, sell: 143, hours: 24, len: 104, speed: 36, egg: '#ff9ecb',
-      info: 'Rosa Schmollmund – verteilt Küsschen an alle.' },
     { id: 'copperband', name: 'Kupferstreifen-Pinzettfisch', lvl: 16, price: 70, sell: 81, hours: 28, len: 116, speed: 46, egg: '#ff8a1f',
       info: 'Orange Streifen und eine Pinzetten-Schnauze, die in jede Ritze passt.' },
     { id: 'tigerbarb', name: 'Sumatrabarbe', lvl: 16, water: 'fresh', price: 72, sell: 83, hours: 26, len: 100, speed: 62, egg: '#ffb21a',
@@ -160,8 +158,6 @@
       info: 'Schwarz mit weißen Tupfen und gelbem Maul – unverwechselbar.' },
     { id: 'moorish', name: 'Halfterfisch', lvl: 28, price: 184, sell: 212, hours: 48, len: 124, speed: 46, egg: '#f5c400',
       info: 'Elegante Streifen und eine lange Rückenfahne.' },
-    { id: 'puffer', name: 'Igelfisch', lvl: 29, price: 265, pearls: 30, sell: 303, hours: 42, len: 108, speed: 28, egg: '#d6a35c',
-      info: 'Stachelige Kugel mit Kullerauge. Gibt es für Münzen oder Perlen.' },
     { id: 'piranha', name: 'Roter Piranha', lvl: 29, water: 'fresh', price: 230, sell: 262, hours: 44, len: 122, speed: 54, egg: '#e02424',
       info: 'Roter Bauch, viele Zähne, schlechter Ruf – dabei eher schreckhaft.' },
     { id: 'picasso', name: 'Picasso-Drückerfisch', lvl: 30, price: 260, sell: 295, hours: 42, len: 126, speed: 44, egg: '#f1d39b',
@@ -347,9 +343,6 @@
     /* ---------- Runde 12: besondere Tiere – gibt es nur für Perlen (pearlOnly), ab einem Level ---------- */
     { id: 'frog', name: 'Wasserfrosch', lvl: 15, water: 'fresh', special: true, pearlOnly: true, pearls: 12, price: 120, sell: 136, hours: 30, len: 120, speed: 32, egg: '#7ad63a',
       info: 'Paddelt mit kräftigen Beinstößen durchs Becken. Als Baby ist er eine kleine Kaulquappe mit ersten Beinchen.' },
-    { id: 'frenchfrog', name: 'Grenouille', lvl: 21, water: 'fresh', special: true, pearlOnly: true, pearls: 15, price: 160, sell: 181, hours: 32, len: 92, speed: 30, egg: '#7ad63a',
-      hab: 'bottom', hop: true,
-      info: 'Ein Wasserfrosch mit Baskenmütze und Ringel-Shirt. Hüpft in kleinen Sätzen über den Grund und strampelt dabei mit den Beinen. Oh là là!' },
     { id: 'hamster', name: 'Tauch-Hamster', lvl: 20, water: 'both', special: true, pearlOnly: true, pearls: 15, price: 170, sell: 192, hours: 36, len: 110, speed: 30, egg: '#ffb04a',
       info: 'Mit Taucherbrille, Schnorchel und Flossen. Keiner weiß, wie er ins Becken gekommen ist – aber er strampelt fröhlich mit.' },
     { id: 'otter', name: 'Fischotter', lvl: 25, water: 'fresh', special: true, pearlOnly: true, pearls: 20, price: 230, sell: 260, hours: 48, len: 150, speed: 44, egg: '#8a5a30',
@@ -672,28 +665,22 @@
     { id: 'cone', name: 'Kegelschnecke', cat: 'critter', lvl: 20, price: 100, w: 78, sink: 2, crawl: ['snail', 4], venom: true, harpoon: true,
       info: 'Ein Schneckenhaus wie ein Kunstwerk – und ein Rüssel mit Giftharpune. Kriecht gemütlich herum und schießt ab und zu die Harpune raus.' },
     { id: 'escargot', name: 'Escargot', cat: 'critter', lvl: 10, price: 90, w: 96, sink: 2, crawl: ['snail', 5], water: 'both',      // Runde 20f: auch ins Süßwasser (Paris – Seine)
-      info: 'Eine Weinbergschnecke im Mini-Taucherhelm – so traut sie sich auch unter Wasser, im Meer wie in der Seine. Kriecht gemütlich herum und schaut durch ihr Bullauge.' },
+      info: 'Eine Weinbergschnecke mit Tauchflasche auf dem Häuschen und dem Atemregler im Mund – so traut sie sich auch unter Wasser, im Meer wie in der Seine. Die Augen oben auf den Stielen haben alles im Blick.' },
     // Runde 20f: Krabbler-Paket – große runde Augen, kein Mund. Neue Gangarten: stilt (Stelzen), dancer (Spanische Tänzerin), clam (Riesenmuschel), skip (Schlammspringer)
-    { id: 'seacucumber', name: 'Seegurke', cat: 'critter', lvl: 9, price: 55, w: 120, sink: 2, crawl: ['snail', 2.6], crown: 0.8, job: 'food', eats: true,
-      info: 'Der Staubsauger des Riffs: kriecht im Schneckentempo und fächelt mit ihrer gelben Tentakelkrone nach Futterresten.' },
+    { id: 'seacucumber', name: 'Seegurke', cat: 'critter', lvl: 9, price: 55, w: 100, sink: 2, crawl: ['snail', 2.6], job: 'food', eats: true,
+      info: 'Der Staubsauger des Riffs: kriecht im Schneckentempo über den Grund und räumt die Futterreste weg.' },
     { id: 'tigershrimp', name: 'Blaue Tigergarnele', cat: 'critter', lvl: 11, price: 70, w: 80, sink: 2, crawl: ['walk', 15], job: 'algae', clean: 0.06, eats: true, water: 'fresh',
       info: 'Kobaltblau mit schwarzen Tigerstreifen – und nebenbei putzt sie die Algen weg.' },
-    { id: 'mudskipper', name: 'Schlammspringer', cat: 'critter', lvl: 13, price: 75, w: 100, sink: 2, crawl: ['skip', 12], water: 'both',
-      info: 'Ein Fisch, der lieber hüpft als schwimmt: springt auf Steine und Deko – und ab und zu mit einem Satz über die Wasserlinie.' },
     { id: 'decorator', name: 'Dekorateurkrabbe', cat: 'critter', lvl: 15, price: 90, w: 110, sink: 2, crawl: ['crab', 14], job: 'food', eats: true,
       info: 'Tarnt sich mit allem, was sie findet: Schwamm, Tang, Anemone und ein Schneckenhaus auf dem Rücken.' },
-    { id: 'arrowcrab', name: 'Pfeilkrabbe', cat: 'critter', lvl: 17, price: 95, w: 110, sink: 2, crawl: ['stilt', 11], job: 'food', eats: true,
-      info: 'Eine Spinne auf Stelzen mit einem Kopf wie eine Pfeilspitze. Frisst Borstenwürmer und andere Plagegeister.' },
-    { id: 'pistolgoby', name: 'Pistolenkrebs & Wächtergrundel', cat: 'critter', lvl: 19, price: 120, w: 130, sink: 2, crawl: ['walk', 6], pistol: true,
-      info: 'Ein unzertrennliches Paar: Der Krebs gräbt, die Grundel hält Wache. Ab und zu knallt der Krebs mit der Schere – so laut, dass Bläschen aufsteigen und die Fische zusammenzucken.' },
     { id: 'horseshoe', name: 'Pfeilschwanzkrebs', cat: 'critter', lvl: 21, price: 130, w: 120, sink: 2, crawl: ['walk', 7], job: 'food', eats: true,
       info: 'Ein lebendes Fossil: seit 450 Millionen Jahren fast unverändert – älter als die Dinosaurier. Und er hat blaues Blut.' },
     { id: 'spanishdancer', name: 'Spanische Tänzerin', cat: 'critter', lvl: 24, price: 160, w: 120, sink: 2, crawl: ['dancer', 7],
       info: 'Eine Nacktschnecke im roten Flamenco-Rock. Gleitet wellend über den Boden – und ab und zu tanzt sie frei durchs Wasser.' },
     { id: 'giantclam', name: 'Riesenmuschel', cat: 'critter', lvl: 28, price: 240, w: 140, sink: 2, crawl: ['clam', 0], sym: true, job: 'algae', clean: 0.05,
       info: 'Bewegt sich keinen Millimeter und filtert dafür das Wasser – ihr Mantel schimmert in allen Blautönen. Antippen: Sie klappt zu.' },
-    { id: 'spidercrab', name: 'Japanische Riesenkrabbe', cat: 'critter', lvl: 33, price: 210, w: 190, sink: 2, crawl: ['stilt', 8], job: 'food', eats: true,
-      info: 'Die größte Krabbe der Welt – bis fast vier Meter Beinspannweite. Stakst ganz langsam auf ihren Stelzen über den Boden.' },
+    { id: 'spidercrab', name: 'Japanische Riesenkrabbe', cat: 'critter', lvl: 33, price: 210, w: 190, sink: 2, crawl: ['legs', 8], legs: 'spidercrab', sym: true, job: 'food', eats: true,      // 19.11.2026: Bein-Rig (js/legrig.js)
+      info: 'Die größte Krabbe der Welt – bis fast vier Meter Beinspannweite. Setzt ihre langen Stelzenbeine Schritt für Schritt, ganz langsam und bedächtig.' },
     { id: 'mantis', name: 'Fangschreckenkrebs', cat: 'critter', lvl: 34, price: 150, w: 106, sink: 2, crawl: ['walk', 13], punch: true,
       info: 'Pfauenbunt, mit Augen, die sich unabhängig drehen – und dem schnellsten Schlag im Tierreich. Klopf bloß nicht ans Glas: Er schlägt zurück!' },
     { id: 'bluering', name: 'Blauring-Krake', cat: 'critter', lvl: 38, price: 180, w: 110, sink: 2, crawl: ['octo', 6], sym: true, venom: true,
@@ -775,7 +762,6 @@
     // Runde 20d: Paris – Wahrzeichen und Straßen-Deko (Eiffelturm funkelt nachts zu jeder vollen Stunde, Laterne und Métro leuchten nachts)
     { id: 'frenchsign', name: 'Schild „Beware of the French!“', cat: 'prop', text: true, lvl: 5, price: 150, w: 130, sink: 6,
       info: '„Frogs and snails, beware of the French!“ – Frösche und Schnecken, Vorsicht vor den Franzosen! Auf Französisch: « Grenouilles et escargots : attention aux Français ! »' },
-    { id: 'petanque', name: 'Pétanque-Kugeln', cat: 'prop', lvl: 6, price: 120, w: 100, sink: 4, info: 'Drei Kugeln und das Schweinchen. Wer liegt am nächsten dran?' },
     { id: 'montmartre', name: 'Laterne vom Montmartre', cat: 'prop', lvl: 8, price: 220, w: 58, sink: 5, size: [0.6, 1.8], glow: [0.5, 0.86, '#ffd27a', 1.7],
       info: 'Eine alte Gaslaterne vom Künstlerhügel. Nachts leuchtet sie warm.' },
     { id: 'cafe', name: 'Café-Tisch', cat: 'prop', lvl: 10, price: 300, w: 160, sink: 5, info: 'Croissant und Espresso – bitte nicht vom Seeteufel klauen lassen.' },
@@ -798,7 +784,6 @@
       info: 'Hausgemachter Šljivovica mit Pflaumen auf dem Etikett. Aus dem Korken steigen ständig Bläschen – Živjeli!' },
     { id: 'brickphone', name: 'Unkaputtbares Handy', cat: 'prop', text: true, lvl: 14, price: 300, w: 70, sink: 5, size: [0.6, 2.0], screen: [0.2, 0.245, 0.8, 0.425],
       info: 'Der Knochen aus den 2000ern: übersteht alles, sogar das Aquarium. Ab und zu leuchtet das Display auf – Snake läuft noch.' },
-    { id: 'fridge', name: 'Retro-Kühlschrank', cat: 'prop', lvl: 16, price: 420, w: 120, sink: 6, hide: [0.05, 0.42], info: 'Mintgrün, Tür offen. Drinnen ist es angenehm kühl – ein beliebtes Versteck.' },
     { id: 'yugo', name: 'Versunkener Yugo', cat: 'prop', lvl: 18, price: 600, w: 220, sink: 7, size: [0.5, 1.8], hide: [0, 0.32], info: 'Der Kult-Kleinwagen vom Balkan. Fährt nicht mehr – dafür wohnen jetzt Fische drin.' },
     { id: 'sofa', name: 'Samt-Sofa', cat: 'prop', lvl: 20, price: 650, w: 210, sink: 6, size: [0.5, 1.8], info: 'Rotes Samtsofa mit Muschel-Kissen und Goldrahmen – die perfekte Couch für eine Unterwasser-Siesta.' },
     { id: 'phonebox', name: 'Rote Telefonzelle', cat: 'prop', lvl: 22, price: 700, w: 110, sink: 6, size: [0.5, 1.8], glows: [[0.5, 0.94, '#ffe9a8', 0.4], [0.5, 0.55, '#fff2c8', 0.75]],
@@ -809,11 +794,12 @@
       info: 'Ein Tauchboot mit Gamecontroller-Steuerung, weißem Heckkonus und vier Propellern. Fährt nirgendwo mehr hin – dafür wohnen jetzt Seepocken drauf.' },
     { id: 'capsule', name: 'Raumkapsel', cat: 'prop', lvl: 36, price: 1500, w: 170, sink: 6, size: [0.5, 1.8], glow: [0.5, 0.4, '#bfe8ff', 0.55],
       info: 'Eine Landekapsel wie aus der Apollo-Zeit – sie hat „Wasserlandung“ etwas zu wörtlich genommen. Nachts leuchtet das Bullauge.' },
+    { id: 'titanic', name: 'Titanic-Wrack', cat: 'prop', text: true, lvl: 38, price: 1800, w: 340, sink: 8, size: [0.5, 1.6], hide: [-0.4, 0.45], bubbles: [0.61, 0.78, 2.6],      // 19.11.2026 (Damian, selbst gezeichnet: tools/redo20g/titanic.py)
+      info: 'Der Bug der Titanic, so wie er seit 1912 in fast 4.000 Metern Tiefe liegt: Rost-Zapfen am schwarzen Rumpf, die Bugreling, der umgestürzte Vormast. Aus dem Loch des ersten Schornsteins steigen ab und zu Blasen – und im abgerissenen Ende verstecken sich gern die Fische.' },
     // Runde 20f: Höhlen und Moos (cave = Höhle für Höhlenbrüter, siehe 20e)
     { id: 'coconut', name: 'Kokosnuss-Höhle', cat: 'rock', lvl: 4, price: 45, w: 130, sink: 5, hide: [0, 0.3], cave: true, info: 'Der Klassiker: eine halbe Kokosnuss mit Eingang. Höhlenbrüter lieben sie.' },
     { id: 'claycave', name: 'Ton-Laichhöhle', cat: 'rock', lvl: 6, price: 60, w: 170, sink: 5, hide: [0.2, 0.32], cave: true, info: 'Eine Tonröhre und ein kleiner Tonbogen – Höhlen zum Verstecken und Laichen für Buntbarsche und Welse.' },
     { id: 'mosstree', name: 'Moosbaum', cat: 'plant', lvl: 12, price: 140, w: 150, sink: 5, home: 'fresh', sway: 0.015, size: [0.5, 1.8], info: 'Ein Bonsai aus Wurzelholz mit Javamoos-Krone – ein kleiner Baum unter Wasser.' },
-    { id: 'mosswall', name: 'Mooswand', cat: 'plant', lvl: 14, price: 180, w: 200, sink: 5, home: 'fresh', size: [0.5, 1.8], info: 'Javamoos auf einem Holzgitter: eine dichte grüne Wand für den Hintergrund.' },
     { id: 'trophy_bronze', name: 'Bronzepokal', cat: 'prop', lvl: 1, price: 0, w: 86, sink: 4, trophy: 3, info: 'Platz 3 in der Wochen-Rangliste. Gibt es nicht zu kaufen – nur zu gewinnen.' },
     { id: 'trophy_silver', name: 'Silberpokal', cat: 'prop', lvl: 1, price: 0, w: 90, sink: 4, trophy: 2, info: 'Platz 2 in der Wochen-Rangliste. Gibt es nicht zu kaufen – nur zu gewinnen.' },
     { id: 'trophy_gold', name: 'Goldpokal', cat: 'prop', lvl: 1, price: 0, w: 96, sink: 4, trophy: 1, info: 'Platz 1 in der Wochen-Rangliste! Gibt es nicht zu kaufen – nur zu gewinnen.' },
@@ -863,6 +849,15 @@
   /* Runde 18: aus dem Spiel genommen (Steinkopf mit Hut, die Brücken und die Wege). Wer eins hatte, bekommt beim Laden den Kaufpreis zurück (AA.dropGone, js/state.js). */
   AA.DECO_GONE = { moai_pukao: ['Steinkopf mit Hut', 340], stonebridge: ['Steinbrücke', 160], rootbridge: ['Wurzelbrücke', 165],
     path_stones: ['Trittstein-Pfad', 40], path_planks: ['Holzbohlen-Weg', 48], path_mosaic: ['Mosaik-Weg', 90] };
+  /* 19.11.2026 (Damian): noch einmal aufgeräumt – drei Tiere, drei Krabbler, drei Deko-Stücke und sechs Böden. Wer etwas davon hat, bekommt beim
+     Laden einmal etwas zurück (AA.dropGone20, js/state.js): Tiere den Verkaufswert (Grenouille ihre 15 Perlen), Deko und Krabbler den Kaufpreis.
+     Böden kosten nichts – ein Becken mit einem davon bekommt wieder Sand. */
+  AA.GONE20 = {
+    fish: { kissing: ['Küssender Gurami', 143], puffer: ['Igelfisch', 303], frenchfrog: ['Grenouille', 0, 15] },
+    deco: { petanque: ['Pétanque-Kugeln', 120], fridge: ['Retro-Kühlschrank', 420], mosswall: ['Mooswand', 180],
+      mudskipper: ['Schlammspringer', 75], arrowcrab: ['Pfeilkrabbe', 95], pistolgoby: ['Pistolenkrebs & Wächtergrundel', 120] },
+    floors: ['cobble', 'autumnleaves', 'footprints', 'ripplesand', 'seagrasslawn', 'travertine']
+  };
   /* Runde 18: Weihnachtszeit nach dem Kalender des Geräts. shop = Reiter „Weihnachten“ im Shop (15. November bis 6. Januar), hats = Mützen auf den
      Clownfischen (1. Dezember bis 6. Januar), advent = Knopf „Adventskalender“ (wie shop). Für Tests: window.AA_DATE = '2026-12-05'. */
   AA.season = function (now) {
@@ -942,14 +937,8 @@
     { id: 'powder', name: 'Pulverschnee', lvl: 1 },
     { id: 'winterwood', name: 'Winterwald-Boden', lvl: 3 },
     /* Runde 20d: Paris */
-    { id: 'cobble', name: 'Kopfsteinpflaster (Paris)', lvl: 12 },
     /* Runde 20f: sieben Böden */
-    { id: 'footprints', name: 'Sand mit Taucher-Fußspuren', lvl: 5 },
-    { id: 'ripplesand', name: 'Wüstensand mit Rippeln', lvl: 7 },
-    { id: 'autumnleaves', name: 'Herbstlaub', lvl: 9 },
-    { id: 'seagrasslawn', name: 'Seegras-Rasen', lvl: 11 },
     { id: 'pinksand', name: 'Rosa Strand (Bahamas)', lvl: 14 },
-    { id: 'travertine', name: 'Kalksinter-Terrassen (Plitvice)', lvl: 18 },
     { id: 'stardust', name: 'Sternenstaub', lvl: 24 }
   ];
   /* ---------- Boden-Formen (Runde 7): 10 Anordnungen, gratis, jederzeit wechselbar. f(u) = Höhe 0…1 an der Stelle u (0 = links, 1 = rechts);
@@ -1250,7 +1239,7 @@
   AA.BIOTOPES = [
     { id: 'reef', name: 'Korallenriff', ico: '🪸', water: 'salt', walls: ['reef', 'atoll', 'redsea', 'grotto', 'nightreef', 'reef2', 'atlantis'], floors: ['sand', 'whitegravel', 'finesand', 'coralsand', 'shells', 'pink', 'coralrubble', 'nacre'],
       deco: ['anemone', 'braincoral', 'tubesponge', 'mushrooms', 'cupcoral', 'coral_purple', 'seafan', 'coral_plate', 'coral_lilac', 'staghorn', 'leathercoral', 'flowerpot', 'birdnest', 'seawhip', 'anemone_pink', 'anemone_carpet', 'torchcoral', 'bubblecoral', 'pillarcoral', 'zoanthus', 'seapen', 'liverock'],
-      fish: ['auriga', 'clown', 'flameback', 'lemonpeel', 'gramma', 'chromis', 'blenny', 'yellowtang', 'damsel', 'mandarin', 'firefish', 'hawkfish', 'banggai', 'copperband', 'foxface', 'bluetang', 'tuskfish', 'parrotfish', 'butterfly', 'wrasse', 'boxfish', 'emperor', 'trigger', 'moorish', 'puffer', 'picasso', 'lion', 'seahorse', 'powderblue', 'eel', 'flameangel', 'dorade', 'turtle',
+      fish: ['auriga', 'clown', 'flameback', 'lemonpeel', 'gramma', 'chromis', 'blenny', 'yellowtang', 'damsel', 'mandarin', 'firefish', 'hawkfish', 'banggai', 'copperband', 'foxface', 'bluetang', 'tuskfish', 'parrotfish', 'butterfly', 'wrasse', 'boxfish', 'emperor', 'trigger', 'moorish', 'picasso', 'lion', 'seahorse', 'powderblue', 'eel', 'flameangel', 'dorade', 'turtle',
         'cleanerwrasse', 'neongoby', 'stonefish', 'sepia', 'squid', 'bluesquid', 'bambooshark', 'epaulette', 'hornshark', 'napoleon', 'goliath', 'barracuda', 'manta'] },
     { id: 'amazon', name: 'Amazonas', ico: '🌴', water: 'fresh', walls: ['amazon', 'blackwater', 'floodforest', 'jungle'], floors: ['amazonsoil', 'finesand', 'aquasoil', 'mud', 'redclay', 'riosand'],
       deco: ['driftwood', 'log', 'rootarch', 'stump', 'woodslice', 'amazonsword', 'ludwigia', 'cabomba', 'vallisneria', 'javafern', 'anubias', 'spiderwood', 'bogwood', 'mangroveroots', 'talawa', 'rootcave', 'twigbush', 'forkbranch', 'longbranch', 'deadtree'],
@@ -1258,7 +1247,7 @@
         'oto', 'whiptail', 'sturisoma', 'zebrapleco', 'goldnugget', 'gibbiceps', 'greenphantom', 'bluephantom', 'royalpleco', 'scarletpleco', 'reticulatus', 'leopoldi'] },
     { id: 'japan', name: 'Japan-Teich', ico: '⛩️', water: 'fresh', walls: ['japanpond', 'lilypond', 'bamboo', 'iwagumi'], floors: ['zen', 'riverstone', 'whitegravel', 'mossfloor', 'split_whitemoss', 'slatefloor'],
       deco: ['lotus', 'bamboo', 'bonsai', 'mossball', 'steprock', 'slate', 'tablerock', 'basalt', 'plateau', 'seiryu', 'dragonstone', 'pebbles3', 'cairn', 'rocktooth', 'spire', 'stepstone', 'pillarstump'],
-      fish: ['koi', 'goldfish', 'carp', 'danio', 'kissing', 'betta', 'tigerbarb', 'clownloach', 'snakehead', 'axolotl', 'grasscarp'] },
+      fish: ['koi', 'goldfish', 'carp', 'danio', 'betta', 'tigerbarb', 'clownloach', 'snakehead', 'axolotl', 'grasscarp'] },
     { id: 'river', name: 'Heimischer Fluss', ico: '🏞️', water: 'fresh', walls: ['river', 'lowriver', 'reeds', 'alpinelake', 'waterfall', 'castlelake'], floors: ['riverstone', 'mud', 'finesand', 'split_stonesand', 'slatefloor', 'redgravel'],
       deco: ['log', 'stump', 'driftwood', 'rootarch', 'vallisneria', 'cabomba', 'rock_grey', 'rocks_brown', 'jetty', 'steprock', 'basalt', 'roundboulder', 'pebblepile', 'dome', 'forkbranch', 'longbranch', 'twigbush'],
       fish: ['carp', 'tench', 'trout', 'pike', 'salmon', 'wels', 'sturgeon', 'beluga', 'aal', 'grasscarp'] },
@@ -1277,12 +1266,12 @@
   ];
   /* Runde 20b: die neuen Arten in ihren Biotopen (zählen damit auch in den Regionen der Themen-Sets) */
   /* Runde 20f: neue Kulissen, Böden und Deko in passenden Biotopen */
-  [['reef', ['maldives', 'caribbean', 'sunsetreef', 'bluehole'], ['pinksand', 'seagrasslawn', 'footprints']], ['krka', ['plitvice'], ['travertine']], ['river', ['autumnpond', 'plitvice'], ['autumnleaves']],
-   ['adria', ['sunsetreef'], ['seagrasslawn', 'footprints']], ['amazon', [], ['autumnleaves']]].forEach(function (x) {
+  [['reef', ['maldives', 'caribbean', 'sunsetreef', 'bluehole'], ['pinksand']], ['krka', ['plitvice'], []], ['river', ['autumnpond', 'plitvice'], []],
+   ['adria', ['sunsetreef'], []]].forEach(function (x) {
     const b = AA.BIOTOPES.find(function (q) { return q.id === x[0]; }); if (!b) return;
     x[1].forEach(function (id) { if (b.walls.indexOf(id) < 0) b.walls.push(id); }); x[2].forEach(function (id) { if (b.floors.indexOf(id) < 0) b.floors.push(id); });
   });
-  [['japan', ['mosstree', 'mosswall']], ['amazon', ['coconut', 'claycave', 'mosstree']], ['river', ['claycave']], ['krka', ['mosstree']]].forEach(function (x) {
+  [['japan', ['mosstree']], ['amazon', ['coconut', 'claycave', 'mosstree']], ['river', ['claycave']], ['krka', ['mosstree']]].forEach(function (x) {
     const b = AA.BIOTOPES.find(function (q) { return q.id === x[0]; }); if (b) x[1].forEach(function (id) { if (b.deco.indexOf(id) < 0) b.deco.push(id); });
   });
   [['reef', ['flamegoby', 'pyjama', 'rabbitfish', 'cowfish', 'titan', 'yellowangler', 'snake_laticauda', 'snake_belcher', 'snake_dubois', 'snake_platurus']], ['adria', ['moonjelly', 'compass', 'gurnard', 'sardine', 'seabass', 'redmullet', 'redgurnard']], ['amazon', ['ghostknife']], ['river', ['zander']]].forEach(function (x) {
@@ -1349,9 +1338,9 @@
     { id: 'cats', kind: 'coll', name: 'Welse und Sauger', ico: '🐟', title: 'Wels-Flüsterer', fx: 'sandpuffs',
       list: ['oto', 'whiptail', 'cory', 'ancistrus', 'sturisoma', 'zebrapleco', 'upsidedown', 'goldnugget', 'gibbiceps', 'greenphantom', 'bluephantom', 'wels', 'redtail', 'royalpleco', 'scarletpleco'] },
     { id: 'spiky', kind: 'coll', name: 'Lieber nicht anfassen', ico: '⚡', title: 'Stachel-Profi', fx: 'sparks',      // Runde 20b: + Gift-Tiere und Gift-Krabbler
-      list: ['weever', 'scorpionfish', 'stonefish', 'puffer', 'piranha', 'lion', 'eleel', 'jellyfish', 'rabbitfish', 'compass', 'titan', 'boxjelly', 'irukandji', 'manowar', 'bluedragon', 'lionsmane', 'cone', 'mantis', 'bluering'] },
+      list: ['weever', 'scorpionfish', 'stonefish', 'piranha', 'lion', 'eleel', 'jellyfish', 'rabbitfish', 'compass', 'titan', 'boxjelly', 'irukandji', 'manowar', 'bluedragon', 'lionsmane', 'cone', 'mantis', 'bluering'] },
     { id: 'paris', kind: 'coll', name: 'Paris', ico: '🗼', title: 'Bon Vivant', fx: 'champagne',      // Runde 20d (Pokal: der goldene Eiffelturm)
-      list: ['sardine', 'seabass', 'redmullet', 'dorade', 'redgurnard', 'zander', 'johndory', 'monkfish', 'frenchfrog', 'escargot', 'sole', 'turbot'] },
+      list: ['sardine', 'seabass', 'redmullet', 'dorade', 'redgurnard', 'zander', 'johndory', 'monkfish', 'escargot', 'sole', 'turbot'] },
     { id: 'snakes', kind: 'coll', name: 'Seeschlangen', ico: '🐍', title: 'Schlangenbeschwörer', list: ['snake_laticauda', 'snake_belcher', 'snake_dubois', 'snake_platurus'] },      // Runde 20c
     { id: 'jellies', kind: 'coll', name: 'Quallen-Ballett', ico: '🎐', title: 'Quallen-Dirigent', fx: 'jellyglow', list: ['moonjelly', 'compass', 'jellyfish', 'boxjelly', 'irukandji', 'combjelly', 'manowar', 'lionsmane'] },
     { id: 'fossil', kind: 'coll', name: 'Lebende Fossilien', ico: '🦴', title: 'Zeitreisender', fx: 'ammonite', list: ['sturgeon', 'arowana', 'beluga', 'arapaima', 'chimaera', 'frilledshark', 'coelacanth', 'horseshoe'] },
@@ -1366,8 +1355,8 @@
     { id: 'winter', kind: 'coll', season: 'xmas', name: 'Winterwunderland', ico: '❄️', title: 'Schneeflöckchen', fx: 'snow', list: ['snowman', 'reindeer', 'xmashorse', 'halofish', 'polarbear', 'candyeel'] },
     { id: 'snails', kind: 'crawl', name: 'Schnecken und Muscheln', ico: '🐌', title: 'Schneckentempo', list: ['seaslug', 'ramshorn', 'turbosnail', 'nerite', 'applesnail', 'spanishdancer', 'giantclam'] },
     { id: 'stars', kind: 'crawl', name: 'Seesterne, Seeigel und Seegurken', ico: '⭐', title: 'Sternensammler', list: ['starfish', 'urchin', 'starfish_red', 'starfish_blue', 'brittlestar', 'urchin_diadem', 'urchin_pink', 'starfish_orange', 'urchin_pencil', 'seacucumber'] },
-    { id: 'shrimps', kind: 'crawl', name: 'Garnelen', ico: '🦐', title: 'Garnelen-Guru', list: ['cherryshrimp', 'amano', 'cleanershrimp', 'shrimp', 'bandedshrimp', 'harlequin', 'fireshrimp', 'tigershrimp', 'pistolgoby'] },
-    { id: 'crabs', kind: 'crawl', name: 'Krebse und Krabben', ico: '🦀', title: 'Scherenprofi', list: ['crab', 'fiddler', 'panthercrab', 'hermit', 'crayfish_blue', 'pompomcrab', 'hummer', 'lobster', 'decorator', 'arrowcrab', 'spidercrab'] },
+    { id: 'shrimps', kind: 'crawl', name: 'Garnelen', ico: '🦐', title: 'Garnelen-Guru', list: ['cherryshrimp', 'amano', 'cleanershrimp', 'shrimp', 'bandedshrimp', 'harlequin', 'fireshrimp', 'tigershrimp'] },
+    { id: 'crabs', kind: 'crawl', name: 'Krebse und Krabben', ico: '🦀', title: 'Scherenprofi', list: ['crab', 'fiddler', 'panthercrab', 'hermit', 'crayfish_blue', 'pompomcrab', 'hummer', 'lobster', 'decorator', 'spidercrab'] },
     { id: 'flats', kind: 'crawl', name: 'Platt am Boden', ico: '🥞', title: 'Bodenständig', list: ['scholle', 'sole', 'turbot', 'torpedo'] },
     { id: 'deepcrawl', kind: 'crawl', name: 'Tiefsee-Krabbler', ico: '🦞', title: 'Yeti-Freund', list: ['isopod', 'seapig', 'yeticrab'] },
     { id: 'm_special', kind: 'master', titleId: 'special' }, { id: 'm_schools', kind: 'master', titleId: 'schools' }, { id: 'm_hybrid', kind: 'master', titleId: 'hybrid' },
