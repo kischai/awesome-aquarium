@@ -71,6 +71,7 @@
     const dx = (x - this.x) / rx, dy = (y - this.y) / ry;
     return dx * dx + dy * dy <= 1;
   };
+  Fish.prototype.gap = function (x, y) { return Math.hypot(x - this.x, y - this.y) - this.size() * 0.3; };      // Runde 20c: Abstand für Finger-Treffer (Schlange: zum Körper)
   Fish.prototype.say = function (e, dur) { this.emote = e; this.emoteT = dur || 1.2; };
   Fish.prototype.busy = function () { return this.ghost || this.state === 'enter' || this.state === 'trick' || this.state === 'mate'; };
 
@@ -235,6 +236,7 @@
     else y = Math.random() < 0.4 ? this.y + AA.rand(-130, 130) : AA.rand(top, bot);
     if ((hab === 'lurk' && !(this.outT > 0)) || hab === 'bottom') { if (Math.random() < 0.6) x = this.x + (Math.random() < 0.5 ? -1 : 1) * AA.rand(60, 240); }   // kurze Wege
     if (this.isLeader) { x = this.x + (Math.random() < 0.75 ? this.dir : -this.dir) * AA.rand(260, 620); if (hab !== 'bottom') y = AA.rand(top + 40, bot - 70); }   // Schwarm-Anführer: weite, ruhige Bahnen
+    if (this.def.snake && !night) x = this.x + (Math.random() < 0.72 ? this.dir : -this.dir) * AA.rand(220, 560);   // Runde 20c: Seeschlange – lange Wege, meist geradeaus weiter (jede Wende ist ein großer Bogen)
     let homed = false;
     if (this.def.home && !night && Math.random() < 0.75) {       // Lieblingsplatz (Clownfisch: Anemone): meistens dort in der Nähe
       const hs = V.homes(this.def.home);
@@ -740,7 +742,7 @@
             if (V.coverAt(this.x, this.z, s * 0.9, h * 0.9) > 0.3 || this.z < V.frontBand()[0] - 0.04) { this.postBad = true; this.wait = 0; this.dodgeT = 12; }
           }
         }
-        if (this.wait <= 0) { this.pickTarget(V, night); const amb = def.id === 'monkfish' || def.id === 'angler'; this.wait = AA.rand(0.2, 2.6) * (d.sick ? 2.5 : 1) * (def.still ? 12 : (def.hab === 'lurk' ? (this.outT > 0 ? 1.2 : 3) : (def.hab === 'bottom' ? (amb ? 6 : 2.8) : 1))); }
+        if (this.wait <= 0) { this.pickTarget(V, night); const amb = def.id === 'monkfish' || def.id === 'angler'; this.wait = AA.rand(0.2, 2.6) * (d.sick ? 2.5 : 1) * (def.still ? 12 : (def.hab === 'lurk' ? (this.outT > 0 ? 1.2 : 3) : (def.hab === 'bottom' ? (amb ? 6 : 2.8) : (def.snake ? 2.2 : 1)))); }
       } else if (this.state === 'den' && dist <= arriveR) {
         this.resting = true;                           // Runde 14: Muräne & Co. liegen entspannt in der Höhle – kein Schnappen, kein Wippen, kaum Wellen
       } else if (this.state === 'nestle' && dist <= arriveR) {
@@ -930,9 +932,11 @@
   Fish.prototype.drawOverlay0 = function (ctx, t) {
     const s = this.size(), ar = this.ar(), V = AA.view, d = this.d;
     if (this.ghost) return;
-    let below = this.y + s * ar * 0.5 + 9;
+    const bx = this.def.snake && this.sn && this.sn.box;            // Runde 20c: Seeschlange – Anzeigen am wirklichen Körper (er liegt nicht um die Mitte)
+    const cx = bx ? (bx[0] + bx[2]) / 2 : this.x, cy = bx ? (bx[1] + bx[3]) / 2 : this.y, hx = bx ? (bx[2] - bx[0]) / 2 : s / 2, hy = bx ? (bx[3] - bx[1]) / 2 : s * ar / 2;
+    let below = cy + hy + 9;
     if (V.tool === 'food' || d.hunger < 0.5 || V.sel === this) {         // Hunger-Anzeige unter dem Fisch
-      const bw = 36, bh = 7, x = this.x - bw / 2, y = below;
+      const bw = 36, bh = 7, x = cx - bw / 2, y = below;
       ctx.save();
       ctx.fillStyle = 'rgba(10,50,80,0.6)'; AA.roundRect(ctx, x - 1.5, y - 1.5, bw + 3, bh + 3, 5); ctx.fill();
       ctx.fillStyle = d.hunger > 0.5 ? '#5fd66d' : (d.hunger > 0.25 ? '#ffb02e' : '#ff4d4d');
@@ -943,25 +947,26 @@
     if (V.sel === this) {
       ctx.save();
       ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 3; ctx.setLineDash([9, 7]); ctx.lineDashOffset = -t * 22;
-      ctx.beginPath(); ctx.ellipse(this.x, this.y, s * 0.62 + 6, s * ar * 0.62 + 6, 0, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, cy, hx * 1.24 + 6, hy * 1.24 + 6, 0, 0, TAU); ctx.stroke();
       ctx.setLineDash([]);
       ctx.font = '800 15px ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const label = (d.v ? '✨ ' : '') + d.name, tw = ctx.measureText(label).width + 18, ly = Math.max(below + 10, this.y + s * ar * 0.62 + 22);
+      const label = (d.v ? '✨ ' : '') + d.name, tw = ctx.measureText(label).width + 18, ly = Math.max(below + 10, cy + hy * 1.24 + 22);
       ctx.fillStyle = 'rgba(10,50,80,0.78)';
-      AA.roundRect(ctx, this.x - tw / 2, ly - 12, tw, 24, 12); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.fillText(label, this.x, ly + 1);
+      AA.roundRect(ctx, cx - tw / 2, ly - 12, tw, 24, 12); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(label, cx, ly + 1);
       ctx.restore();
     }
     if (this.emote) {
-      const a = Math.min(1, this.emoteT * 4), by = this.y - s * ar * 0.5 - 26 - Math.sin(t * 6) * 2;
+      const hd = bx && this.sn.tr[0], ex = hd ? hd.x : this.x;          // Schlange: die Sprechblase gehört zum Kopf
+      const a = Math.min(1, this.emoteT * 4), by = (hd ? hd.y - this.sn.band * 1.6 : this.y - s * ar * 0.5) - 26 - Math.sin(t * 6) * 2;
       ctx.save();
       ctx.globalAlpha = a;
       ctx.fillStyle = 'rgba(255,255,255,0.94)';
-      ctx.beginPath(); ctx.arc(this.x, by, 16, 0, TAU); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(this.x - 5, by + 13); ctx.lineTo(this.x, by + 23); ctx.lineTo(this.x + 6, by + 13); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex, by, 16, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(ex - 5, by + 13); ctx.lineTo(ex, by + 23); ctx.lineTo(ex + 6, by + 13); ctx.fill();
       ctx.font = '18px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(this.emote, this.x, by + 1);
+      ctx.fillText(this.emote, ex, by + 1);
       ctx.restore();
     }
   };

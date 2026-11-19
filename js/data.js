@@ -376,6 +376,9 @@
       info: 'Ein Kofferfisch mit Hörnern vorn und hinten – wie eine kleine Kuh. Schwirrt wie ein Hubschrauber durchs Becken; die Babys sind fast kugelrund.' },
     { id: 'gurnard', name: 'Fliegender Knurrhahn', lvl: 29, price: 240, sell: 274, hours: 42, len: 136, speed: 24, egg: '#3a8ad6', hab: 'bottom', flash: true,
       info: '„Läuft“ mit seinen Flossenfingern über den Boden. Klopfst du ans Glas, klappt er die riesigen blauen Flügelflossen auf – Schreck lass nach!' },
+    // Runde 20c: Seeschlangen – eigenes Schlangen-Rig (js/snake.js): der Körper folgt dem Weg des Kopfes; Luftholen, Züngeln, Spurt, Einringeln
+    { id: 'snake_laticauda', name: 'Gebänderte Seeschlange', lvl: 30, price: 265, sell: 302, hours: 44, len: 360, speed: 28, egg: '#3a6fd0', snake: true,
+      info: 'Blau-schwarz geringelt, mit gelber Schnauze. Taucht alle ein, zwei Minuten zum Luftholen auf, züngelt neugierig und ruht am liebsten zusammengeringelt neben einem Felsen.' },
     { id: 'titan', name: 'Titan-Drückerfisch', lvl: 31, price: 290, sell: 330, hours: 48, len: 140, speed: 46, egg: '#9a9a2a', biter: true,
       info: 'Der Rambo des Riffs. Alle paar Minuten schießt er auf deinen Mauszeiger zu und beißt rein – Autsch! (Abschaltbar in ⚙️.) Manchmal lässt er Schmerzensgeld fallen.' },
     { id: 'yellowangler', name: 'Gelber Anglerfisch', lvl: 33, price: 430, sell: 486, hours: 36, len: 116, speed: 14, egg: '#ffd21f', hab: 'bottom', still: true, front: true, yawn: true,
@@ -1156,7 +1159,7 @@
       fish: ['scorpionfish', 'weever', 'bream', 'medmoray', 'garfish', 'dorade', 'seahorse', 'sepia', 'squid', 'jellyfish', 'seal'] }
   ];
   /* Runde 20b: die neuen Arten in ihren Biotopen (zählen damit auch in den Regionen der Themen-Sets) */
-  [['reef', ['flamegoby', 'pyjama', 'rabbitfish', 'cowfish', 'titan', 'yellowangler']], ['adria', ['moonjelly', 'compass', 'gurnard']], ['amazon', ['ghostknife']]].forEach(function (x) {
+  [['reef', ['flamegoby', 'pyjama', 'rabbitfish', 'cowfish', 'titan', 'yellowangler', 'snake_laticauda']], ['adria', ['moonjelly', 'compass', 'gurnard']], ['amazon', ['ghostknife']]].forEach(function (x) {
     const b = AA.BIOTOPES.find(function (q) { return q.id === x[0]; }); x[1].forEach(function (id) { if (b.fish.indexOf(id) < 0) b.fish.push(id); });
   });
   /* Räuber (pred: true an der Art – unten gesetzt): Wird einer richtig hungrig (unter `hungry`), jagt er einen Fisch, der höchstens `ratio` so lang ist wie er selbst

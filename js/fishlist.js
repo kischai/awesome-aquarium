@@ -402,7 +402,8 @@
       if (fv.ghost || !d || fv.y < AA.G.top) continue;
       const cl = AA.fishClass(d), vd = d.v && AA.VAR_BY[d.v], name = df.name.length > 18 ? df.name.slice(0, 17) + '…' : df.name, txt = (d.sex === 'm' ? '♂ ' : '♀ ') + name;
       ctx.font = FONT[0];
-      const tw = ctx.measureText(txt).width, w = 20 + tw + (vd ? 12 : 0) + (d.keep ? 16 : 0) + 8, h = fv.size() * fv.ar(), x = Math.round(fv.x - w / 2), y = Math.round(fv.y - h * 0.5 - 16);
+      const tw = ctx.measureText(txt).width, w = 20 + tw + (vd ? 12 : 0) + (d.keep ? 16 : 0) + 8, h = fv.size() * fv.ar(), bx = df.snake && fv.sn && fv.sn.box,      // Runde 20c: Seeschlange – Schild über dem wirklichen Körper
+        x = Math.round((bx ? (bx[0] + bx[2]) / 2 : fv.x) - w / 2), y = Math.round(bx ? bx[1] - 10 : fv.y - h * 0.5 - 16);
       ctx.globalAlpha = 0.92; ctx.fillStyle = 'rgba(8,38,58,0.66)'; rr(ctx, x, y - 9, w, 18, 9); ctx.fill();
       ctx.globalAlpha = 1; ctx.fillStyle = cl.col; ctx.beginPath(); ctx.arc(x + 10, y, 7, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = FONT[1]; ctx.fillText(cl.id, x + 10, y + 0.5);

@@ -588,6 +588,7 @@
     else if (k === 'flap') AA.drawFlap(ctx, img, w, h, phase * 0.42, rig, amp);
     else if (k === 'whip') AA.drawWhip(ctx, img, w, h, phase * 0.8, rig, amp);
     else if (k === 'ribbon') AA.drawRibbon(ctx, img, w, h, phase * 0.9, rig, amp);
+    else if (k === 'snake' && AA.drawSnakeSprite) AA.drawSnakeSprite(ctx, img, w, h, phase, rig, amp);      // Runde 20c (js/snake.js)
     else AA.drawWavy(ctx, img, w, h, phase, rig, amp);
   }
 
@@ -897,7 +898,7 @@
   };
   V.hitFishNear = function (x, y, r) {               // Runde 11: der nächste Fisch, dessen Mitte höchstens r entfernt ist (Finger)
     let best = null, bd = r;
-    for (let i = 0; i < V.fish.length; i++) { const f = V.fish[i]; if (f.ghost) continue; const d = Math.hypot(x - f.x, y - f.y) - f.size() * 0.3; if (d < bd) { bd = d; best = f; } }
+    for (let i = 0; i < V.fish.length; i++) { const f = V.fish[i]; if (f.ghost) continue; const d = f.gap(x, y); if (d < bd) { bd = d; best = f; } }
     return best;
   };
   V.eggPos = function (e) { const sc = AA.depthScale(e.z); return { x: e.x, y: AA.floorY(e.z, e.x) - 16 * sc, r: 19 * sc }; };
