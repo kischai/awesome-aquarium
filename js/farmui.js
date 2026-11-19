@@ -176,11 +176,11 @@
           return '<button class="buy' + (st === 'coins' ? ' poor' : '') + '" data-act="role" data-id="' + k + '"' + (st === 'coins' ? ' disabled' : '') + '>' + R.ico + ' ' + R.name + ' · ' + coin() + ' ' + fmt(R.price) + '</button>';
         }).join('') + '</div>' + (t.role ? '<button class="lnk" data-act="roleclear">Aufgabe wieder entfernen (kein Geld zurück)</button>' : '') + '</div>';
     }
-    const os = AA.oceanStatus(), O = AA.OCEAN;
-    h += '<div class="card wide"><div class="pic emoji">🦈</div><div class="nm">Meeresbecken <small class="tagline">für die ganz Großen</small></div>' +
-      '<div class="info">Ein riesiges Meerwasser-Becken für ' + O.cap + ' Bewohner. Nur hier ziehen Adlerrochen, Katzenhai, Riffhai, Schwertfisch und Meeresschildkröte ein – alle anderen Meerwasser-Tiere dürfen natürlich auch rein.</div>' +
-      (os === 'owned' ? '<button class="buy active" disabled>✓ Gekauft</button>' : (os === 'level' ? '<button class="buy locked" disabled>🔒 Ab Level ' + O.lvl + '</button>' :
-        '<button class="buy' + (os === 'coins' ? ' poor' : '') + '" data-act="buyocean"' + (os === 'coins' ? ' disabled' : '') + '>🦈 Meeresbecken · ' + coin() + ' ' + fmt(O.price) + '</button>')) + '</div>';
+    const os = AA.oceanStatus(), O = AA.OCEAN, onx = AA.oceanNext(), on = AA.oceanCount(), oNum = ['', 'Zweites ', 'Drittes '][on] || '';
+    h += '<div class="card wide"><div class="pic emoji">🦈</div><div class="nm">' + oNum + 'Meeresbecken <small class="tagline">für die ganz Großen' + (on ? ' · du hast ' + on + ' von ' + O.max : '') + '</small></div>' +
+      '<div class="info">Ein riesiges Meerwasser-Becken für ' + O.cap + ' Bewohner. Nur hier ziehen Adlerrochen, Katzenhai, Riffhai, Schwertfisch und Meeresschildkröte ein – alle anderen Meerwasser-Tiere dürfen natürlich auch rein. Bis zu ' + O.max + ' Meeresbecken.</div>' +
+      (os === 'owned' ? '<button class="buy active" disabled>✓ Alle ' + O.max + ' gekauft</button>' : (os === 'level' ? '<button class="buy locked" disabled>🔒 Ab Level ' + onx.lvl + '</button>' :
+        '<button class="buy' + (os === 'coins' ? ' poor' : '') + '" data-act="buyocean"' + (os === 'coins' ? ' disabled' : '') + '>🦈 ' + oNum + 'Meeresbecken · ' + coin() + ' ' + fmt(onx.price) + '</button>')) + '</div>';
     return h;
   };
 

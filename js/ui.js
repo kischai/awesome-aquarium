@@ -157,7 +157,8 @@
         (f.hab === 'bottom' ? '<span title="Grundfisch: bleibt am Boden">⬇️ Grund</span>' : (f.hab === 'lurk' ? '<span title="Höhlenbewohner: braucht ein Versteck (Deko mit 🏠)">🕳️ Höhle</span>' : '')) +
         (f.id === 'clown' ? '<span title="Wohnt in einer Anemone (Shop → Deko): nach der Balz schneller wieder bereit">🏠 Anemone</span>' : '') + '<span title="Zeit bis erwachsen">⏱ ' + AA.fmtDur(real(f.grow)) + '</span><span title="Verkaufswert (erwachsen)">💰 ' + fmt(f.sell) + '</span><span title="Paarung kostet">❤ ' + fmt(f.mate) + '</span></div>' +
         (f.special ? '<div class="stats"><span class="tag-special" title="Besonderes Tier: gibt es nur für Perlen">⭐ Besonderes Tier</span></div>' : '') +
-        buyBtn('buyfish', f.id, f.pearlOnly ? f.pearls : f.price, locked, f.lvl, why ? (LOCK[why] || W[w].ico + ' ' + W[w].only) : (full ? 'Becken voll' : ''), !!f.pearlOnly) + '</div>';
+        (AA.isFishOfDay && AA.isFishOfDay(f) ? '<div class="stats"><span class="tag-daily" title="Fisch des Tages: heute ' + Math.round(AA.DAILY.off * 100) + ' % günstiger">🏷️ Fisch des Tages −' + Math.round(AA.DAILY.off * 100) + ' %</span></div>' : '') +
+        buyBtn('buyfish', f.id, f.pearlOnly ? f.pearls : (AA.priceOf ? AA.priceOf(f) : f.price), locked, f.lvl, why ? (LOCK[why] || W[w].ico + ' ' + W[w].only) : (full ? 'Becken voll' : ''), !!f.pearlOnly) + '</div>';
   }
   function fishCards() {
     const s = AA.state, t = AA.tank(), W = AA.WATER, card = fishCard;
@@ -168,13 +169,13 @@
     const goTo = function (test, hint) { const i = s.tanks.findIndex(test); return i >= 0 ? ' <button class="lnk" data-act="gotankstore" data-id="' + i + '">→ zu „' + esc(s.tanks[i].name) + '“ wechseln</button>' : ' ' + hint; };
     const toTanks = 'Gibt es im Reiter <button class="lnk" data-act="tab" data-id="tank">🏠 Aquarien</button>.';
     const GROUPS = [
-      ['big', '📐 <b>Bodenhaie</b> – brauchen Platz: nur im größten Becken (' + AA.SIZES[AA.SIZES.length - 1].gal + ' Gallonen) oder im Meeresbecken.', function () { return goTo(function (tk) { return tk !== t && tk.water === 'salt' && !tk.deep && (tk.ocean || tk.size === AA.SIZES.length - 1); }, 'Vergrößern kannst du im Reiter <button class="lnk" data-act="tab" data-id="tank">🏠 Aquarien</button>.'); }],
+      ['big', '📐 <b>Bodenhaie</b> – brauchen Platz: erst ab ' + AA.SIZES[AA.BIG_SIZE].gal + ' Gallonen oder im Meeresbecken.', function () { return goTo(function (tk) { return tk !== t && tk.water === 'salt' && !tk.deep && (tk.ocean || tk.size >= AA.BIG_SIZE); }, 'Vergrößern kannst du im Reiter <button class="lnk" data-act="tab" data-id="tank">🏠 Aquarien</button>.'); }],
       ['ocean', '🦈 <b>Meeresriesen</b> – leben nur im Meeresbecken.', function () { return goTo(function (tk) { return tk.ocean; }, toTanks); }],
       ['deep', '🌌 <b>Tiefsee-Tiere</b> – leben nur im stockdunklen Tiefsee-Becken.', function () { return goTo(function (tk) { return tk.deep; }, toTanks); }],
       ['nodeep', '🌊 <b>Keine Tiefsee-Tiere</b> – denen ist es hier unten zu dunkel und zu kalt.', function () { return goTo(function (tk) { return tk.water === 'salt' && !tk.deep; }, ''); }]
     ];
     let h = '<div class="sec">' + AA.tankIco(t) + ' „' + esc(t.name) + '“ ist ' + (t.deep ? 'das <b>Tiefsee-Becken</b>' : (t.ocean ? 'das <b>Meeresbecken</b>' : 'ein <b>' + W[t.water].name + '-Becken</b>')) + ' (' + AA.count(t) + ' von ' + AA.cap(t) + ' Bewohnern). Fische kommen als hungrige Babys. Frosch, Hamster, Otter & Co. für Perlen: <button class="lnk" data-act="tab" data-id="special">⭐ Specials</button></div>' +
-      mine.map(card).join('');
+      (UI.fishOfDaySec ? UI.fishOfDaySec() : '') + mine.map(card).join('');
     GROUPS.forEach(function (g) {
       const l = base.filter(function (f) { return fits(f) && AA.whyNot(f, t) === g[0]; });
       if (l.length) h += '<div class="sec other">' + g[1] + g[2]() + '</div>' + l.map(card).join('');
@@ -373,7 +374,7 @@
       '<div class="note">Zieht als hungriges Baby ein und ist in <b>' + AA.fmtDur(real(f.grow)) + '</b> erwachsen (4 Wachstumsphasen, in jeder kann es einen Trick lernen). Für Nachwuchs brauchst du ♂ und ♀ derselben Art.</div>' +
       '<div class="row end"><button class="btn grey" data-act="backstore">Zurück</button>' +
       (f.pearls ? '<button class="btn violet" data-act="confirmfishp"' + (s.pearls < f.pearls ? ' disabled' : '') + '>' + (f.pearlOnly ? 'Kaufen · ' : '') + fmt(f.pearls) + ' Perlen</button>' : '') +
-      (f.pearlOnly ? '' : '<button class="btn green" data-act="confirmfish"' + (s.coins < f.price ? ' disabled' : '') + '>Kaufen · ' + fmt(f.price) + ' Münzen</button>') + '</div></div></div>';
+      (f.pearlOnly ? '' : '<button class="btn green" data-act="confirmfish"' + (s.coins < (AA.priceOf ? AA.priceOf(f) : f.price) ? ' disabled' : '') + '>Kaufen · ' + fmt(AA.priceOf ? AA.priceOf(f) : f.price) + ' Münzen' + (AA.isFishOfDay && AA.isFishOfDay(f) ? ' (−' + Math.round(AA.DAILY.off * 100) + ' %)' : '') + '</button>') + '</div></div></div>';
   }
   /* ---------- Runde 12: Info-Fenster zu einem Ei (antippen im Becken) ---------- */
   UI.eggInfo = function (egg) {
@@ -812,6 +813,7 @@
     if (UI.ecoClick && UI.ecoClick(act, id, b)) return;           // Boden-Form, Übersicht, Räuber-Schalter (js/ecoui.js)
     if (UI.farmClick && UI.farmClick(act, id, b)) return;         // Zuchtplaner, Personal, Verträge, Zuchtstation (js/farmui.js)
     if (UI.bizClick && UI.bizClick(act, id, b)) return;           // Büro: Kunden, Markt, Bilanz (js/bizui.js)
+    if (UI.dailyClick && UI.dailyClick(act, id, b)) return;       // Runde 20f: Glücksrad (js/daily.js)
     if (act === 'close') UI.close();
     else if (act === 'tab') UI.openStore(id);
     else if (act === 'buyfish') UI.buyFishDialog(id);
@@ -902,6 +904,7 @@
     $('#tank-next').addEventListener('click', function () { AA.switchTank(AA.state.active + 1); });
     $('#btn-medals').addEventListener('click', function () { AA.audio.play('click'); UI.openMedals(); });
     $('#btn-gift').addEventListener('click', UI.gift);
+    if ($('#btn-wheel')) $('#btn-wheel').addEventListener('click', function () { AA.audio.play('click'); if (UI.openWheel) UI.openWheel(); });      // Runde 20f
     $('#btn-hunt').addEventListener('click', function () { AA.audio.play('click'); UI.openHunt(); });
     $('#btn-photo').addEventListener('click', UI.photo);
     $('#btn-light').addEventListener('click', UI.toggleNight);

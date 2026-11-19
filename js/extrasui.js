@@ -104,12 +104,40 @@
 
   /* ================= Becken-Hilfe (im Besuch) ================= */
   function visitId(v) { return v && (v.test ? 'test' : v.user); }
+  /* Runde 20f: ❤️ Herz für das schönste Becken des Tages – eins am Tag, insgesamt (die Datenbank prüft das auch) */
+  function heartHtml(v) {
+    const st = store(), h = st.heart && st.heart.day === today() ? st.heart : null;
+    if (h) return h.to === visitId(v) ? '<span class="vb-help done">❤️ Dein Herz für heute</span>' : '';
+    return '<button class="btn pink sm" data-help="heart" title="Einmal am Tag: dein Herz für das schönste Becken, das du heute siehst">❤️ Herz</button>';
+  }
   UI.visitHelpHtml = function (v) {
     const id = visitId(v), helped = dayList(store(), 'helped').indexOf(id) >= 0, gifted = dayList(store(), 'gifted').indexOf(id) >= 0;
-    if (helped) return '<span class="vb-help done">✓ Heute schon geholfen</span>' + (gifted ? '' : '<button class="btn violet sm" data-help="gift">🎁 Schenken</button>');
+    if (helped) return '<span class="vb-help done">✓ Heute schon geholfen</span>' + (gifted ? '' : '<button class="btn violet sm" data-help="gift">🎁 Schenken</button>') + heartHtml(v);
     return '<button class="btn blue sm" data-help="feed" title="Einmal am Tag: die Fische füttern">🍽️ Füttern</button><button class="btn blue sm" data-help="clean" title="Einmal am Tag: das Becken putzen">🧽 Putzen</button>' +
-      (gifted ? '' : '<button class="btn violet sm" data-help="gift">🎁 Schenken</button>');
+      (gifted ? '' : '<button class="btn violet sm" data-help="gift">🎁 Schenken</button>') + heartHtml(v);
   };
+  function heartFx() {
+    const V = AA.view;
+    for (let i = 0; i < 8; i++) setTimeout(function () { V.puff('heart', AA.rand(260, AA.W - 260), AA.rand(220, 480), 2); }, i * 90);
+  }
+  function giveHeart(v, btn) {
+    const st = store(), id = visitId(v), t = AA.tank(), tn = t ? String(t.name || '') : '';
+    const ok = function () {
+      st.heart = { day: today(), to: id, name: v.name, tank: tn }; keep(st);
+      AA.audio.play('level'); heartFx();
+      UI.toast('❤️ Dein Herz für heute geht an das Becken „' + esc(tn) + '“ von <b>' + esc(v.name) + '</b>. Morgen gibt es ein neues.', 'love');
+      redrawBanner();
+    };
+    if (v.test) { ok(); return; }
+    const C = AA.cloud;
+    if (!C || !C.user) { UI.toast('⚠️ Zum Herzen-Verteilen bitte anmelden.', 'warn'); return; }
+    if (btn) btn.disabled = true;
+    C.giveHeart(v.user, AA.state.active, tn).then(function (r) {
+      if (r && r.ok) ok();
+      else if (r && r.error === 'already') { st.heart = { day: today(), to: r.to === v.user ? id : String(r.to || '?') }; keep(st); UI.toast('❤️ Dein Herz für heute hast du schon vergeben – morgen gibt es ein neues.'); redrawBanner(); }
+      else { if (btn) btn.disabled = false; UI.toast('⚠️ Das Herz kam nicht an.', 'warn'); }
+    }, function () { if (btn) btn.disabled = false; UI.toast('⚠️ Keine Verbindung.', 'warn'); });
+  }
   function helpFx(kind) {
     const V = AA.view, t = AA.tank();
     if (kind === 'feed') {
@@ -126,6 +154,7 @@
   UI.visitHelp = function (kind, btn) {
     const v = AA.visit; if (!v) return;
     if (kind === 'gift') { UI.giftFriend(v.test ? 'test' : { user: v.user, name: v.name }); setTimeout(redrawBanner, 50); return; }
+    if (kind === 'heart') { giveHeart(v, btn); return; }
     const st = store(), list = dayList(st, 'helped'), id = visitId(v);
     if (list.indexOf(id) >= 0) return;
     const ok = function () {
@@ -188,11 +217,13 @@
     const C = AA.cloud;
     if (C && C.on && C.user && !busy && Date.now() - cloudAt > 10 * 60 * 1000) {      // Familie: alle 10 Minuten nachsehen
       cloudAt = Date.now(); busy = true;
-      Promise.all([C.myHelps().catch(function () { return []; }), C.myGifts().catch(function () { return []; }), C.todayDone().catch(function () { return null; })]).then(function (r) {
+      Promise.all([C.myHelps().catch(function () { return []; }), C.myGifts().catch(function () { return []; }), C.todayDone().catch(function () { return null; }),
+        C.myHearts ? C.myHearts().catch(function () { return []; }) : Promise.resolve([])]).then(function (r) {
         busy = false;
         r[0].forEach(applyHelp);
         r[1].forEach(function (g) { const txt = AA.applyGift(g); UI.toast('🎁 <b>' + esc(g.name) + '</b> hat dir ein Geschenk geschickt: ' + txt + '.', 'gold'); });
-        if (r[0].length || r[1].length) { AA.audio.play('chest'); AA.save(); }
+        (r[3] || []).forEach(function (h) { UI.toast('❤️ <b>' + esc(h.name) + '</b> hat ' + (h.tank ? 'deinem Becken „' + esc(h.tank) + '“' : 'deinem Becken') + ' ein Herz geschenkt!', 'love'); });      // Runde 20f
+        if (r[0].length || r[1].length || (r[3] || []).length) { AA.audio.play('chest'); AA.save(); }
         if (UI.refreshFriends) UI.refreshFriends();
       }, function () { busy = false; });
     }

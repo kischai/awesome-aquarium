@@ -106,6 +106,7 @@
         drag = { egg: egg, ox: p.x - pe.x, oy: p.y - pe.y, sx: p.x, sy: p.y, moved: false };
         return;
       }
+      if (o && V.pokeCrawler) V.pokeCrawler(o);       // Runde 20f: Riesenmuschel klappt zu
       if (o) {                                       // ox/oy: wo die Maus relativ zum Fuß des Stücks zugepackt hat (Kies-Linie bzw. Oberseite der Plattform)
         const st = V.stackInfo(o);
         V.selectDeco(o); drag = { o: o, ox: p.x - (st ? st.x : o.x), oy: p.y - (st ? st.y : AA.floorY(o.z, o.x)), sx: p.x, sy: p.y, moved: false }; return;
@@ -125,7 +126,7 @@
         if (Math.abs(s - 1) < 0.035) s = 1;          // nahe der Originalgröße rastet es ein
         V.resizeDeco(drag.o, Math.max(0.01, s));
       } else if (drag && drag.egg) {
-        if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 6) { drag.moved = true; V.dragEgg = drag.egg; }
+        if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 6 && !(V.eggCarrier && V.eggCarrier(drag.egg))) { drag.moved = true; V.dragEgg = drag.egg; }      // Runde 20f: getragene Eier (Seedrache, Pyjama) bleiben beim Papa
         if (drag.moved) {
           const e2 = drag.egg, x = AA.clamp(p.x - drag.ox, AA.xLimits(e2.z)[0] + 30, AA.xLimits(e2.z)[1] - 30);
           let z = e2.z;
@@ -239,6 +240,7 @@
     else if (k === 'i' && UI.openFishList) UI.openFishList({ fresh: true }); else if (k === 'o' && UI.toggleLabels) UI.toggleLabels();      // Fisch-Übersicht, Schilder (js/fishlist.js)
     else if (k === 'r' && UI.toggleFriends) UI.toggleFriends();
     else if (k === 'z' && UI.openRank) UI.openRank(); else if (k === 'c' && UI.openLogin7) UI.openLogin7();
+    else if (k === 'w' && UI.openWheel) UI.openWheel();                                                     // Runde 20f: Glücksrad (js/daily.js)
     else if (k === 'm' && AA.music) { const on = AA.music.toggle(); UI.toast(on ? '🎵 Musik an' : '🔇 Musik aus'); }
   }
 
@@ -456,6 +458,7 @@
       };
       if (UI.cloudBoot) UI.cloudBoot(hello); else hello();      // mit Wolke: erst anmelden bzw. Besuchs-Ansicht, dann das Übliche
       AA.ready = true;
+      if (AA.markWheel) setTimeout(AA.markWheel, 400);                    // Runde 20f: Punkt am Glücksrad
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();

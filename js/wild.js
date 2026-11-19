@@ -12,13 +12,15 @@
 
   /* ---------- Tiefsee-Becken ---------- */
   AA.hasDeep = function () { return S().tanks.some(function (t) { return t.deep; }); };
-  AA.deepStatus = function () { const s = S(); return AA.hasDeep() ? 'owned' : (s.level < AA.DEEP.lvl ? 'level' : (s.coins < AA.DEEP.price ? 'coins' : 'ok')); };
+  AA.deepCount = function () { return S().tanks.filter(function (t) { return t.deep; }).length; };
+  AA.deepNext = function () { const n = AA.deepCount(), D = AA.DEEP; return n >= D.max ? null : { n: n, lvl: D.lvls[n], price: D.prices[n] }; };      // Runde 20f: bis zu zwei
+  AA.deepStatus = function () { const s = S(), nx = AA.deepNext(); return !nx ? 'owned' : (s.level < nx.lvl ? 'level' : (s.coins < nx.price ? 'coins' : 'ok')); };
   AA.buyDeep = function () {
-    const s = S(), st = AA.deepStatus(), D = AA.DEEP;
+    const s = S(), st = AA.deepStatus(), D = AA.DEEP, nx = AA.deepNext();
     if (st !== 'ok') return st;
-    AA.addCoins(-D.price);
+    AA.addCoins(-nx.price);
     const t = AA.newTank(s.tanks.length, 'salt');
-    t.deep = true; t.size = AA.SIZES.length - 1; t.name = D.name;
+    t.deep = true; t.size = AA.SIZES.length - 1; t.name = AA.wideName ? AA.wideName(D.name) : D.name;
     if (AA.WALL_BY[D.wall]) { if (s.walls.indexOf(D.wall) < 0) s.walls.push(D.wall); t.wall = D.wall; }      // die Tiefsee-Kulisse gehört zum Becken dazu
     if (AA.FLOOR_BY[D.floor] && s.level >= AA.FLOOR_BY[D.floor].lvl) t.floor = D.floor; else t.floor = 'black';
     s.tanks.push(t); s.active = s.tanks.length - 1;

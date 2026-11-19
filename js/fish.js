@@ -59,7 +59,7 @@
   AA.fishK = function () {
     const t = AA.tank();
     if (!t) return 1;
-    return AA.wide(t) ? AA.FISH_BIG.wide : (t.size >= AA.SIZES.length - 1 ? AA.FISH_BIG.regular : 1);
+    return AA.wide(t) ? AA.FISH_BIG.wide : (t.size >= AA.BIG_SIZE ? AA.FISH_BIG.regular : 1);
   };
   Fish.prototype.reach = function () { const r = this.rig(); return r.tx ? (r.tx - 1) * (r.tail || 0) : 0; };   // Runde 12: verlängerter Rochenschwanz ragt so weit (× Größe) über das Bild hinaus
   Fish.prototype.mouth = function () {
@@ -223,8 +223,14 @@
     const hab = this.def.hab;
     if (this.def.surface) {                           // Runde 20b: Galeere, Blauer Drache – treiben an der Oberfläche, die Strömung schiebt sie quer übers Becken
       if (!this.cur) this.cur = Math.random() < 0.5 ? -1 : 1;
-      x = this.x + this.cur * AA.rand(180, 420);
-      if (x < lim[0] + s || x > lim[1] - s) { this.cur = -this.cur; x = this.x + this.cur * AA.rand(160, 360); }
+      if (this.def.snake) {                           // Runde 20f: Gelbbauch – lange Bahnen an der Oberfläche, gewendet wird nur am Beckenrand
+        const rs0 = s * (0.5 + this.reach());
+        x = this.x + this.cur * AA.rand(220, 560);
+        if (x < lim[0] + rs0 || x > lim[1] - rs0) { this.cur = -this.cur; x = this.x + this.cur * AA.rand(220, 560); }
+      } else {
+        x = this.x + this.cur * AA.rand(180, 420);
+        if (x < lim[0] + s || x > lim[1] - s) { this.cur = -this.cur; x = this.x + this.cur * AA.rand(160, 360); }
+      }
       y = top - h * 0.1;
     }
     else if (night || this.d.sick) y = AA.rand(bot - 110, bot);
@@ -236,7 +242,7 @@
     else y = Math.random() < 0.4 ? this.y + AA.rand(-130, 130) : AA.rand(top, bot);
     if ((hab === 'lurk' && !(this.outT > 0)) || hab === 'bottom') { if (Math.random() < 0.6) x = this.x + (Math.random() < 0.5 ? -1 : 1) * AA.rand(60, 240); }   // kurze Wege
     if (this.isLeader) { x = this.x + (Math.random() < 0.75 ? this.dir : -this.dir) * AA.rand(260, 620); if (hab !== 'bottom') y = AA.rand(top + 40, bot - 70); }   // Schwarm-Anführer: weite, ruhige Bahnen
-    if (this.def.snake && !night) x = this.x + (Math.random() < 0.72 ? this.dir : -this.dir) * AA.rand(220, 560);   // Runde 20c: Seeschlange – lange Wege, meist geradeaus weiter (jede Wende ist ein großer Bogen)
+    if (this.def.snake && !this.def.surface && !night) x = this.x + (Math.random() < 0.72 ? this.dir : -this.dir) * AA.rand(220, 560);   // (Gelbbauch: treibt wie Galeere & Co. mit der Strömung, wendet nur am Rand – Runde 20f)   // Runde 20c: Seeschlange – lange Wege, meist geradeaus weiter (jede Wende ist ein großer Bogen)
     if (this.def.snake && this.def.crevice && !night) y = AA.rand(Math.max(top, bot - 150), bot - 10);         // Dubois: Bodenjägerin, dicht über dem Grund
     let homed = false;
     if (this.def.home && !night && Math.random() < 0.75) {       // Lieblingsplatz (Clownfisch: Anemone): meistens dort in der Nähe
@@ -551,6 +557,7 @@
     }
 
     if (this.flashT > 0) this.flashT -= dt;          // Runde 20b: Knurrhahn – Flügel auf (1,5 s)
+    if (this.snapT > 0) this.snapT -= dt;
     if (def.yawn && !V.photoMode) {                   // Runde 20b: Gelber Angler gähnt ab und zu riesig (Augen halb zu)
       if (this.yawnT > 0) { this.yawnT -= dt; this.eyeShut = this.yawnT > 0.2; }
       this.yawnW = (this.yawnW === undefined ? AA.rand(15, 40) : this.yawnW) - dt;
@@ -657,6 +664,7 @@
               const rg = this.rig(), mm = rg.mouth || NO_RIG.mouth, dirM = rg.kind === 'front' ? 1 : this.foodDir;
               tx = best.x - dirM * (mm[0] - 0.5) * s; ty = best.y - (m.y - this.y);
               burst = d.sick ? 1.6 : 2.3; this.state = 'food'; arriveR = 2;
+              if (def.lure && !d.sick && bd < 230) { burst = 7; if (!(this.snapT > 0)) this.snapT = 0.35; }      // Runde 20f: Gelber Angler – Futter vorm Maul: blitzschnell zuschnappen
             }
           }
         }
@@ -691,7 +699,7 @@
         }
         if (this.state === 'wander') {
           this.hideT -= dt;
-          if (def.hab === 'open' || def.hab === 'lurk' || this.host || this.isLeader || def.still || def.suck || def.cleaner || def.front) this.hideT = 30;   // Freiwasser-Arten, Lauerer (eigene Höhle), Clownfische (Anemone), Schwarm-Anführer; Grundfische vorn (Runde 13)
+          if (def.hab === 'open' || def.hab === 'lurk' || this.host || this.isLeader || def.still || def.suck || def.cleaner || def.front || def.snake) this.hideT = 30;      // Runde 20f: Seeschlangen verstecken sich nicht (eigene Spalten-/Ringel-Verhalten)   // Freiwasser-Arten, Lauerer (eigene Höhle), Clownfische (Anemone), Schwarm-Anführer; Grundfische vorn (Runde 13)
           if (this.hideT <= 0) {                     // ab und zu kurz ins Versteck (Baumstamm & Co.) – die meiste Zeit schwimmen sie frei herum (AA.HIDE)
             this.hideT = AA.rand(AA.HIDE.every[0], AA.HIDE.every[1]);
             const hs = V.hideouts();
@@ -730,7 +738,7 @@
           if (dd < r && dd > 0.01) { const kk = (1 - dd / r) * Math.max(60, speed * 2.4); dvx += ox / dd * kk; dvy += oy / dd * kk; }
         }
       }
-      else if (this.state === 'wander') {
+      if (dist <= arriveR && this.state === 'wander') {      // am Ziel: kurz warten, dann das nächste Ziel (Runde 20f: hing seit 20b als „else“ an der Gift-Abfrage – Fische wählten unterwegs dauernd neue Ziele und blieben neben Quallen stehen)
         this.wait -= dt;
         if (def.hab === 'bottom' && !d.sick) {          // Bodenfisch rastet auf dem Kies und gründelt ab und zu im Sand
           this.resting = true; this.digT -= dt;
@@ -861,6 +869,7 @@
       const fl = this.flashT > 0 ? Math.sin(Math.PI * Math.min(1, (1.5 - this.flashT) / 1.5)) : 0;
       if (fl > 0) ctx.scale(1 + fl * 0.05, 1 + fl * (this.def.spines ? 0.12 : 0.3));      // Runde 20b: Knurrhahn – die Flügelflossen gehen auf · Kaninchenfisch – Stacheln hoch
       if (this.yawnT > 0) { const e = Math.sin(Math.PI * (1 - this.yawnT / 1.6)); ctx.scale(1 - e * 0.04, 1 + e * 0.11); }      // Runde 20b: Gelber Angler gähnt
+      if (this.snapT > 0) { const e = Math.sin(Math.PI * (1 - this.snapT / 0.35)); ctx.scale(1 + e * 0.07, 1 + e * 0.13); }      // Runde 20f: schnappt zu (Maul auf)
       AA.drawBody(ctx, img, w, h, this.phase, rig, this.amp);
       if (fl > 0 && this.def.flash) {
         ctx.save(); ctx.globalCompositeOperation = 'lighter';

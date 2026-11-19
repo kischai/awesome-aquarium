@@ -299,7 +299,7 @@
     }
     if (sn.tr.length < 2 || Math.hypot(sn.tr[0].x - Dx, sn.tr[0].y - Dy) > s * 1.7) reset(f, sn, Dx, Dy);
     const H = sn.tr[0], dx = Dx - H.x, dy = Dy - H.y, dist = Math.hypot(dx, dy);
-    const vc = Math.hypot(f.vx, f.vy), rMin = s * 0.15;
+    const vc = Math.hypot(f.vx, f.vy), rMin = s * (f.def.surface && f.state === 'wander' ? 0.1 : 0.15);   // Gelbbauch: engere Wende an der Oberfläche (taucht dabei nicht so tief ab)
     let v = Math.min(dist * 2.6, 45 + vc * 1.7 + (f.state === 'flee' ? 160 : 0) + (f.state === 'leave' || f.state === 'enter' ? 420 : 0));
     if (dist < Math.max(1.5, s * 0.03)) v = 0;      // angekommen: stillhalten (sonst kreist der Kopf in Mini-Schleifen um den Punkt)
     if (v > 0) {
@@ -453,7 +453,7 @@
   }
   /* Belcher: schwimmt an einen Fisch heran, schaut ihm ins Gesicht und züngelt (der Fisch guckt verdutzt) */
   function startVisit(f, sn, V, s) {
-    let best = null, bd = 520;
+    let best = null, bd = 1e9;                         // Runde 20f: der nächste Fisch im ganzen Becken (vorher nur im Umkreis von 520 px)
     for (let i = 0; i < V.fish.length; i++) {
       const o = V.fish[i];
       if (o === f || o.ghost || o.def.snake || o.def.venom || o.state === 'hide' || o.state === 'den' || o.state === 'enter' || o.state === 'leave') continue;

@@ -1129,3 +1129,14 @@ span.fl-lock { border: none; background: none; }
   .fl-acts { padding-left: 4px; }
   .fl-lab { padding: 5px 8px; font-size: 12px; }
 }
+
+/* Runde 20f: Fisch des Tages, Glücksrad */
+.tag-daily { background: linear-gradient(#ffe2e2, #ff8a8a) !important; font-weight: 900; color: #5a1010; }
+.daily-sec { background: linear-gradient(90deg, rgba(255,138,138,0.25), rgba(255,215,120,0.2)); border-radius: 10px; padding: 6px 10px; }
+.wheel-box { text-align: center; }
+.wheel-wrap { display: flex; justify-content: center; margin: 4px 0 2px; }
+.wheel-svg { max-width: 72vw; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25)); }
+.wheel-msg { margin: 6px 0; font-weight: 700; }
+.wheel-list { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 4px 0 10px; }
+.wheel-prize { border-radius: 999px; padding: 2px 9px; font-size: 0.82em; font-weight: 700; color: #2a2a3a; }
+.rk-tank { display: block; font-size: 0.72em; opacity: 0.75; font-weight: 600; }

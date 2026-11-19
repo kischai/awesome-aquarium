@@ -97,6 +97,8 @@
   AA.mateChanceFor = function () { return 1; };      // Runde 11: jede Balz bringt ein Ei (die Anemone verkürzt beim Clownfisch stattdessen die Pause)
   /* Eier legt der Clownfisch direkt neben seine Anemone */
   AA.eggSpot = function (t, sp, egg) {
+    const def = AA.FISH_BY[sp];
+    if (def && def.carry) { egg.carry = def.carry; return; }     // Runde 20f: Seedrache trägt die Eier am Schwanz, Pyjama-Kardinalbarsch im Maul (Papa)
     if (sp !== 'clown') return;
     const hs = t.deco.filter(function (o) { return AA.DECO_BY[o.type].host; });
     if (!hs.length) return;

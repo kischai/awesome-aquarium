@@ -13,29 +13,39 @@
   function head(title) { return '<div class="m-head"><div class="m-title">' + title + '</div><button class="x" data-act="close" title="Schließen">✕</button></div>'; }
 
   /* ---------- Rangliste ---------- */
-  const COLS = { level: ['⭐', 'Level', function (v) { return 'Level ' + v; }], species: ['📖', 'Sammelbuch', function (v) { return v + ' Arten'; }], beauty: ['🌟', 'Schönheit', function (v) { return v + ' / 100'; }] };
+  const COLS = { level: ['⭐', 'Level', function (v) { return 'Level ' + v; }], species: ['📖', 'Sammelbuch', function (v) { return v + ' Arten'; }], beauty: ['🌟', 'Schönheit', function (v) { return v + ' / 100'; }],
+    hearts: ['❤️', 'Herzen der Woche', function (v) { return v + (v === 1 ? ' Herz' : ' Herzen'); }] };      // Runde 20f: Schönstes Becken der Woche
+  /* Runde 20f: Herzen der Woche (C.hearts aus heart_week) – null, solange nichts geladen ist (ohne Wolke immer) */
+  function heartRow(u) { const C = AA.cloud, H = C && C.hearts; return H && u ? H.list.find(function (x) { return x.user === u; }) || null : null; }
+  function heartsOf(u) { const C = AA.cloud, r = heartRow(u); return r ? r.hearts | 0 : (C && C.hearts && u ? 0 : null); }
+  function heartTank(u) { const r = heartRow(u); return r && r.tank ? r.tank : null; }
   function people() {
     const C = AA.cloud, me = AA.myRankStats(), out = [];
     const my = AA.me ? AA.me() : { name: 'Du', avatar: 'clown' };      // Runde 11: auch ohne Konto mit eigenem Namen und Bild
     const pub = UI.myPublic ? UI.myPublic() : {};      // Runde 19: Titel, Abzeichen, Goldrahmen
-    out.push({ me: true, name: my.name, avatar: my.avatar, user: C && C.user && C.profile ? C.user.id : null, photo: C && C.profile ? C.profile.photo || 0 : 0, level: me.level, species: me.species, beauty: me.beauty, title: pub.title, badges: pub.badges, gold: pub.gold });
+    out.push({ me: true, name: my.name, avatar: my.avatar, user: C && C.user && C.profile ? C.user.id : null, photo: C && C.profile ? C.profile.photo || 0 : 0, level: me.level, species: me.species, beauty: me.beauty, title: pub.title, badges: pub.badges, gold: pub.gold, hearts: heartsOf(C && C.user ? C.user.id : null), htank: heartTank(C && C.user ? C.user.id : null) });
     if (C && C.friends) C.friends.forEach(function (f) {
       if (f.status !== 'accepted') return;
-      out.push({ name: f.name, username: f.username || '', avatar: f.avatar, user: f.user, photo: f.photo || 0, level: f.level || 1, species: f.species === undefined || f.species === null ? null : f.species, beauty: f.beauty === undefined || f.beauty === null ? null : f.beauty, title: f.title || null, badges: f.badges || [], gold: f.gold | 0 });
+      out.push({ name: f.name, username: f.username || '', avatar: f.avatar, user: f.user, photo: f.photo || 0, level: f.level || 1, species: f.species === undefined || f.species === null ? null : f.species, beauty: f.beauty === undefined || f.beauty === null ? null : f.beauty, title: f.title || null, badges: f.badges || [], gold: f.gold | 0, hearts: heartsOf(f.user), htank: heartTank(f.user) });
     });
-    if (AA.testOn()) { const t = AA.testStats(); out.push({ test: true, name: AA.TEST.name + ' 🧪', avatar: AA.TEST.avatar, level: t.level, species: t.species, beauty: t.beauty }); }
+    if (AA.testOn()) { const t = AA.testStats(); out.push({ test: true, name: AA.TEST.name + ' 🧪', avatar: AA.TEST.avatar, level: t.level, species: t.species, beauty: t.beauty, hearts: 0 }); }
     return out;
   }
   UI.rankPeople = people;                             // Runde 12: für die Wochen-Pokale (js/extras.js)
   UI.openRank = function (tab) {
     if (tab) rankTab = tab;
+    const CH = AA.cloud;
+    if (rankTab === 'hearts' && CH && CH.on && CH.user && CH.heartWeek && !(Date.now() - (CH.heartsAt || 0) < 60000) && !UI.rankLoading) {      // Runde 20f
+      UI.rankLoading = true;
+      CH.heartWeek().then(function () { UI.rankLoading = false; if (UI.modalKind === 'rank' && rankTab === 'hearts') UI.openRank(); }, function () { UI.rankLoading = false; });
+    }
     const P = people(), k = rankTab, col = COLS[k];
     const rows = P.filter(function (p) { return p[k] !== null && p[k] !== undefined; }).sort(function (a, b) { return b[k] - a[k] || (a.me ? -1 : 1); });
     let place = 0, prev = null;
     const html = rows.map(function (p, i) {
       if (p[k] !== prev) { place = i + 1; prev = p[k]; }
       const medal = place === 1 ? '🥇' : (place === 2 ? '🥈' : (place === 3 ? '🥉' : place + '.'));
-      return '<div class="rk-row' + (p.me ? ' me' : '') + '"><span class="rk-pl">' + medal + '</span>' + (UI.face ? UI.face(p) : av(p.avatar)) + '<b class="rk-nm">' + esc(p.name) + (p.me ? ' <small>(du)</small>' : '') + (p.username ? ' <small class="cl-handle">@' + esc(p.username) + '</small>' : '') + (UI.themeBadges ? UI.themeBadges(p.badges) : '') + (UI.titleLine && p.title ? '<small class="rk-ttl">' + UI.titleLine(p.title) + '</small>' : '') + '</b><span class="rk-v">' + col[2](p[k]) + '</span></div>';
+      return '<div class="rk-row' + (p.me ? ' me' : '') + '"><span class="rk-pl">' + medal + '</span>' + (UI.face ? UI.face(p) : av(p.avatar)) + '<b class="rk-nm">' + esc(p.name) + (p.me ? ' <small>(du)</small>' : '') + (p.username ? ' <small class="cl-handle">@' + esc(p.username) + '</small>' : '') + (UI.themeBadges ? UI.themeBadges(p.badges) : '') + (UI.titleLine && p.title ? '<small class="rk-ttl">' + UI.titleLine(p.title) + '</small>' : '') + '</b><span class="rk-v">' + col[2](p[k]) + (k === 'hearts' && p.htank ? '<small class="rk-tank">„' + esc(p.htank) + '“</small>' : '') + '</span></div>';
     }).join('');
     const miss = P.filter(function (p) { return p[k] === null || p[k] === undefined; });
     const tabs = Object.keys(COLS).map(function (c) { return '<button class="tab' + (c === k ? ' active' : '') + '" data-act="rk-tab" data-id="' + c + '">' + COLS[c][0] + ' ' + COLS[c][1] + '</button>'; }).join('');
@@ -48,7 +58,8 @@
       : (!C.user ? '<div class="note">Melde dich an (👥 Freunde), dann siehst du hier deine Familie.</div>' : '') +
         (miss.length ? '<div class="note">' + miss.map(function (p) { return esc(p.name); }).join(', ') + ': noch keine Werte – erscheinen, sobald sie ihr Spiel aktualisiert haben.</div>' : '');
     UI.open('rank', head('🏆 Rangliste der Familie') + '<div class="tabs">' + tabs + '</div><div class="list rk-list">' + note + html + foot +
-      (k === 'beauty' ? '<div class="note">Die Schönheit zählt dein schönstes Becken. Wie sie zustande kommt: im ✏️ Deko-Modus oben auf die Note tippen.</div>' : '') + '</div>', 'mid');
+      (k === 'beauty' ? '<div class="note">Die Schönheit zählt dein schönstes Becken. Wie sie zustande kommt: im ✏️ Deko-Modus oben auf die Note tippen.</div>' : '') +
+      (k === 'hearts' ? '<div class="note">❤️ <b>Schönstes Becken der Woche:</b> Wer bei Freunden zu Besuch ist, darf jeden Tag ein Herz vergeben – an das schönste Becken, das er an dem Tag sieht. Gezählt wird ab Montag.</div>' : '') + '</div>', 'mid');
     if (UI.fillPhotos) UI.fillPhotos();                // Launch: Profilfotos nachladen
   };
 

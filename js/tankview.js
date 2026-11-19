@@ -645,7 +645,13 @@
       const c = crawlState(o), b = V.decoBox(o);
       if (def.crawl[0] === 'octo' && Math.hypot(b.cx - x, b.by - b.h * 0.5 - y) < 340) c.flash = 1;      // Blauring-Krake: Ringe blitzen hell auf
       if (def.punch && !(c.punchAt > 0) && V.time - (c.punched || -99) > 2.5) { c.punchAt = V.time + 0.3; c.px = x; c.py = y; }   // Fangschreckenkrebs: schlägt zurück
+      if (def.crawl[0] === 'clam' && Math.hypot(b.cx - x, b.by - b.h * 0.5 - y) < 300) c.shut = 3.2;     // Runde 20f: Riesenmuschel klappt zu
     }
+  };
+  /* Runde 20f: ein Krabbler wurde angetippt (Hand/Deko-Modus) – die Riesenmuschel klappt zu */
+  V.pokeCrawler = function (o) {
+    const def = o && AA.DECO_BY[o.type];
+    if (def && def.crawl && def.crawl[0] === 'clam') { const c = crawlState(o); if (!(c.shut > 0)) AA.audio.play('pop'); c.shut = 3.2; }
   };
   /* Runde 20b: Glas-Riss – ein Stern aus Zickzack-Linien, der nach 3 Sekunden wieder verheilt (Fangschreckenkrebs) */
   V.cracks = [];
@@ -901,7 +907,23 @@
     for (let i = 0; i < V.fish.length; i++) { const f = V.fish[i]; if (f.ghost) continue; const d = f.gap(x, y); if (d < bd) { bd = d; best = f; } }
     return best;
   };
-  V.eggPos = function (e) { const sc = AA.depthScale(e.z); return { x: e.x, y: AA.floorY(e.z, e.x) - 16 * sc, r: 19 * sc }; };
+  V.eggPos = function (e) {
+    const f = e.carry ? V.eggCarrier(e) : null;
+    if (f) {                                           // Runde 20f: getragen – am Schwanz (Seedrache) oder im Maul (Pyjama-Kardinalbarsch); das Ei wandert mit
+      const s = f.size(), h = s * f.ar(), m = e.carry === 'mouth' ? f.mouth() : { x: f.x - f.dir * s * 0.34, y: f.y + h * 0.16 };
+      e.x = m.x; e.z = f.z;
+      return { x: m.x, y: m.y, r: Math.max(6, s * 0.06), car: f };
+    }
+    const sc = AA.depthScale(e.z); return { x: e.x, y: AA.floorY(e.z, e.x) - 16 * sc, r: 19 * sc };
+  };
+  /* Runde 20f: wer trägt dieses Ei? Ein erwachsenes Männchen der Art (bleibt derselbe, solange es da ist) */
+  V.eggCarrier = function (e) {
+    if (!e.carry) return null;
+    let f = null;
+    for (let i = 0; i < V.fish.length; i++) { const q = V.fish[i]; if (q.d.id === e.cid && !q.ghost && q.state !== 'leave') { f = q; break; } }
+    if (!f) for (let i = 0; i < V.fish.length; i++) { const q = V.fish[i]; if (q.d.sp === e.sp && q.d.sex === 'm' && q.d.adult && !q.ghost && q.state !== 'leave') { f = q; e.cid = q.d.id; break; } }
+    return f;
+  };
   V.hitEgg = function (x, y) {
     const tank = AA.tank();
     for (let i = 0; i < tank.eggs.length; i++) { const p = V.eggPos(tank.eggs[i]); if (Math.hypot(x - p.x, y - p.y) < p.r * 1.8) return tank.eggs[i]; }
@@ -946,6 +968,7 @@
      Das Verhältnis von Fisch zu Becken ist dasselbe wie vorher; bis 13.11. stand ein kleines Becken dafür verkleinert in einem Raum
      (Wand, Unterschrank, Namensschild). V.ox/V.oy/V.txtK bleiben für Erweiterungen stehen (0, 0, 1). */
   V.kCur = 1; V.sprK = 1; V.txtK = 1; V.ox = 0; V.oy = 0; V.kTank = null;
+  V.noteT = {}; V.scr = {};      // Runde 20f: Noten über dem Flügel, Handy-Display
   V.zoomTarget = function () { const t = AA.tank(); return AA.wide(t) || window.AA_NOZOOM ? 1 : (AA.ZOOM[t.size] || 1); };      // AA_NOZOOM: Schalter für die alten automatischen Tests
   V.setZoom = function (k) { V.kCur = k; V.sprK = (AA.wide(AA.tank()) && !window.AA_NOZOOM ? AA.OCEAN_SPR : 1) / Math.sqrt(k); };   // Meeresbecken: alles kleiner = riesig
   V.toWorld = function (x, y) { return { x: x, y: y }; };
@@ -1043,8 +1066,12 @@
     if (c.flash > 0) c.flash = Math.max(0, c.flash - dt * 0.8);                 // Runde 20b: Blauring-Krake – Ringe leuchten nach
     if (c.punchAt > 0 && V.time >= c.punchAt) {         // Runde 20b: Fangschreckenkrebs schlägt ans Glas
       c.punchAt = 0; c.punched = V.time; c.hit = 0.35;
-      V.crack(c.px, c.py); AA.audio.play('hit');
-      const b = V.decoBox(o); V.floatText(b.cx, b.y - 8, '👊', '#ffffff');
+      const b = V.decoBox(o);
+      if (c.shellHit) {                                 // Runde 20f: knackt ein Schneckenhaus – höchstens eine Perle am Tag (10 %)
+        const q = c.shellHit; c.shellHit = null; AA.audio.play('hit'); V.puff('dust', q.x, q.y + 10, 3); V.floatText(q.x, q.y - 20, '💥', '#ffffff');
+        const s = AA.state, day = AA.today ? AA.today() : new Date().toISOString().slice(0, 10);
+        if (s.mantisPearl !== day && Math.random() < 0.1 && !AA.visit) { s.mantisPearl = day; AA.addPearls(1); V.floatText(q.x, q.y - 52, '+1 Perle', '#ffd9ff'); V.twinkle(q.x, q.y, '#ffd9ff', 18); AA.save(); }
+      } else { V.crack(c.px, c.py); AA.audio.play('hit'); V.floatText(b.cx, b.y - 8, '👊', '#ffffff'); }
     }
     if (c.hit > 0) c.hit -= dt;
     if (def.harpoon && !V.photoMode) {                 // Runde 20b: Kegelschnecke schießt ab und zu die Harpune raus
@@ -1052,6 +1079,8 @@
       if (c.jabW <= 0) { c.jabW = AA.rand(16, 36); c.jab = 0.5; }
     }
     if (c.jab > 0) c.jab -= dt;
+    if (kind === 'clam') { c.v = 0; c.ph += dt * 0.3; if (c.shut > 0) c.shut = Math.max(0, c.shut - dt); return; }      // Runde 20f: Riesenmuschel – liegt fest
+    if (def.punch) { mantisEyes(c, dt); c.shellW = (c.shellW === undefined ? AA.rand(15, 40) : c.shellW) - dt; }      // Runde 20f: Augen drehen sich unabhängig, Schneckenhaus-Uhr
     if (kind === 'glide') {                          // Runde 12: Scholle – Tempo und Flossenwelle weich nachführen (vorher sprang die Phase bei jedem Tempowechsel: Zittern)
       const mvRaw = Math.min(1, (c.v || 0) / (def.crawl[1] * 0.5 + 0.01));
       c.mvs = (c.mvs || 0) + (mvRaw - (c.mvs || 0)) * Math.min(1, dt * 1.2);
@@ -1067,11 +1096,14 @@
       }
     }
     if (c.mode !== 'floor') { glassStep(o, def, c, dt); return; }
-    if (o === V.dragDeco) { c.tx = o.x; c.tz = o.z; c.wait = 1.5; c.v = 0; c.food = null; c.climb = null; return; }      // wird gerade getragen
+    if (o === V.dragDeco) { c.tx = o.x; c.tz = o.z; c.wait = 1.5; c.v = 0; c.food = null; c.climb = null; c.lift = 0; c.hop = null; c.perch = null; c.dance = null; c.task = null; c.home = null; return; }      // wird gerade getragen
     if (o === V.selDeco) { c.v = 0; return; }                                                          // ausgewählt: hält still
     if (V.service[o.id] > V.time) { c.v = 0; c.wait = Math.max(c.wait, 1.5); return; }                 // Putzerstation: putzt gerade einen Fisch
     if (c.wave) { c.wave.t += dt; c.v = 0; if (c.wave.t >= AA.WAVE_T) c.wave = null; return; }       // Runde 18: Schneemann winkt gerade – steht still
-    if (V.paradeStep && V.paradeStep(o, def, c, dt)) return;                                         // Runde 19: Gänsemarsch (js/themefx.js)
+    if (V.paradeStep && V.paradeStep(o, def, c, dt)) { c.lift = 0; c.hop = null; c.perch = null; c.dance = null; return; }      // Runde 19: Gänsemarsch (js/themefx.js)
+    if (kind === 'skip') { skipStep(o, def, c, dt); return; }                                         // Runde 20f: Schlammspringer hüpft
+    if (kind === 'dancer' && danceTick(o, def, c, dt)) return;                                        // Runde 20f: Spanische Tänzerin tanzt frei
+    if (def.pistol && !V.photoMode) pistolTick(o, c, dt);                                             // Runde 20f: Pistolenkrebs gräbt und knallt
     const night = !!AA.state.settings.night;
     let speed = def.crawl[1] * (night ? 0.5 : 1);
     if (def.eats) {                                    // Futterreste: nach liegen gebliebenen Flocken Ausschau halten
@@ -1093,6 +1125,7 @@
     if (dist < 3) {
       c.v = 0;
       if (c.food) { c.food.eaten = true; c.food = null; V.addBubble(o.x, AA.floorY(o.z, o.x) - 14, 2); c.wait = AA.rand(0.6, 1.6); return; }
+      if (c.task) { const tk = c.task; c.task = null; if (taskArrive(o, def, c, tk)) return; }      // Runde 20f: Fangschreckenkrebs – Höhle, Schneckenhaus
       if (c.climb) {                                   // am Glas angekommen: hoch
         c.mode = c.climb; c.climb = null; c.down = false; c.legs = AA.randi(1, 3); c.wait = 0;
         c.gx = c.mode === 'wall' ? (o.x < W / 2 ? 15 : W - 15) : o.x; c.gy = AA.floorY(o.z, o.x) - def.w * 0.2;
@@ -1111,8 +1144,9 @@
       if (c.wait <= 0 && kind === 'snowman' && !c.waved && !night && !V.photoMode && Math.random() < 0.55) {      // Runde 18: dreht sich zur Kamera und winkt
         c.wave = { t: 0 }; c.waved = true; c.wait = AA.rand(0.8, 2.5); return;
       }
+      if (c.wait <= 0 && def.punch && mantisPlan(o, def, c)) return;      // Runde 20f: in die Höhle, raus zum Schneckenhaus
       if (c.wait <= 0) {                               // neues Ziel in der Nähe; Seesterne und Seeigel trödeln länger
-        c.waved = false;
+        c.waved = false; c.home = null;
         const slow = kind === 'star' || kind === 'urchin' || kind === 'glide' || kind === 'octo', far = kind === 'crab' ? 420 : (kind === 'glide' ? 120 : (kind === 'octo' ? 220 : (slow ? 150 : 280)));      // glide = Scholle: gleitet ein Stück, liegt dann lange still
         c.tx = AA.clamp(o.x + AA.rand(-far, far), lim[0] + 50, lim[1] - 50);
         c.tz = AA.clamp(o.z + AA.rand(-0.32, 0.32), 0.04, 1);
@@ -1127,6 +1161,8 @@
     else if (kind === 'glide') gait = 0.9 + 0.1 * Math.sin(c.ph * 0.9);
     else if (kind === 'snowman') gait = 0.2 + 0.8 * Math.max(0, Math.sin(c.ph * 2.2));      // Runde 18: gleitet in Schüben
     else if (kind === 'octo') gait = 0.2 + 0.8 * Math.max(0, Math.sin(c.ph * 1.5));         // Runde 20b: Krake – zieht sich in Schüben voran
+    else if (kind === 'stilt') gait = 0.25 + 0.75 * Math.max(0, Math.sin(c.ph * 2.6));      // Runde 20f: Stelzen-Krabben staksen Schritt für Schritt
+    else if (kind === 'dancer') gait = 0.7 + 0.3 * Math.sin(c.ph * 1.4);
     const step = Math.min(dist, speed * gait * dt);
     o.x = AA.clamp(o.x + dx / dist * step, lim[0] + 20, lim[1] - 20);
     o.z = AA.clamp(o.z + dz / dist * step / ZPX, 0.02, 1);
@@ -1202,6 +1238,10 @@
   }
   function drawCrawler(ctx, o, def, img, b) {
     const c = crawlState(o), kind = def.crawl[0], mv = Math.min(1, c.v / (def.crawl[1] * 0.5 + 0.01));
+    if (c.lift) ctx.translate(0, -c.lift);                                  // Runde 20f: Schlammspringer in der Luft / auf Deko, Tänzerin im freien Wasser
+    if (kind === 'clam') { drawClam(ctx, img, b, c); return; }
+    if (kind === 'dancer') { drawDancer(ctx, img, b, c, mv); return; }
+    if (kind === 'skip') { drawSkipper(ctx, img, b, c); return; }
     if (kind === 'snowman') { drawSnowman(ctx, o, def, img, b, c, mv); return; }
     if (kind === 'octo') { drawOcto(ctx, img, b, c, mv); return; }
     if (c.hit > 0) ctx.translate(Math.sin((0.35 - c.hit) / 0.35 * Math.PI) * b.w * 0.14, 0);       // Fangschreckenkrebs: Schlag nach vorn
@@ -1211,8 +1251,260 @@
     else if (kind === 'urchin') { const q = Math.sin(c.ph * 1.7) * 0.022; ctx.scale(1 + q, 1 + q * 1.4); }
     else if (kind === 'crab') { ctx.translate(0, -Math.abs(Math.sin(c.ph * 12)) * 3.2 * mv); ctx.rotate(Math.sin(c.ph * 12) * 0.06 * mv + Math.sin(c.ph * 1.1) * 0.02); }
     else if (kind === 'glide') { const m = c.mvs || 0, q = Math.sin(c.gph || 0) * (0.004 + 0.009 * m); ctx.translate(0, -1.2 * m); ctx.scale(1 + q, 1 - q * 1.1); }      // Scholle: ganz sachte Flossenwelle, liegt sonst flach
+    else if (kind === 'stilt') { const s1 = Math.sin(c.ph * 2.6); ctx.translate(0, -Math.abs(s1) * 5 * mv - 1); ctx.rotate(s1 * 0.03 * mv + Math.sin(c.ph * 0.7) * 0.012); }      // Runde 20f: Stelzen – auf und ab
     else { ctx.translate(0, -Math.abs(Math.sin(c.ph * 7)) * 2.4 * mv); ctx.rotate(Math.sin(c.ph * 7) * 0.04 * mv); }
+    if (def.crown) drawCrownBody(ctx, img, b, c, def.crown);              // Runde 20f: Seegurke – Tentakelkrone fächelt
+    else ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h);
+    if (def.punch && c.eyes) drawMantisEyes(ctx, b, c);
+  }
+
+  /* ================= Runde 20f: neue Krabbler ================= */
+  /* Oberkante eines Bildes an 33 Stellen (Höhe über der Unterkante, Anteil der Bildhöhe) – darauf landet der Schlammspringer */
+  const SKY = new WeakMap();
+  function skyline(img) {
+    let s = SKY.get(img); if (s) return s;
+    s = new Float32Array(33);
+    try {
+      const w = 66, h = Math.max(8, Math.round(img.height / img.width * 66)), cv = mk(w, h), g = cv.getContext('2d');
+      g.drawImage(img, 0, 0, w, h); const d = g.getImageData(0, 0, w, h).data;
+      for (let i = 0; i <= 32; i++) { const x = Math.min(w - 1, Math.round(i / 32 * (w - 1))); let y = 0; while (y < h && d[(y * w + x) * 4 + 3] < 140) y++; s[i] = y >= h ? 0 : 1 - y / h; }
+    } catch (e) { s.fill(0.8); }
+    SKY.set(img, s); return s;
+  }
+  function startHop(o, c, x1, z1, l1, T, h) { c.hop = { t: 0, T: T, x0: o.x, z0: o.z, x1: x1, z1: z1, l0: c.lift || 0, l1: l1, h: h }; }
+  function perchSpot(o) {
+    const tank = AA.tank(), lim = AA.xLimits(); let best = null, bd = 1e9;
+    for (let i = 0; i < tank.deco.length; i++) {
+      const P = tank.deco[i], pd = AA.DECO_BY[P.type];
+      if (!pd || P === o || pd.crawl || pd.path || pd.flat || pd.daily || pd.cat === 'plant' || P.r) continue;
+      const pb = V.decoBox(P); if (pb.h < 34 || pb.h > 430) continue;
+      const dd = Math.abs(pb.cx - o.x) + Math.random() * 180; if (dd > 620 || dd >= bd) continue;
+      const img = V.decoImg(P); if (!img) continue;
+      const u = AA.rand(0.3, 0.7), hh = skyline(img)[Math.round((P.flip ? 1 - u : u) * 32)];
+      if (hh < 0.3) continue;
+      const x = AA.clamp(pb.x + u * pb.w, lim[0] + 24, lim[1] - 24), z = Math.min(1, P.z + 0.006);
+      bd = dd; best = { P: P, x: x, z: z, lift: Math.max(0, AA.floorY(z, x) - (pb.by - hh * pb.h + 3)) };
+    }
+    return best;
+  }
+  /* Schlammspringer: bewegt sich nur in Sprüngen – über den Kies, auf Deko und ab und zu mit einem Satz über die Wasserlinie */
+  function skipStep(o, def, c, dt) {
+    const lim = AA.xLimits(), night = !!AA.state.settings.night;
+    if (c.hop) {
+      const h = c.hop; h.t += dt; const u = Math.min(1, h.t / h.T);
+      o.x = h.x0 + (h.x1 - h.x0) * u; o.z = h.z0 + (h.z1 - h.z0) * u;
+      c.lift = h.l0 + (h.l1 - h.l0) * u + h.h * 4 * u * (1 - u);
+      c.v = 1 + Math.hypot(h.x1 - h.x0, (h.z1 - h.z0) * ZPX) / h.T;
+      if (Math.abs(h.x1 - h.x0) > 2) o.flip = h.x1 < h.x0;
+      if (h.leap) {
+        const surf = AA.floorY(o.z, o.x) - G.top;      // Höhe der Wasserlinie über dem Kies
+        if (!h.up && c.lift > surf - 4) { h.up = true; V.ripple(o.x, G.top + 3); AA.audio.play('splash'); for (let i = 0; i < 4; i++) V.addBubble(o.x + AA.rand(-14, 14), G.top + 10, AA.rand(2, 4)); }
+        else if (h.up && !h.down && u > 0.5 && c.lift < surf - 4) { h.down = true; V.ripple(o.x, G.top + 3); for (let i = 0; i < 6; i++) V.addBubble(o.x + AA.rand(-16, 16), G.top + 14, AA.rand(2, 4.5)); }
+      }
+      if (u >= 1) {
+        c.hop = null; c.lift = h.l1; c.perch = h.perch || null; c.v = 0;
+        c.wait = h.leap ? AA.rand(1.5, 3) : (c.perch ? AA.rand(5, 14) : AA.rand(0.25, 1.3));
+        if (!h.l1) V.puff('dust', o.x, AA.floorY(o.z, o.x) - 4, 1);
+      }
+      return;
+    }
+    c.v = 0;
+    if (c.perch) {                                     // sitzt oben: Stück weg oder verschoben? Dann runter.
+      const P = c.perch.P;
+      if (AA.tank().deco.indexOf(P) < 0 || P === V.dragDeco || Math.abs(V.decoBox(P).cx - c.perch.cx) > 2) { c.perch = null; startHop(o, c, o.x + AA.rand(-40, 40), o.z, 0, 0.55, 24); return; }
+    } else if (c.lift) c.lift = Math.max(0, c.lift - 400 * dt);
+    c.wait -= dt; if (c.wait > 0) return;
+    const r = Math.random();
+    if (!night && !V.photoMode && !c.perch && r < 0.14) {          // ein Satz über die Wasserlinie
+      const surf = AA.floorY(o.z, o.x) - G.top;
+      startHop(o, c, AA.clamp(o.x + AA.rand(-70, 70), lim[0] + 30, lim[1] - 30), o.z, 0, AA.clamp(surf / 260, 1.0, 1.8), surf + AA.rand(30, 55)); c.hop.leap = true;
+      return;
+    }
+    if (!night && !c.perch && r < 0.5) {                           // auf ein Deko-Stück springen
+      const sp = perchSpot(o);
+      if (sp) { startHop(o, c, sp.x, sp.z, sp.lift, 0.75, 34 + sp.lift * 0.18); c.hop.perch = { P: sp.P, cx: V.decoBox(sp.P).cx }; return; }
+    }
+    if (c.perch) { c.perch = null; startHop(o, c, AA.clamp(o.x + AA.rand(-90, 90), lim[0] + 30, lim[1] - 30), AA.clamp(o.z + AA.rand(0.04, 0.12), 0.04, 1), 0, 0.6, 22); return; }
+    startHop(o, c, AA.clamp(o.x + AA.rand(36, 110) * (Math.random() < 0.5 ? -1 : 1), lim[0] + 30, lim[1] - 30), AA.clamp(o.z + AA.rand(-0.08, 0.08), 0.04, 1), 0, 0.42, AA.rand(14, 26));
+  }
+  function drawSkipper(ctx, img, b, c) {
+    const h = c.hop, u = h ? Math.min(1, h.t / h.T) : 1;
+    if (h) { ctx.rotate((u < 0.5 ? -0.22 : 0.18) * Math.sin(Math.PI * u)); const k = Math.sin(Math.PI * u) * 0.06; ctx.scale(1 + k, 1 - k * 0.6); }
+    else { const q = Math.sin(c.ph * 3.1) * 0.015; ctx.scale(1 - q, 1 + q); }      // atmet
     ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h);
+  }
+  /* Spanische Tänzerin: gleitet mit wellendem Rock, ab und zu tanzt sie frei durchs Wasser (steigt auf, Wellen werden groß) */
+  function danceTick(o, def, c, dt) {
+    const night = !!AA.state.settings.night, mvN = Math.min(1, (c.v || 0) / (def.crawl[1] * 0.5 + 0.01));
+    c.wph = (c.wph || 0) + dt * (c.dance ? 5.5 : 1.4 + 2.6 * mvN);
+    if (c.dance) {
+      const d = c.dance; d.t += dt; const u = Math.min(1, d.t / d.T), lim = AA.xLimits();
+      c.lift = d.h * Math.pow(Math.sin(Math.PI * u), 0.7); c.v = 0;
+      o.x = AA.clamp(d.x0 + Math.sin(u * Math.PI * 2) * 46, lim[0] + 30, lim[1] - 30);
+      if (u >= 1) { c.dance = null; c.lift = 0; c.danceW = AA.rand(45, 100); c.wait = AA.rand(2, 5); c.tx = o.x; c.tz = o.z; }
+      return true;
+    }
+    c.danceW = (c.danceW === undefined ? AA.rand(12, 35) : c.danceW) - dt;
+    if (c.danceW <= 0 && !night && !V.photoMode) { c.dance = { t: 0, T: AA.rand(6, 9), h: AA.rand(120, 210), x0: o.x }; return true; }
+    return false;
+  }
+  function drawDancer(ctx, img, b, c, mv) {
+    const N = 24, sw = img.width / N, dw = b.w / N, ph = c.wph || 0, dn = !!c.dance;
+    const amp = b.h * (dn ? 0.1 : 0.028 + 0.03 * mv);
+    if (dn) ctx.rotate(Math.sin(ph * 0.6) * 0.12);
+    for (let i = 0; i < N; i++) {
+      const u = (i + 0.5) / N, y = Math.sin(ph * 2.2 - u * 9) * amp * (0.35 + 0.65 * Math.sin(Math.PI * u));
+      ctx.drawImage(img, i * sw, 0, sw + 0.5, img.height, -b.w / 2 + i * dw, -b.h + y, dw + 0.7, b.h);
+    }
+  }
+  /* Riesenmuschel: liegt fest; der Mantel schimmert (heller Streifen wandert über die blauen Stellen), angetippt klappt sie für 3 s zu */
+  const MANTLE = new WeakMap();
+  function mantleMask(img) {
+    let m = MANTLE.get(img); if (m !== undefined) return m;
+    try {
+      const cv = mk(img.width, img.height), g = cv.getContext('2d'); g.drawImage(img, 0, 0);
+      const id = g.getImageData(0, 0, cv.width, cv.height), a = id.data;
+      for (let i = 0; i < a.length; i += 4) { const r = a[i], gg = a[i + 1], bb = a[i + 2]; if (!((bb > 120 && bb > r + 60) || (gg > 150 && gg > r + 50 && bb > 80))) a[i + 3] = 0; }
+      g.putImageData(id, 0, 0); m = cv;
+    } catch (e) { m = null; }
+    MANTLE.set(img, m); return m;
+  }
+  let shimCv = null;
+  const MTINT = new WeakMap();
+  function mantleTint(m) {
+    let t = MTINT.get(m); if (t !== undefined) return t;
+    try { t = mk(m.width, m.height); const g = t.getContext('2d'); g.drawImage(m, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#e8d6bd'; g.fillRect(0, 0, m.width, m.height); } catch (e) { t = null; }
+    MTINT.set(m, t); return t;
+  }
+  function drawClam(ctx, img, b, c) {
+    const s = c.shut || 0, k = s > 0 ? AA.clamp(Math.min(3.2 - s, s) / 0.25, 0, 1) : 0;     // 0 = offen, 1 = zu
+    ctx.save();
+    if (k > 0) ctx.scale(1 + k * 0.02, 1 - k * 0.34);
+    ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h);
+    const m = mantleMask(img);
+    if (m) {
+      if (k > 0) { const tn = mantleTint(m); if (tn) { ctx.globalAlpha = k * 0.92; ctx.drawImage(tn, -b.w / 2, -b.h, b.w, b.h); ctx.globalAlpha = 1; } }   // zu: der Mantel verschwindet hinter den Schalen
+      if (k < 1) {
+        if (!shimCv) shimCv = mk(64, 64);
+        if (shimCv.width !== m.width || shimCv.height !== m.height) { shimCv.width = m.width; shimCv.height = m.height; }
+        const g = shimCv.getContext('2d'), w = m.width, p = ((c.ph * 0.9) % 1.6) - 0.3;
+        g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, w, m.height); g.drawImage(m, 0, 0);
+        g.globalCompositeOperation = 'source-in';
+        const gr = g.createLinearGradient(0, 0, w, 0);
+        gr.addColorStop(AA.clamp(p - 0.16, 0, 1), 'rgba(160,255,255,0)'); gr.addColorStop(AA.clamp(p, 0, 1), 'rgba(190,255,255,0.95)'); gr.addColorStop(AA.clamp(p + 0.16, 0, 1), 'rgba(160,255,255,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, w, m.height);
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (0.55 + 0.25 * Math.sin(c.ph * 2.3)) * (1 - k) * (AA.state.settings.night ? 1.4 : 1);
+        ctx.drawImage(shimCv, -b.w / 2, -b.h, b.w, b.h);
+        ctx.globalAlpha = (0.1 + 0.06 * Math.sin(c.ph * 1.7)) * (1 - k); ctx.drawImage(m, -b.w / 2, -b.h, b.w, b.h);
+      }
+    }
+    ctx.restore();
+  }
+  /* Seegurke: die Tentakelkrone (rechts ab def.crown, ohne das rechte Auge) fächelt um ihren Ansatz */
+  const CROWN = new WeakMap();
+  function crownParts(img, cx) {
+    let p = CROWN.get(img); if (p !== undefined) return p;
+    try {
+      const w = img.width, h = img.height, body = mk(w, h), crown = mk(w, h), gb = body.getContext('2d'), gc = crown.getContext('2d');
+      gb.drawImage(img, 0, 0); gc.drawImage(img, 0, 0);
+      const x0 = Math.round(w * cx), ex = w * 0.80, ey = h * 0.13, er = w * 0.05;
+      const ib = gb.getImageData(0, 0, w, h), ic = gc.getImageData(0, 0, w, h);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4, inCrown = x >= x0 && Math.hypot(x - ex, (y - ey) * 1.0) > er;
+        if (inCrown) ib.data[i + 3] = 0; else ic.data[i + 3] = 0;
+      }
+      gb.putImageData(ib, 0, 0); gc.putImageData(ic, 0, 0); p = { body: body, crown: crown };
+    } catch (e) { p = null; }
+    CROWN.set(img, p); return p;
+  }
+  function drawCrownBody(ctx, img, b, c, cx) {
+    const p = crownParts(img, cx);
+    if (!p) { ctx.drawImage(img, -b.w / 2, -b.h, b.w, b.h); return; }
+    ctx.drawImage(p.body, -b.w / 2, -b.h, b.w, b.h);
+    const px = -b.w / 2 + b.w * cx, py = -b.h * 0.52, f = Math.sin(c.ph * 2.4), k = 1 + f * 0.12;
+    ctx.save(); ctx.translate(px, py); ctx.rotate(Math.sin(c.ph * 1.3) * 0.07); ctx.scale(1 + (k - 1) * 0.35, k);
+    ctx.drawImage(p.crown, -b.w * cx, -b.h * 0.48, b.w, b.h);
+    ctx.restore();
+  }
+  /* Pistolenkrebs & Wächtergrundel: gräbt (Staubwölkchen), ab und zu ein Knall mit Bläschen – die Fische in der Nähe zucken zusammen */
+  function pistolTick(o, c, dt) {
+    const b = V.decoBox(o), dir = o.flip ? -1 : 1;
+    if (!(c.v > 1) && Math.random() < dt * 0.7) V.puff('dust', b.cx + dir * b.w * 0.1, b.by - 4, 1);
+    c.snapW = (c.snapW === undefined ? AA.rand(10, 28) : c.snapW) - dt;
+    if (c.snapW > 0) return;
+    c.snapW = AA.rand(25, 55); c.hit = 0.22;
+    const x = b.cx + dir * b.w * 0.04, y = b.by - b.h * 0.6;
+    AA.audio.play('pop'); V.floatText(x, b.y - 12, '💥', '#ffffff');
+    for (let i = 0; i < 9; i++) V.addBubble(x + AA.rand(-10, 10), y + AA.rand(-8, 8), AA.rand(1.5, 4.2));
+    for (let i = 0; i < V.fish.length; i++) { const f = V.fish[i]; if (!f.ghost && f.onKnock && Math.hypot(f.x - x, f.y - y) < 240) f.onKnock(x, y); }
+  }
+  /* Fangschreckenkrebs: wohnt in einer Höhle und schaut heraus, knackt ab und zu leere Schneckenhäuser (manchmal liegt eine Perle drin) */
+  const SHELLS = { conch: 1, scallop: 1 };
+  function mantisCave(o) {
+    const tank = AA.tank(); let best = null, bd = 1e9;
+    for (let i = 0; i < tank.deco.length; i++) {
+      const P = tank.deco[i], pd = AA.DECO_BY[P.type];
+      if (!pd || pd.crawl || !pd.hide || pd.cat === 'plant' || P.on) continue;
+      const pb = V.decoBox(P); if (pb.w < 90) continue;
+      const dd = Math.abs(pb.cx - o.x) - (pd.cave ? 400 : 0); if (dd < bd) { bd = dd; best = P; }
+    }
+    return best;
+  }
+  function mantisPlan(o, def, c) {
+    const night = !!AA.state.settings.night, lim = AA.xLimits();
+    if (c.home && night) { c.wait = AA.rand(20, 40); return true; }       // nachts bleibt er drin
+    if (!night && !(c.shellW > 0)) {                                       // etwa jede Minute: ein leeres Schneckenhaus knacken
+      c.shellW = AA.rand(40, 90);
+      const sh = AA.tank().deco.filter(function (q) { return SHELLS[q.type] && !q.on; });
+      if (sh.length) {
+        const S = AA.pick(sh), sb = V.decoBox(S), side = o.x < sb.cx ? -1 : 1, bw = V.decoBox(o).w;
+        c.tx = AA.clamp(sb.cx + side * (sb.w * 0.5 + bw * 0.35), lim[0] + 30, lim[1] - 30); c.tz = AA.clamp(S.z + 0.01, 0.02, 1);
+        c.task = { kind: 'shell', P: S }; c.home = null; c.wait = 0; return true;
+      }
+    }
+    if (!c.home && (night || Math.random() < 0.5)) {
+      const P = mantisCave(o);
+      if (P) {
+        const pb = V.decoBox(P), side = pb.cx > (lim[0] + lim[1]) / 2 ? -1 : 1, bw = V.decoBox(o).w;
+        c.tx = AA.clamp(pb.cx + side * (pb.w * 0.5 - bw * 0.42), lim[0] + 30, lim[1] - 30); c.tz = AA.clamp(P.z - 0.03, 0.02, 1);
+        c.task = { kind: 'home', P: P, side: side }; c.wait = 0; return true;
+      }
+    }
+    return false;
+  }
+  function taskArrive(o, def, c, tk) {
+    if (tk.kind === 'home') {
+      if (AA.tank().deco.indexOf(tk.P) < 0) return false;
+      c.home = tk.P; o.flip = tk.side < 0; c.wait = AA.state.settings.night ? AA.rand(60, 120) : AA.rand(14, 34);
+      return true;
+    }
+    if (tk.kind === 'shell') {
+      if (AA.tank().deco.indexOf(tk.P) < 0) return false;
+      const sb = V.decoBox(tk.P); o.flip = sb.cx < o.x;
+      c.punchAt = V.time + 0.25; c.shellHit = { x: sb.cx, y: sb.by - sb.h * 0.5 };
+      c.wait = AA.rand(2.5, 4.5);
+      return true;
+    }
+    return false;
+  }
+  function mantisEyes(c, dt) {
+    if (!c.eyes) c.eyes = [{ a: 0.3, ta: 0.3, n: 0.4 }, { a: 2.2, ta: 2.2, n: 1.1 }];
+    for (let i = 0; i < 2; i++) {
+      const e = c.eyes[i]; e.n -= dt;
+      if (e.n <= 0) { e.n = AA.rand(0.4, 2.2); e.ta = AA.rand(-Math.PI, Math.PI); }
+      let d = e.ta - e.a; d = Math.atan2(Math.sin(d), Math.cos(d)); e.a += AA.clamp(d, -7 * dt, 7 * dt);
+    }
+  }
+  const MANTIS_EYES = [[0.685, 0.1, 0.044], [0.795, 0.078, 0.048]];      // Mitte (Anteil von Breite/Höhe) und Radius (Anteil der Breite) im Bild deco/mantis
+  function drawMantisEyes(ctx, b, c) {
+    for (let i = 0; i < 2; i++) {
+      const E = MANTIS_EYES[i], e = c.eyes[i], ex = -b.w / 2 + E[0] * b.w, ey = -b.h + E[1] * b.h, r = E[2] * b.w;
+      ctx.save(); ctx.beginPath(); ctx.arc(ex, ey, r * 0.9, 0, TAU); ctx.clip();
+      ctx.translate(ex, ey); ctx.rotate(e.a);
+      ctx.fillStyle = 'rgba(110,235,215,0.6)'; ctx.fillRect(-r, -r * 0.14, r * 2, r * 0.28);       // Mittelband
+      ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.beginPath(); ctx.arc(r * 0.46, 0, r * 0.2, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
   }
 
   /* ---------- Runde 8: wer im Becken welche Rolle hat (Schwarm-Anführer, Wirtsanemone der Clownfische, Putzerstationen, Pflanzen) ---------- */
@@ -1315,6 +1607,15 @@
     if (V.bubT <= 0) { V.bubT = AA.rand(0.5, 1.7); const z = Math.random(), bx = AA.rand(40, W - 40); V.addBubble(bx, AA.floorY(z, bx) - 6, AA.rand(1.5, 3.6)); }
     for (let i = 0; i < tank.deco.length; i++) {
       const o = tank.deco[i], def = AA.DECO_BY[o.type];
+      if (def.notes && !V.photoMode) {                 // Runde 20f: Konzertflügel – ab und zu steigen Noten auf
+        V.noteT[o.id] = (V.noteT[o.id] === undefined ? AA.rand(2, 8) : V.noteT[o.id]) - dt;
+        if (V.noteT[o.id] <= 0) { V.noteT[o.id] = AA.rand(5, 12); const b = V.decoBox(o); V.floatText(b.cx + AA.rand(-0.15, 0.25) * b.w, b.y + b.h * 0.3, AA.pick(['♪', '♫', '♬']), '#ffffff'); }
+      }
+      if (def.screen) {                                // Runde 20f: Handy – das Display leuchtet ab und zu auf
+        const sc = V.scr[o.id] || (V.scr[o.id] = { next: AA.rand(4, 14), on: 0 });
+        if (sc.on > 0) sc.on = Math.max(0, sc.on - dt);
+        else if ((sc.next -= dt) <= 0) { sc.next = AA.rand(16, 38); sc.on = 2.6; }
+      }
       if (!def.bubbles) continue;
       V.decoT[o.id] = (V.decoT[o.id] === undefined ? Math.random() * def.bubbles[2] : V.decoT[o.id]) - dt;
       if (V.decoT[o.id] <= 0) {
@@ -1612,6 +1913,7 @@
     else ctx.drawImage(im, -b.w / 2, -b.h, b.w, b.h);
     if (gl && img) drawGlobeSnow(ctx, def, b, gl);
     if (def.lights && img) drawLights(ctx, def, b, t);
+    if (def.screen && img) drawScreen(ctx, o, def, b);                                // Runde 20f: Handy-Display
     if (def.theme && img && V.trophyMark && !def.noMark) V.trophyMark(ctx, o, def, b);      // Runde 19: Pokal eines Themen-Sets – Set-Zeichen auf dem Kelch
     ctx.restore();
     // Sockel im Kies versenken: Runde 12 – Sand-Wellen nur auf dem Stück selbst (siehe buildFoot); sonst wie früher die Szene über den Rand
@@ -1633,6 +1935,18 @@
     if (o === V.selDeco && !V.photoMode) drawSel(ctx, o, b, t, lift);
   }
 
+  /* Runde 20f: Handy-Display leuchtet grün auf (def.screen = [x0, y0, x1, y1] im Bild, Anteile, von oben links) */
+  function drawScreen(ctx, o, def, b) {
+    const s = V.scr[o.id]; if (!s || !(s.on > 0)) return;
+    const k = Math.min(1, s.on / 0.3, (2.6 - s.on) / 0.15 + 0.001), r = def.screen;
+    const x0 = -b.w / 2 + r[0] * b.w, y0 = -b.h + r[1] * b.h, w = (r[2] - r[0]) * b.w, h = (r[3] - r[1]) * b.h;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.6 * k;
+    ctx.fillStyle = 'rgba(190,255,120,0.9)'; ctx.fillRect(x0, y0, w, h);
+    const g = ctx.createRadialGradient(x0 + w / 2, y0 + h / 2, 1, x0 + w / 2, y0 + h / 2, w);
+    g.addColorStop(0, 'rgba(200,255,140,0.75)'); g.addColorStop(1, 'rgba(120,230,60,0)');
+    ctx.fillStyle = g; ctx.fillRect(x0 - w * 0.5, y0 - h * 0.9, w * 2, h * 2.8);
+    ctx.restore();
+  }
   /* Runde 18: Schneekugel – Flocken (Lage im Einheitskreis) rieseln im Glas; ab und zu und beim Antippen (Auswählen) schüttelt sie sich, dann wirbeln sie hoch */
   function globeState(o, t) {
     let g = V.globe[o.id];
@@ -1734,8 +2048,33 @@
   }
   /* Runde 12: Ei in besserer Qualität – durchscheinende Gallerthülle mit Glanz, Dotter in der Artfarbe und ein Embryo, der mit dem
      Brutfortschritt wächst (erst ein Schatten, dann ein eingerolltes Fischchen mit Auge). Kurz vor dem Schlüpfen: Wackeln und Risse. */
+  /* Runde 20f: getragene Eier – rosa Eier-Traube unter dem Schwanz des Seedrachen, beim Pyjama-Kardinalbarsch „volle Backen“ */
+  function drawCarried(ctx, e, p, t) {
+    const f = p.car, s = f.size(), done = AA.clamp(1 - e.hatch / (e.total || 1), 0, 1);
+    ctx.save();
+    if (e.carry === 'mouth') {                        // volle Backen: eine runde Kehle unterm Maul (Farbe des Gesichts), ein paar Eier schauen heraus
+      const h = s * f.ar(), r = s * 0.085, pu = 1 + Math.sin(t * 2.4 + e.x * 0.1) * 0.05, cx = p.x - f.dir * r * 0.8, cy = p.y + h * 0.13;
+      const g = ctx.createRadialGradient(cx + f.dir * r * 0.25, cy - r * 0.35, r * 0.15, cx, cy, r * 1.05 * pu);
+      g.addColorStop(0, '#fff3a6'); g.addColorStop(0.65, '#f0cf3a'); g.addColorStop(1, '#d9a92a');
+      ctx.fillStyle = g; ctx.strokeStyle = 'rgba(60,40,20,0.75)'; ctx.lineWidth = Math.max(1, s * 0.012);
+      ctx.beginPath(); ctx.ellipse(cx, cy, r * 1.05 * pu, r * 0.8 * pu, f.dir * 0.25, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fffbe6'; ctx.strokeStyle = 'rgba(120,90,30,0.6)'; ctx.lineWidth = 0.8;
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(p.x + f.dir * r * (0.05 + i * 0.2), p.y + r * (0.2 + (i % 2) * 0.14), r * 0.16, 0, TAU); ctx.fill(); ctx.stroke(); }
+    } else {
+      const n = 11, r = Math.max(2.2, s * 0.022);
+      for (let i = 0; i < n; i++) {
+        const u = i / (n - 1), x = p.x + f.dir * (u - 0.5) * s * 0.2, y = p.y + Math.sin(u * Math.PI) * r * 1.1 + (i % 2) * r * 0.9 + Math.sin(t * 2 + i) * 0.4;
+        ctx.fillStyle = done > 0.75 ? '#ffb0a0' : '#ff9cb8'; ctx.strokeStyle = 'rgba(150,40,70,0.55)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); ctx.stroke();
+        if (done > 0.45) { ctx.fillStyle = '#3a2030'; ctx.beginPath(); ctx.arc(x + r * 0.25, y - r * 0.15, r * 0.28, 0, TAU); ctx.fill(); }   // Äuglein
+      }
+    }
+    ctx.restore();
+  }
   function drawEgg(ctx, e, t) {
-    const p = V.eggPos(e), r = p.r, soon = e.hatch < e.total * 0.04, done = AA.clamp(1 - e.hatch / (e.total || 1), 0, 1);
+    const p0 = e.carry ? V.eggPos(e) : null;
+    if (p0 && p0.car) { drawCarried(ctx, e, p0, t); return; }
+    const p = p0 || V.eggPos(e), r = p.r, soon = e.hatch < e.total * 0.04, done = AA.clamp(1 - e.hatch / (e.total || 1), 0, 1);
     const col = (AA.FISH_BY[e.sp] || {}).egg || '#ffd27a', held = e === V.dragEgg;
     if (e.v) eggGlow(ctx, e, p, r, t);
     ctx.fillStyle = 'rgba(40,30,50,' + (held ? 0.1 : 0.18) + ')';

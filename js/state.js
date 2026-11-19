@@ -99,6 +99,7 @@
   function fixTank(o, i) {
     o.deco = (o.deco || []).filter(function (d) { return AA.DECO_BY[d.type]; });
     o.deco.forEach(function (d) {                    // Größe: nur gültige Werte innerhalb der Spanne des Stücks behalten
+      if (AA.DECO_BY[d.type].text) d.flip = false;    // Runde 20f: Stücke mit Schrift (Schild, Rakija, OceanGape …) nie spiegeln
       if (d.s === undefined) return;
       const r = AA.decoRange(AA.DECO_BY[d.type]), v = +d.s;
       if (!r || !(v > 0) || !isFinite(v) || Math.abs(v - 1) < 0.005) delete d.s; else d.s = AA.clamp(Math.round(v * 100) / 100, r[0], r[1]);
@@ -257,7 +258,7 @@
       const o = JSON.parse(raw);
       if (!o || !Array.isArray(o.tanks) || !o.tanks.length) throw new Error('kein Becken im Spielstand');
       const gone = guest ? null : AA.dropGone(o);      // Runde 18: entfernte Deko zählen, bevor fixTank (Becken) und decorFix (Lager) sie still wegwerfen
-      o.tanks = o.tanks.slice(0, AA.MAX_TANKS + 3).map(fixTank);      // 8 Becken + Süßwasser-Sonderangebot + Meeresbecken + Tiefsee-Becken
+      o.tanks = o.tanks.slice(0, AA.MAX_TANKS + 1 + (AA.OCEAN.max || 1) + (AA.DEEP.max || 1)).map(fixTank);      // 8 Becken + Süßwasser-Sonderangebot + bis zu 3 Meeresbecken + 2 Tiefsee-Becken (Runde 20f)
       if ((o.v | 0) < 3) { o.news = { water: migrateWater(o) }; o.v = 3; }      // Umzug + einmaliger Hinweis auf das, was neu ist (zeigt die Oberfläche)
       const ds = defaultStats(); o.stats = o.stats || {};
       for (const k in ds) if (o.stats[k] === undefined) o.stats[k] = ds[k];
@@ -413,16 +414,18 @@
       AA.FOOD.forEach(function (f) { if (f.lvl === lvl) out.push(f.name); });
       for (let i = 0; i < AA.MAX_TANKS; i++) for (let z = 0; z < AA.SIZES.length; z++) {
         if (AA.tankReq(i, z).lvl !== lvl) continue;
-        const reg = s.tanks.filter(function (t) { return !t.bonus; });
+        const reg = s.tanks.filter(function (t) { return !t.bonus && !AA.wide(t); });      // Runde 20f: Meeres-/Tiefsee-Becken zählen nicht zur Leiter
         if (z === 0) { if (i >= reg.length) out.push(i === reg.length ? 'ein weiteres Aquarium' : 'Aquarium Nr. ' + (i + 1)); }
         else if (i < reg.length && reg[i].size < z) out.push('Ausbau auf ' + AA.SIZES[z].gal + ' Gallonen (' + reg[i].name + ')');
       }
       for (let z = 0; z < AA.SIZES.length; z++) {      // Sonderangebot Süßwasser-Becken
-        if (AA.FRESH_TANK.lvl[z] !== lvl) continue;
+        if (AA.tankReq(0, z, true).lvl !== lvl) continue;
         const bt = s.tanks.find(function (t) { return t.bonus; });
         if (z === 0) { if (!bt) out.push('Süßwasser-Becken 🌿'); }
         else if (bt && bt.size < z) out.push('Ausbau auf ' + AA.SIZES[z].gal + ' Gallonen (' + bt.name + ')');
       }
+      if (AA.oceanCount) AA.OCEAN.lvls.forEach(function (l, k) { if (l === lvl && AA.oceanCount() <= k) out.push((k ? (k + 1) + '. ' : '') + 'Meeresbecken 🦈'); });      // Runde 20f
+      if (AA.deepCount) AA.DEEP.lvls.forEach(function (l, k) { if (l === lvl && AA.deepCount() <= k) out.push((k ? (k + 1) + '. ' : '') + 'Tiefsee-Becken 🌌'); });
     }
     return out;
   };
@@ -445,8 +448,9 @@
       if (s.pearls < def.pearls) return 'pearls';
       AA.addPearls(-def.pearls);
     } else {
-      if (s.coins < def.price) return 'coins';
-      AA.addCoins(-def.price); s.stats.spentFish += def.price;
+      const pr = AA.priceOf ? AA.priceOf(def) : def.price;      // Runde 20f: Fisch des Tages −30 %
+      if (s.coins < pr) return 'coins';
+      AA.addCoins(-pr); s.stats.spentFish += pr;
     }
     const f = AA.makeFish(sp, name, sex);           // kommt als Baby und hat Hunger
     t.fish.push(f); s.stats.bought++; s.stats.spBought[sp] = 1;
@@ -819,7 +823,7 @@
     return n;
   };
   /* Runde 11: Grenzen je Becken – Krabbler 5 (Meeres- und Tiefsee-Becken 8), Deko wächst mit der Größe (nie unter den alten 30) */
-  AA.crawlMax = function (t) { return (t.ocean || t.deep) ? B.maxCrawlBig : B.maxCrawl; };
+  AA.crawlMax = function (t) { return (t.ocean || t.deep) ? B.maxCrawlBig : Math.max(B.maxCrawl, (B.crawlBySize || [])[t.size | 0] || 0); };
   AA.decoMax = function (t) { return t.ocean ? B.decoOcean : (t.deep ? B.decoDeep : Math.max(B.maxDeco, B.decoBySize[t.size | 0] || B.maxDeco)); };
   AA.decoRoom = function (t, def) { return def.crawl ? AA.decoCount(t, true) < AA.crawlMax(t) : AA.decoCount(t, false) < AA.decoMax(t); };
   /* Algenfresser unter den Krabblern: so stark bremsen sie zusammen das Veralgen (0…B.cleanMax) */
@@ -855,7 +859,7 @@
   AA.placeDeco = function (type, t) {
     t = t || AA.tank();
     if (!AA.DECO_BY[type] || !AA.decoFits(AA.DECO_BY[type], t) || !AA.decoRoom(t, AA.DECO_BY[type])) return null;
-    const p = freeSpot(t), o = { id: AA.uid(), type: type, x: p.x, z: p.z, flip: Math.random() < 0.5 };
+    const p = freeSpot(t), o = { id: AA.uid(), type: type, x: p.x, z: p.z, flip: !AA.DECO_BY[type].text && Math.random() < 0.5 };
     t.deco.push(o);
     if (t === AA.tank()) AA.decoClampX(o);           // nicht in die Seitenscheiben (Runde 10)
     AA.emit('decoAdded', o, t);

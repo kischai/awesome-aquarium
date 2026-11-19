@@ -5,7 +5,7 @@
   const $ = AA.$, esc = AA.esc, fmt = AA.fmt, UI = AA.ui;
   function coin() { return '<img class="ic" src="' + AA.assets.src('prop/coin') + '" alt="Münzen">'; }
   function pct(x) { return Math.round(x * 100); }
-  const big = function () { return AA.SIZES[AA.SIZES.length - 1].gal; };
+  const big = function () { return AA.SIZES[AA.BIG_SIZE].gal; };      // Runde 20f: ab 125 Gallonen (es gibt jetzt größere Stufen)
 
   /* Eigenheiten einer Art: [Kurztext, Erklärung] – dieselbe Liste für die Schildchen im Shop und die Marken auf der Fisch-Karte */
   function traits(f) {
@@ -19,7 +19,7 @@
     if (f.glow) a.push(['✨ Leuchtet', 'Leuchtet im Dunkeln: nachts und im Tiefsee-Becken.']);
     if (f.ocean) a.push(['🦈 Meeresbecken', 'Meeresriese: lebt nur im Meeresbecken.']);
     else if (f.deep === 1) a.push(['🌌 Tiefsee', 'Tiefsee-Tier: lebt nur im Tiefsee-Becken.']);
-    else if (f.big) a.push(['📐 Großes Becken', 'Braucht Platz: nur im größten Becken (' + big() + ' Gallonen) oder im Meeresbecken.']);
+    else if (f.big) a.push(['📐 Großes Becken', 'Braucht Platz: erst ab ' + big() + ' Gallonen oder im Meeresbecken.']);
     if (f.deep === 2) a.push(['🌌 Auch Tiefsee', 'Darf auch ins Tiefsee-Becken.']);
     return a;
   }
@@ -39,13 +39,13 @@
 
   /* ================= Shop → Aquarien: Tiefsee-Becken ================= */
   UI.wildTankCards = function () {
-    const st = AA.deepStatus(), D = AA.DEEP;
+    const st = AA.deepStatus(), D = AA.DEEP, nx = AA.deepNext(), dn = AA.deepCount(), num = dn ? 'Zweites ' : '';
     const only = AA.FISH.filter(function (f) { return f.deep === 1 && !f.hybrid; }), also = AA.FISH.filter(function (f) { return f.deep === 2 && !f.hybrid; });
-    return '<div class="card wide deepcard"><div class="pic emoji">🌌</div><div class="nm">Tiefsee-Becken <small class="tagline">stockdunkel – hier leuchten die Bewohner selbst</small></div>' +
+    return '<div class="card wide deepcard"><div class="pic emoji">🌌</div><div class="nm">' + num + 'Tiefsee-Becken <small class="tagline">stockdunkel – hier leuchten die Bewohner selbst' + (dn ? ' · du hast ' + dn + ' von ' + D.max : '') + '</small></div>' +
       '<div class="info">Ein riesiges, finsteres Meerwasser-Becken für ' + D.cap + ' Bewohner. Nur hier leben die ' + only.length + ' Tiefsee-Arten – vom Laternenfisch bis zum Quastenflosser. ' +
       'Mit hinein dürfen ' + also.map(function (f) { return esc(f.name); }).join(', ') + '. Alle anderen bleiben draußen: zu dunkel, zu kalt.</div>' +
-      (st === 'owned' ? '<button class="buy active" disabled>✓ Gekauft</button>' : (st === 'level' ? '<button class="buy locked" disabled>🔒 Ab Level ' + D.lvl + '</button>' :
-        '<button class="buy' + (st === 'coins' ? ' poor' : '') + '" data-act="buydeep"' + (st === 'coins' ? ' disabled' : '') + '>🌌 Tiefsee-Becken · ' + coin() + ' ' + fmt(D.price) + '</button>')) + '</div>';
+      (st === 'owned' ? '<button class="buy active" disabled>✓ Beide gekauft</button>' : (st === 'level' ? '<button class="buy locked" disabled>🔒 Ab Level ' + nx.lvl + '</button>' :
+        '<button class="buy' + (st === 'coins' ? ' poor' : '') + '" data-act="buydeep"' + (st === 'coins' ? ' disabled' : '') + '>🌌 ' + num + 'Tiefsee-Becken · ' + coin() + ' ' + fmt(nx.price) + '</button>')) + '</div>';
   };
 
   /* ================= Deko: Prestige ================= */

@@ -170,7 +170,7 @@
   UI.decoKey = function (k) {                          // Tasten im Deko-Modus: Q/E drehen, X spiegeln
     const o = V.selDeco; if (!o) return false;
     if (k === 'q' || k === 'e') { UI.decoAct(k === 'q' ? 'rotl' : 'rotr', o); return true; }
-    if (k === 'x' && !AA.DECO_BY[o.type].crawl) { o.flip = !o.flip; AA.audio.play('click'); AA.save(); return true; }
+    if (k === 'x' && !AA.DECO_BY[o.type].crawl && !AA.DECO_BY[o.type].text) { o.flip = !o.flip; AA.audio.play('click'); AA.save(); return true; }
     return false;
   };
 

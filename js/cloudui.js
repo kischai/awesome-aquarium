@@ -693,7 +693,7 @@
 
   /* ---------- Menü ☰ (Handy): alles, was in der schlanken Leiste keinen Platz hat. Die Kacheln drücken einfach die echten Knöpfe. ---------- */
   const MENU = [['btn-quests', '📋', 'Aufträge', '#quest-badge'], ['btn-book', '📖', 'Sammelbuch', '#book-badge'], ['btn-office', '🏢', 'Büro', '#office-badge'], ['btn-tanks', '🗂️', 'Alle Becken', '#tanks-badge'],
-    ['btn-medals', '🏅', 'Erfolge', '#medal-dot'], ['btn-gift', '🎁', 'Geschenk', '#gift-dot'], ['btn-hunt', '🧭', 'Schatzsuche', '#hunt-badge'], ['btn-photo', '📷', 'Foto', null],
+    ['btn-medals', '🏅', 'Erfolge', '#medal-dot'], ['btn-gift', '🎁', 'Geschenk', '#gift-dot'], ['btn-wheel', '🎡', 'Glücksrad', '#wheel-dot'], ['btn-hunt', '🧭', 'Schatzsuche', '#hunt-badge'], ['btn-photo', '📷', 'Foto', null],
     ['btn-login', '📅', 'Kalender', '#login-dot'], ['btn-rank', '🏆', 'Rangliste', null], ['btn-friends', '👥', 'Freunde', '#friends-badge'],
     ['btn-light', '🌙', 'Licht', null], ['btn-sound', '🔊', 'Ton', null], ['btn-settings', '⚙️', 'Einstellungen', null]];
   function mark(sel) {                                   // Punkt oder Zahl des echten Knopfs übernehmen

@@ -32,7 +32,8 @@
     trainTries: 3,
     feederKeep: 0.75,            // der Futterautomat hält die Fische mindestens so satt
     maxDeco: 36,                 // Deko-Teile pro Becken (Grundwert) – Runde 11: wächst mit der Größe, nie darunter (AA.decoMax)
-    decoBySize: [36, 42, 48, 54], decoOcean: 72, decoDeep: 60,      // Runde 14: je Größe +20 % (vorher 30/35/40/45, Meer 60, Tiefsee 50)
+    decoBySize: [36, 42, 48, 54, 60, 66], decoOcean: 72, decoDeep: 60,      // Runde 14: je Größe +20 % (vorher 30/35/40/45, Meer 60, Tiefsee 50); Runde 20f: 150/175 Gal. 60/66
+    crawlBySize: [5, 5, 5, 5, 6, 7],   // Runde 20f: Krabbler je Größe (150 Gal. 6, 175 Gal. 7)
     maxCrawl: 5, maxCrawlBig: 8, // Krabbler pro Becken; Meeres- und Tiefsee-Becken 8 (Runde 11, vorher 10 überall)
     cleanMax: 0.6                // so stark können sie das Veralgen höchstens bremsen
   };
@@ -55,7 +56,7 @@
       if (def.ocean && !t.ocean) return 'ocean';
       if (def.deep === 1 && !t.deep) return 'deep';
       if (t.deep && !def.deep) return 'nodeep';
-      if (def.big && !t.ocean && t.size < AA.SIZES.length - 1) return 'big';
+      if (def.big && !t.ocean && t.size < AA.BIG_SIZE) return 'big';
     }
     else if (def.deep === 1 && !t.deep) return 'deep';                // Tiefsee-Krabbler (Runde 10): nur ins Tiefsee-Becken
     const w = AA.waterOf(def);
@@ -64,7 +65,7 @@
   AA.livesIn = function (def, t) { return !AA.whyNot(def, t); };
   AA.wide = function (t) { return !!(t.ocean || t.deep); };      // Meeres- und Tiefsee-Becken: füllen den ganzen Bildschirm, feste Größe
   AA.tankIco = function (t) { return t.ocean ? '🦈' : (t.deep ? '🌌' : AA.WATER[t.water].ico); };
-  AA.FRESH_TANK = { price: [150, 200, 300, 400], lvl: [4, 6, 9, 12] };
+  AA.FRESH_TANK = { price: [150, 200, 300, 400], lvl: [4, 6, 9, 12] };      // die Stufen 150/175 Gallonen rechnet AA.tankReq (Runde 20f)
 
   /* ---------- Fische ----------
      lvl/price/sell/hours stammen aus der Arten-Tabelle des Vorbilds – bei Arten, die es dort nicht gibt, aus der jeweils freien Stufe
@@ -365,7 +366,7 @@
        spines = stellt beim Klopfen die Stacheln auf · yawn = gähnt ab und zu */
     { id: 'flamegoby', name: 'Flammen-Garnelengrundel', lvl: 14, price: 64, sell: 74, hours: 24, len: 74, speed: 30, egg: '#ff5a1a', hab: 'bottom', hop: true,
       info: 'Klein, rot getupft und mit einer riesigen Rückenflosse wie eine Fahne. Hüpft ruckartig über den Boden – ein Flummi mit Flosse.' },
-    { id: 'pyjama', name: 'Pyjama-Kardinalbarsch', lvl: 16, price: 72, sell: 83, hours: 26, len: 78, speed: 20, egg: '#e8d820', school: true,
+    { id: 'pyjama', name: 'Pyjama-Kardinalbarsch', carry: 'mouth', lvl: 16, price: 72, sell: 83, hours: 26, len: 78, speed: 20, egg: '#e8d820', school: true,
       info: 'Gelbes Gesicht, rote Augen, hinten getupft wie ein Schlafanzug. Schwebt fast reglos im Grüppchen – und die Väter brüten die Eier im Maul aus.' },
     { id: 'moonjelly', name: 'Mondqualle', lvl: 18, price: 84, sell: 97, hours: 28, len: 96, speed: 18, egg: '#c8a8f0', hab: 'open', jelly: true,
       info: 'Der Klassiker unter den Quallen: vier Ringe im Schirm, ein Saum aus feinen Fäden. Pulsiert gemütlich und ist völlig harmlos.' },
@@ -401,13 +402,13 @@
       info: 'Ein Raubfisch aus der Seine mit großen Glasaugen. Nachts leuchten sie im Licht – damit sieht er auch im Trüben alles.' },
     { id: 'titan', name: 'Titan-Drückerfisch', lvl: 31, price: 290, sell: 330, hours: 48, len: 140, speed: 46, egg: '#9a9a2a', biter: true,
       info: 'Der Rambo des Riffs. Alle paar Minuten schießt er auf deinen Mauszeiger zu und beißt rein – Autsch! (Abschaltbar in ⚙️.) Manchmal lässt er Schmerzensgeld fallen.' },
-    { id: 'yellowangler', name: 'Gelber Anglerfisch', lvl: 33, price: 430, sell: 486, hours: 36, len: 116, speed: 14, egg: '#ffd21f', hab: 'bottom', still: true, front: true, yawn: true,
+    { id: 'yellowangler', name: 'Gelber Anglerfisch', lure: true, lvl: 33, price: 430, sell: 486, hours: 36, len: 116, speed: 14, egg: '#ffd21f', hab: 'bottom', still: true, front: true, yawn: true,
       info: 'Warzig, knallgelb und tiefenentspannt: chillt nur am Boden und wedelt mit seiner rosa Angel. Fällt Futter in die Nähe – schnapp! Schneller, als man gucken kann.' },
     { id: 'boxjelly', name: 'Würfelqualle', lvl: 36, price: 730, sell: 820, hours: 32, len: 66, speed: 36, egg: '#a8d8ff', hab: 'open', jelly: true, venom: true, alpha: 0.78,
       info: 'Die Seewespe: eckiger, fast unsichtbarer Schirm. Als einzige Qualle kann sie richtig steuern – sie hat sogar Augen. Die anderen Fische halten lieber Abstand.' },
     { id: 'irukandji', name: 'Irukandji-Qualle', lvl: 40, price: 1520, sell: 1715, hours: 50, len: 30, speed: 16, egg: '#ffc8e0', hab: 'open', jelly: true, venom: true, alpha: 0.55, find: true,
       info: 'Nicht größer als ein Fingernagel und fast unsichtbar. Ins Sammelbuch kommt sie erst, wenn du sie im Becken gefunden und angetippt hast!' },
-    { id: 'seadragon', name: 'Seedrache (Fetzenfisch)', lvl: 42, price: 1950, sell: 2195, hours: 72, len: 150, speed: 14, egg: '#e8c43a', sway: true,
+    { id: 'seadragon', name: 'Seedrache (Fetzenfisch)', carry: 'tail', lvl: 42, price: 1950, sell: 2195, hours: 72, len: 150, speed: 14, egg: '#e8c43a', sway: true,
       info: 'Blatt-Lappen wie Tang am ganzen Körper: Er schwebt im Zeitlupentempo und wiegt sich wie eine Pflanze. Bei ihm tragen die Väter die Eier am Schwanz.' },
     { id: 'combjelly', name: 'Rippenqualle', lvl: 44, price: 2350, sell: 2645, hours: 72, len: 80, speed: 18, egg: '#d8c8ff', hab: 'open', jelly: true, rainbow: true, glow: '#c8b8ff', deep: 2,
       info: 'Gar keine echte Qualle: Über ihre acht Wimpernkämme laufen Regenbogen-Lichtwellen. Sie nesselt nicht – gucken lohnt sich trotzdem.' },
@@ -589,7 +590,7 @@
        glow = leuchtet im Dunkeln [x, Höhe (Anteile), Farbe, Radius als Vielfaches der Breite]. ----- */
     { id: 'boot', name: 'Alter Stiefel', cat: 'prop', lvl: 3, price: 18, w: 104, sink: 6, info: 'Hat mal einem Angler gehört. Jetzt wohnt Seegras drin.' },
     { id: 'gnome', name: 'Tauch-Zwerg', cat: 'prop', lvl: 4, price: 26, w: 84, sink: 6, info: 'Gartenzwerg mit Schnorchel. Winkt jedem Fisch.' },
-    { id: 'sign', name: 'Angeln-verboten-Schild', cat: 'prop', lvl: 6, price: 30, w: 96, sink: 7, info: 'Die Fische haben es selbst aufgestellt.' },
+    { id: 'sign', name: 'Angeln-verboten-Schild', cat: 'prop', text: true, lvl: 6, price: 30, w: 96, sink: 7, info: 'Die Fische haben es selbst aufgestellt.' },
     { id: 'lantern', name: 'Schiffslaterne', cat: 'prop', lvl: 12, price: 60, w: 80, sink: 6, glow: [0.5, 0.42, '#ffc060', 1.5], info: 'Brennt auch unter Wasser – nachts und in der Tiefsee leuchtet sie warm.' },
     { id: 'skull', name: 'Piraten-Schädel', cat: 'prop', lvl: 16, price: 85, w: 128, sink: 7, info: 'Grinst mit Goldzahn. Garantiert harmlos.' },
     { id: 'treasure', name: 'Königsschatz', cat: 'prop', lvl: 30, price: 4000, w: 196, sink: 8, prestige: true, info: 'Ein Berg aus Gold mit Krone obendrauf.' },
@@ -670,8 +671,29 @@
        octo = Kraken-Rig (Mantel atmet, Arme wellen sich, Ringe pulsieren und blitzen beim Klopfen) ----- */
     { id: 'cone', name: 'Kegelschnecke', cat: 'critter', lvl: 20, price: 100, w: 78, sink: 2, crawl: ['snail', 4], venom: true, harpoon: true,
       info: 'Ein Schneckenhaus wie ein Kunstwerk – und ein Rüssel mit Giftharpune. Kriecht gemütlich herum und schießt ab und zu die Harpune raus.' },
-    { id: 'escargot', name: 'Escargot', cat: 'critter', lvl: 10, price: 90, w: 96, sink: 2, crawl: ['snail', 5],
-      info: 'Eine Weinbergschnecke im Mini-Taucherhelm – so traut sie sich auch unter Wasser. Kriecht gemütlich herum und schaut durch ihr Bullauge.' },
+    { id: 'escargot', name: 'Escargot', cat: 'critter', lvl: 10, price: 90, w: 96, sink: 2, crawl: ['snail', 5], water: 'both',      // Runde 20f: auch ins Süßwasser (Paris – Seine)
+      info: 'Eine Weinbergschnecke im Mini-Taucherhelm – so traut sie sich auch unter Wasser, im Meer wie in der Seine. Kriecht gemütlich herum und schaut durch ihr Bullauge.' },
+    // Runde 20f: Krabbler-Paket – große runde Augen, kein Mund. Neue Gangarten: stilt (Stelzen), dancer (Spanische Tänzerin), clam (Riesenmuschel), skip (Schlammspringer)
+    { id: 'seacucumber', name: 'Seegurke', cat: 'critter', lvl: 9, price: 55, w: 120, sink: 2, crawl: ['snail', 2.6], crown: 0.8, job: 'food', eats: true,
+      info: 'Der Staubsauger des Riffs: kriecht im Schneckentempo und fächelt mit ihrer gelben Tentakelkrone nach Futterresten.' },
+    { id: 'tigershrimp', name: 'Blaue Tigergarnele', cat: 'critter', lvl: 11, price: 70, w: 80, sink: 2, crawl: ['walk', 15], job: 'algae', clean: 0.06, eats: true, water: 'fresh',
+      info: 'Kobaltblau mit schwarzen Tigerstreifen – und nebenbei putzt sie die Algen weg.' },
+    { id: 'mudskipper', name: 'Schlammspringer', cat: 'critter', lvl: 13, price: 75, w: 100, sink: 2, crawl: ['skip', 12], water: 'both',
+      info: 'Ein Fisch, der lieber hüpft als schwimmt: springt auf Steine und Deko – und ab und zu mit einem Satz über die Wasserlinie.' },
+    { id: 'decorator', name: 'Dekorateurkrabbe', cat: 'critter', lvl: 15, price: 90, w: 110, sink: 2, crawl: ['crab', 14], job: 'food', eats: true,
+      info: 'Tarnt sich mit allem, was sie findet: Schwamm, Tang, Anemone und ein Schneckenhaus auf dem Rücken.' },
+    { id: 'arrowcrab', name: 'Pfeilkrabbe', cat: 'critter', lvl: 17, price: 95, w: 110, sink: 2, crawl: ['stilt', 11], job: 'food', eats: true,
+      info: 'Eine Spinne auf Stelzen mit einem Kopf wie eine Pfeilspitze. Frisst Borstenwürmer und andere Plagegeister.' },
+    { id: 'pistolgoby', name: 'Pistolenkrebs & Wächtergrundel', cat: 'critter', lvl: 19, price: 120, w: 130, sink: 2, crawl: ['walk', 6], pistol: true,
+      info: 'Ein unzertrennliches Paar: Der Krebs gräbt, die Grundel hält Wache. Ab und zu knallt der Krebs mit der Schere – so laut, dass Bläschen aufsteigen und die Fische zusammenzucken.' },
+    { id: 'horseshoe', name: 'Pfeilschwanzkrebs', cat: 'critter', lvl: 21, price: 130, w: 120, sink: 2, crawl: ['walk', 7], job: 'food', eats: true,
+      info: 'Ein lebendes Fossil: seit 450 Millionen Jahren fast unverändert – älter als die Dinosaurier. Und er hat blaues Blut.' },
+    { id: 'spanishdancer', name: 'Spanische Tänzerin', cat: 'critter', lvl: 24, price: 160, w: 120, sink: 2, crawl: ['dancer', 7],
+      info: 'Eine Nacktschnecke im roten Flamenco-Rock. Gleitet wellend über den Boden – und ab und zu tanzt sie frei durchs Wasser.' },
+    { id: 'giantclam', name: 'Riesenmuschel', cat: 'critter', lvl: 28, price: 240, w: 140, sink: 2, crawl: ['clam', 0], sym: true, job: 'algae', clean: 0.05,
+      info: 'Bewegt sich keinen Millimeter und filtert dafür das Wasser – ihr Mantel schimmert in allen Blautönen. Antippen: Sie klappt zu.' },
+    { id: 'spidercrab', name: 'Japanische Riesenkrabbe', cat: 'critter', lvl: 33, price: 210, w: 190, sink: 2, crawl: ['stilt', 8], job: 'food', eats: true,
+      info: 'Die größte Krabbe der Welt – bis fast vier Meter Beinspannweite. Stakst ganz langsam auf ihren Stelzen über den Boden.' },
     { id: 'mantis', name: 'Fangschreckenkrebs', cat: 'critter', lvl: 34, price: 150, w: 106, sink: 2, crawl: ['walk', 13], punch: true,
       info: 'Pfauenbunt, mit Augen, die sich unabhängig drehen – und dem schnellsten Schlag im Tierreich. Klopf bloß nicht ans Glas: Er schlägt zurück!' },
     { id: 'bluering', name: 'Blauring-Krake', cat: 'critter', lvl: 38, price: 180, w: 110, sink: 2, crawl: ['octo', 6], sym: true, venom: true,
@@ -751,14 +773,14 @@
     { id: 'kelpforest', name: 'Kelpwald', cat: 'plant', lvl: 24, price: 160, w: 140, sink: 5, home: 'salt', sway: 0.05, size: [0.5, 1.4], info: 'Drei Riesentang-Stämme mit unzähligen Blättern – ein Stück Kelpwald für dein Meeresbecken.' },
     { id: 'pinna', name: 'Steckmuschel', cat: 'prop', lvl: 9, price: 60, w: 110, sink: 9, info: 'Die größte Muschel des Mittelmeers steckt mit der Spitze im Sand. In der Adria streng geschützt – hier darf sie stehen.' },
     // Runde 20d: Paris – Wahrzeichen und Straßen-Deko (Eiffelturm funkelt nachts zu jeder vollen Stunde, Laterne und Métro leuchten nachts)
-    { id: 'frenchsign', name: 'Schild „Beware of the French!“', cat: 'prop', lvl: 5, price: 150, w: 130, sink: 6,
-      info: '„Frogs and snails, beware of the French!“ – Frösche und Schnecken, Vorsicht vor den Franzosen!' },
+    { id: 'frenchsign', name: 'Schild „Beware of the French!“', cat: 'prop', text: true, lvl: 5, price: 150, w: 130, sink: 6,
+      info: '„Frogs and snails, beware of the French!“ – Frösche und Schnecken, Vorsicht vor den Franzosen! Auf Französisch: « Grenouilles et escargots : attention aux Français ! »' },
     { id: 'petanque', name: 'Pétanque-Kugeln', cat: 'prop', lvl: 6, price: 120, w: 100, sink: 4, info: 'Drei Kugeln und das Schweinchen. Wer liegt am nächsten dran?' },
     { id: 'montmartre', name: 'Laterne vom Montmartre', cat: 'prop', lvl: 8, price: 220, w: 58, sink: 5, size: [0.6, 1.8], glow: [0.5, 0.86, '#ffd27a', 1.7],
       info: 'Eine alte Gaslaterne vom Künstlerhügel. Nachts leuchtet sie warm.' },
     { id: 'cafe', name: 'Café-Tisch', cat: 'prop', lvl: 10, price: 300, w: 160, sink: 5, info: 'Croissant und Espresso – bitte nicht vom Seeteufel klauen lassen.' },
     { id: 'frogbaguette', name: 'Frosch mit Baguette', cat: 'prop', lvl: 11, price: 420, w: 106, sink: 5, wobble: true, info: 'Eine Froschstatue mit Baguette. Sie wackelt – vor Freude über das frische Brot.' },
-    { id: 'morris', name: 'Litfaßsäule', cat: 'prop', lvl: 12, price: 380, w: 74, sink: 5, size: [0.6, 1.8], info: 'Mit Plakaten fürs Kabarett. Welche Vorstellung schauen wir uns an?' },
+    { id: 'morris', name: 'Litfaßsäule', cat: 'prop', text: true, lvl: 12, price: 380, w: 74, sink: 5, size: [0.6, 1.8], info: 'Mit Plakaten fürs Kabarett. Welche Vorstellung schauen wir uns an?' },
     { id: 'metro', name: 'Métro-Eingang', cat: 'prop', lvl: 14, price: 520, w: 140, sink: 5, size: [0.6, 1.8], hide: [0, 0.3],
       glows: [[0.12, 0.92, '#ffb347', 0.5], [0.88, 0.92, '#ffb347', 0.5]], info: 'Jugendstil-Bogen mit zwei Laternen. Nachts gehen sie an – nächster Zug nach Pigalle.' },
     { id: 'winebarrel', name: 'Bordeaux-Fass', cat: 'prop', lvl: 16, price: 650, w: 170, sink: 7, hide: [0.2, 0.42], info: 'Ein Fass mit Flasche – die Fische verstecken sich gern darin.' },
@@ -767,8 +789,31 @@
     { id: 'arc', name: 'Triumphbogen', cat: 'prop', lvl: 22, price: 1500, w: 200, sink: 8, size: [0.5, 2.0], hide: [0, 0.3], info: 'Mitten auf dem Kreisverkehr – durch den Bogen passt jeder Fisch.' },
     { id: 'eiffel', name: 'Eiffelturm', cat: 'prop', lvl: 24, price: 1800, w: 150, sink: 6, size: [0.5, 2.2], sparkle: true, glow: [0.5, 0.42, '#ffcf6a', 0.95],
       info: 'Nachts goldgelb beleuchtet – und zu jeder vollen Stunde glitzert er fünf Minuten lang, wie das Original.' },
-    { id: 'monalisa', name: 'Mona Lisa', cat: 'prop', lvl: 26, price: 2000, w: 104, sink: 5, size: [0.6, 2.0], info: 'Im Goldrahmen auf der Staffelei. Ihr Lächeln folgt dir durchs ganze Becken.' },
+    { id: 'monalisa', name: 'Mona Lisa', cat: 'prop', text: true, lvl: 26, price: 2000, w: 104, sink: 5, size: [0.6, 2.0], info: 'Im Goldrahmen auf der Staffelei. Ihr Lächeln folgt dir durchs ganze Becken.' },
     { id: 'notredame', name: 'Notre-Dame', cat: 'prop', lvl: 28, price: 2400, w: 180, sink: 7, size: [0.5, 2.0], info: 'Die Kathedrale mit der großen Rosette – frisch renoviert und jetzt unter Wasser.' },
+    // Runde 20f: verrückte Gegenstände im Wasser (OceanGape mit Titan-Heck, Rakija-Blasen, Handy-Display, Flügel mit Noten)
+    { id: 'cart', name: 'Einkaufswagen', cat: 'prop', lvl: 8, price: 160, w: 160, sink: 5, hide: [0, 0.35], info: 'Irgendwer hat ihn nicht zurückgebracht. Der Euro steckt bestimmt noch drin.' },
+    { id: 'bicycle', name: 'Fahrrad mit Körbchen', cat: 'prop', lvl: 10, price: 220, w: 200, sink: 5, info: 'Da ist wohl jemand mit dem Rad in den See gefahren. Das Körbchen ist jetzt ein Fischbett.' },
+    { id: 'rakija', name: 'Rakija-Flasche', cat: 'prop', text: true, lvl: 12, price: 250, w: 70, sink: 5, size: [0.6, 2.0], bubbles: [0.5, 0.96, 1.5],
+      info: 'Hausgemachter Šljivovica mit Pflaumen auf dem Etikett. Aus dem Korken steigen ständig Bläschen – Živjeli!' },
+    { id: 'brickphone', name: 'Unkaputtbares Handy', cat: 'prop', text: true, lvl: 14, price: 300, w: 70, sink: 5, size: [0.6, 2.0], screen: [0.2, 0.245, 0.8, 0.425],
+      info: 'Der Knochen aus den 2000ern: übersteht alles, sogar das Aquarium. Ab und zu leuchtet das Display auf – Snake läuft noch.' },
+    { id: 'fridge', name: 'Retro-Kühlschrank', cat: 'prop', lvl: 16, price: 420, w: 120, sink: 6, hide: [0.05, 0.42], info: 'Mintgrün, Tür offen. Drinnen ist es angenehm kühl – ein beliebtes Versteck.' },
+    { id: 'yugo', name: 'Versunkener Yugo', cat: 'prop', lvl: 18, price: 600, w: 220, sink: 7, size: [0.5, 1.8], hide: [0, 0.32], info: 'Der Kult-Kleinwagen vom Balkan. Fährt nicht mehr – dafür wohnen jetzt Fische drin.' },
+    { id: 'sofa', name: 'Samt-Sofa', cat: 'prop', lvl: 20, price: 650, w: 210, sink: 6, size: [0.5, 1.8], info: 'Rotes Samtsofa mit Muschel-Kissen und Goldrahmen – die perfekte Couch für eine Unterwasser-Siesta.' },
+    { id: 'phonebox', name: 'Rote Telefonzelle', cat: 'prop', lvl: 22, price: 700, w: 110, sink: 6, size: [0.5, 1.8], glows: [[0.5, 0.94, '#ffe9a8', 0.4], [0.5, 0.55, '#fff2c8', 0.75]],
+      info: 'Very British. Nachts brennt drinnen noch Licht – angerufen hat aber schon lange keiner mehr.' },
+    { id: 'plane', name: 'Flugzeugwrack', cat: 'prop', lvl: 26, price: 950, w: 270, sink: 8, size: [0.5, 1.6], hide: [0.05, 0.22], info: 'Eine alte Propellermaschine, sanft notgewassert. Unter den Tragflächen verstecken sich gern kleine Fische.' },
+    { id: 'piano', name: 'Konzertflügel', cat: 'prop', lvl: 30, price: 1100, w: 200, sink: 7, size: [0.5, 1.6], notes: true, info: 'Spielt nur noch Wassermusik: Ab und zu steigen ein paar Noten auf.' },
+    { id: 'oceangape', name: 'OceanGape', cat: 'prop', text: true, lvl: 32, price: 1200, w: 230, sink: 6, size: [0.5, 1.6], bubbles: [0.03, 0.41, 1.8],
+      info: 'Ein Tauchboot mit Gamecontroller-Steuerung, weißem Heckkonus und vier Propellern. Fährt nirgendwo mehr hin – dafür wohnen jetzt Seepocken drauf.' },
+    { id: 'capsule', name: 'Raumkapsel', cat: 'prop', lvl: 36, price: 1500, w: 170, sink: 6, size: [0.5, 1.8], glow: [0.5, 0.4, '#bfe8ff', 0.55],
+      info: 'Eine Landekapsel wie aus der Apollo-Zeit – sie hat „Wasserlandung“ etwas zu wörtlich genommen. Nachts leuchtet das Bullauge.' },
+    // Runde 20f: Höhlen und Moos (cave = Höhle für Höhlenbrüter, siehe 20e)
+    { id: 'coconut', name: 'Kokosnuss-Höhle', cat: 'rock', lvl: 4, price: 45, w: 130, sink: 5, hide: [0, 0.3], cave: true, info: 'Der Klassiker: eine halbe Kokosnuss mit Eingang. Höhlenbrüter lieben sie.' },
+    { id: 'claycave', name: 'Ton-Laichhöhle', cat: 'rock', lvl: 6, price: 60, w: 170, sink: 5, hide: [0.2, 0.32], cave: true, info: 'Eine Tonröhre und ein kleiner Tonbogen – Höhlen zum Verstecken und Laichen für Buntbarsche und Welse.' },
+    { id: 'mosstree', name: 'Moosbaum', cat: 'plant', lvl: 12, price: 140, w: 150, sink: 5, home: 'fresh', sway: 0.015, size: [0.5, 1.8], info: 'Ein Bonsai aus Wurzelholz mit Javamoos-Krone – ein kleiner Baum unter Wasser.' },
+    { id: 'mosswall', name: 'Mooswand', cat: 'plant', lvl: 14, price: 180, w: 200, sink: 5, home: 'fresh', size: [0.5, 1.8], info: 'Javamoos auf einem Holzgitter: eine dichte grüne Wand für den Hintergrund.' },
     { id: 'trophy_bronze', name: 'Bronzepokal', cat: 'prop', lvl: 1, price: 0, w: 86, sink: 4, trophy: 3, info: 'Platz 3 in der Wochen-Rangliste. Gibt es nicht zu kaufen – nur zu gewinnen.' },
     { id: 'trophy_silver', name: 'Silberpokal', cat: 'prop', lvl: 1, price: 0, w: 90, sink: 4, trophy: 2, info: 'Platz 2 in der Wochen-Rangliste. Gibt es nicht zu kaufen – nur zu gewinnen.' },
     { id: 'trophy_gold', name: 'Goldpokal', cat: 'prop', lvl: 1, price: 0, w: 96, sink: 4, trophy: 1, info: 'Platz 1 in der Wochen-Rangliste! Gibt es nicht zu kaufen – nur zu gewinnen.' },
@@ -897,7 +942,15 @@
     { id: 'powder', name: 'Pulverschnee', lvl: 1 },
     { id: 'winterwood', name: 'Winterwald-Boden', lvl: 3 },
     /* Runde 20d: Paris */
-    { id: 'cobble', name: 'Kopfsteinpflaster (Paris)', lvl: 12 }
+    { id: 'cobble', name: 'Kopfsteinpflaster (Paris)', lvl: 12 },
+    /* Runde 20f: sieben Böden */
+    { id: 'footprints', name: 'Sand mit Taucher-Fußspuren', lvl: 5 },
+    { id: 'ripplesand', name: 'Wüstensand mit Rippeln', lvl: 7 },
+    { id: 'autumnleaves', name: 'Herbstlaub', lvl: 9 },
+    { id: 'seagrasslawn', name: 'Seegras-Rasen', lvl: 11 },
+    { id: 'pinksand', name: 'Rosa Strand (Bahamas)', lvl: 14 },
+    { id: 'travertine', name: 'Kalksinter-Terrassen (Plitvice)', lvl: 18 },
+    { id: 'stardust', name: 'Sternenstaub', lvl: 24 }
   ];
   /* ---------- Boden-Formen (Runde 7): 10 Anordnungen, gratis, jederzeit wechselbar. f(u) = Höhe 0…1 an der Stelle u (0 = links, 1 = rechts);
      an der höchsten Stelle liegt der Boden AA.LIFT_MAX Pixel höher. Deko, Eier, Krabbler und Futter folgen der Form von allein. ---------- */
@@ -971,6 +1024,16 @@
     /* Runde 12: Adria-Biotop und fünf „lebende Kulissen“ (live: im Hintergrund ziehen Silhouetten vorbei – js/tankview.js drawLive) */
     { id: 'krka', name: 'Krka-Wasserfälle', pearls: 8, img: 'bg/krka', home: 'fresh', special: true, cols: ['#6deead', '#2cddca', '#63dccf', '#09bbb8'], far: '#8ad1a3', ray: '255,255,235' },
     { id: 'paris', name: 'Paris – Seine bei Nacht', pearls: 8, img: 'bg/paris', home: 'fresh', special: true, cols: ['#3e7061', '#126675', '#085967', '#32655b'], far: '#0f5c6c', ray: '255,226,150' },      // Runde 20d
+    /* Runde 20f: neun Kulissen */
+    { id: 'plitvice', name: 'Plitvicer Seen', pearls: 8, img: 'bg/plitvice', home: 'fresh', cols: ['#3d8d6e', '#178c81', '#25947c', '#29936b'], far: '#259784', ray: '255,255,235' },
+    { id: 'autumnpond', name: 'Herbst-Teich', pearls: 6, img: 'bg/autumnpond', home: 'fresh', cols: ['#8c7a19', '#4d6725', '#2e6030', '#4d692b'], far: '#36612d', ray: '255,236,170' },
+    { id: 'nile', name: 'Nil mit Pyramiden', pearls: 8, img: 'bg/nile', home: 'fresh', cols: ['#807f24', '#788331', '#547136', '#4e6529'], far: '#627937', ray: '255,240,180' },
+    { id: 'caribbean', name: 'Karibik-Sandbank', pearls: 7, img: 'bg/caribbean', home: 'salt', cols: ['#71c7da', '#29aba2', '#039ead', '#39aa90'], far: '#0aa1ac', ray: '255,255,235' },
+    { id: 'maldives', name: 'Malediven-Hausriff', pearls: 8, img: 'bg/maldives', home: 'salt', cols: ['#3dafb6', '#2c9db8', '#5881a0', '#6ea7ab'], far: '#4091a6', ray: '255,255,235' },
+    { id: 'bluehole', name: 'Dean’s Blue Hole', pearls: 9, img: 'bg/bluehole', home: 'salt', special: true, cols: ['#39887b', '#05788f', '#014268', '#0b4b67'], far: '#015476', ray: '255,255,235' },
+    { id: 'sunsetreef', name: 'Sonnenuntergang überm Riff', pearls: 9, img: 'bg/sunsetreef', home: 'salt', special: true, cols: ['#f07b45', '#4d886f', '#10708c', '#49707a'], far: '#147889', ray: '255,214,160' },
+    { id: 'biolum', name: 'Biolumineszenz-Bucht', pearls: 9, img: 'bg/biolum', home: 'salt', special: true, cols: ['#045988', '#012e54', '#013058', '#023457'], far: '#012d54', ray: '170,220,255' },
+    { id: 'space', name: 'Weltraum-Aquarium', pearls: 10, img: 'bg/space', special: true, cols: ['#395664', '#323f95', '#232e87', '#164f68'], far: '#3a388e', ray: '200,210,255' },
     { id: 'adria', name: 'Adria-Felsküste', pearls: 8, img: 'bg/adria', home: 'salt', special: true, cols: ['#1ac9fd', '#09aef9', '#22bceb', '#55a170'], far: '#68b0c7', ray: '255,255,235' },
     { id: 'whale', name: 'Offener Ozean', pearls: 10, img: 'bg/whale', home: 'salt', live: 'whale', cols: ['#2ae8fd', '#0bbef6', '#059fed', '#0293e6'], far: '#079cec', ray: '230,245,255' },
     { id: 'shoal', name: 'Riffkante', pearls: 10, img: 'bg/shoal', home: 'salt', live: 'shoal', cols: ['#17ecfd', '#03b5fb', '#0186f2', '#0879e9'], far: '#4487d6', ray: '255,255,235' },
@@ -981,11 +1044,18 @@
   AA.WALL_BY = {};
   AA.WALLS.forEach(function (w) { AA.WALL_BY[w.id] = w; });
 
-  /* ---------- Aquarien: 50/75/100/125 Gallonen = 10/20/30/40 Bewohner, höchstens 8 Becken ---------- */
-  AA.SIZES = [{ gal: 50, cap: 10 }, { gal: 75, cap: 20 }, { gal: 100, cap: 30 }, { gal: 125, cap: 40 }];
+  /* ---------- Aquarien: 50/75/100/125/150/175 Gallonen = 10/20/30/40/50/60 Bewohner, höchstens 8 Becken ----------
+     Runde 20f (Damian, 19.11.2026): zwei Ausbaustufen mehr – 150 und 175 Gallonen, bis 60 Fische; Fische und Deko werden dabei kleiner (AA.ZOOM).
+     AA.BIG_SIZE: ab dieser Stufe (125 Gallonen) dürfen Bodenhaie & Co. (big an der Art) einziehen – bleibt bei 3, auch mit den neuen Stufen. */
+  AA.SIZES = [{ gal: 50, cap: 10 }, { gal: 75, cap: 20 }, { gal: 100, cap: 30 }, { gal: 125, cap: 40 }, { gal: 150, cap: 50 }, { gal: 175, cap: 60 }];
+  AA.BIG_SIZE = 3;
   AA.MAX_TANKS = 8;                                   // dazu kommt das Sonderangebot Süßwasser-Becken (bonus) – also höchstens 9
   /* Preis und Mindest-Level für Becken idx (0 = erstes; das Bonus-Becken zählt nicht mit) in Größe size (0 = 50 Gallonen) */
   AA.tankReq = function (idx, size, bonus) {
+    if (size >= 4) {                                    // Runde 20f: die großen Stufen – ab Level 20 (150 Gal.) bzw. 26 (175 Gal.), spätere Becken wie gehabt später
+      const k = size - 4;
+      return { price: [1500, 3000][k] + [250, 500][k] * (bonus ? 0 : idx), lvl: Math.max([20, 26][k] + (bonus ? 2 : 0), bonus ? 0 : 7 * idx + 2 * size) };
+    }
     if (bonus) return { price: AA.FRESH_TANK.price[size], lvl: AA.FRESH_TANK.lvl[size] };
     if (idx === 0) return { price: [0, 100, 150, 200][size], lvl: [1, 3, 5, 6][size] };
     return { price: [300, 400, 500, 600][size], lvl: 7 * idx + 2 * size };
@@ -1143,12 +1213,15 @@
   /* ================= Runde 6: Zuchtbetrieb, Teil 2 ================= */
   /* Maßstab je Ausbaustufe (50 / 75 / 100 / 125 Gallonen): Fische, Deko und Eier werden um 1/√k größer gezeichnet – je größer das Becken,
      desto kleiner wirkt alles darin (siehe V.setZoom). Bis 13.11.2026 stand ein kleines Becken auf k verkleinert in einem Raum. */
-  AA.ZOOM = [0.66, 0.78, 0.89, 1];
+  AA.ZOOM = [0.66, 0.78, 0.89, 1, 1.16, 1.32];      // Runde 20f: 150 Gal. × 0,93 · 175 Gal. × 0,87 (Meeresbecken 0,78)
   /* Meeresbecken: ein einziges, riesiges Meerwasser-Becken. Level 40 = kurz bevor der Adlerrochen (41) freigeschaltet wird.
      Meeresriesen (ocean: true an der Art) lassen sich nur dort kaufen oder hineinsetzen; wer schon in einem normalen Becken lebt, darf bleiben. */
   AA.OCEAN = { lvl: 40, price: 15000, cap: 50, name: 'Meeresbecken' };
+  /* Runde 20f (Damian, 19.11.2026): bis zu 3 Meeresbecken und 2 Tiefsee-Becken – jedes weitere später und teurer */
+  AA.OCEAN.max = 3; AA.OCEAN.lvls = [40, 44, 48]; AA.OCEAN.prices = [15000, 22000, 30000];
   /* Tiefsee-Becken (Runde 9): ein einziges, stockdunkles Meerwasser-Becken. Nur Tiefsee-Tiere (deep an der Art) dürfen hinein – dort leuchten sie selbst. */
   AA.DEEP = { lvl: 36, price: 9000, cap: 40, name: 'Tiefsee-Becken', wall: 'abyss', floor: 'lavasand' };
+  AA.DEEP.max = 2; AA.DEEP.lvls = [36, 42]; AA.DEEP.prices = [9000, 15000];
   /* Zuchtstation: ein Becken bekommt eine Aufgabe (einmal kaufen, bleibt; pro Becken eine). */
   AA.ROLES = {
     brut: { name: 'Brutbecken', ico: '🥚', lvl: 8, price: 400, hatch: 2, info: 'Eier in diesem Becken schlüpfen doppelt so schnell.' },
@@ -1203,6 +1276,15 @@
       fish: ['scorpionfish', 'weever', 'bream', 'medmoray', 'garfish', 'dorade', 'seahorse', 'sepia', 'squid', 'jellyfish', 'seal'] }
   ];
   /* Runde 20b: die neuen Arten in ihren Biotopen (zählen damit auch in den Regionen der Themen-Sets) */
+  /* Runde 20f: neue Kulissen, Böden und Deko in passenden Biotopen */
+  [['reef', ['maldives', 'caribbean', 'sunsetreef', 'bluehole'], ['pinksand', 'seagrasslawn', 'footprints']], ['krka', ['plitvice'], ['travertine']], ['river', ['autumnpond', 'plitvice'], ['autumnleaves']],
+   ['adria', ['sunsetreef'], ['seagrasslawn', 'footprints']], ['amazon', [], ['autumnleaves']]].forEach(function (x) {
+    const b = AA.BIOTOPES.find(function (q) { return q.id === x[0]; }); if (!b) return;
+    x[1].forEach(function (id) { if (b.walls.indexOf(id) < 0) b.walls.push(id); }); x[2].forEach(function (id) { if (b.floors.indexOf(id) < 0) b.floors.push(id); });
+  });
+  [['japan', ['mosstree', 'mosswall']], ['amazon', ['coconut', 'claycave', 'mosstree']], ['river', ['claycave']], ['krka', ['mosstree']]].forEach(function (x) {
+    const b = AA.BIOTOPES.find(function (q) { return q.id === x[0]; }); if (b) x[1].forEach(function (id) { if (b.deco.indexOf(id) < 0) b.deco.push(id); });
+  });
   [['reef', ['flamegoby', 'pyjama', 'rabbitfish', 'cowfish', 'titan', 'yellowangler', 'snake_laticauda', 'snake_belcher', 'snake_dubois', 'snake_platurus']], ['adria', ['moonjelly', 'compass', 'gurnard', 'sardine', 'seabass', 'redmullet', 'redgurnard']], ['amazon', ['ghostknife']], ['river', ['zander']]].forEach(function (x) {
     const b = AA.BIOTOPES.find(function (q) { return q.id === x[0]; }); x[1].forEach(function (id) { if (b.fish.indexOf(id) < 0) b.fish.push(id); });
   });
@@ -1272,7 +1354,7 @@
       list: ['sardine', 'seabass', 'redmullet', 'dorade', 'redgurnard', 'zander', 'johndory', 'monkfish', 'frenchfrog', 'escargot', 'sole', 'turbot'] },
     { id: 'snakes', kind: 'coll', name: 'Seeschlangen', ico: '🐍', title: 'Schlangenbeschwörer', list: ['snake_laticauda', 'snake_belcher', 'snake_dubois', 'snake_platurus'] },      // Runde 20c
     { id: 'jellies', kind: 'coll', name: 'Quallen-Ballett', ico: '🎐', title: 'Quallen-Dirigent', fx: 'jellyglow', list: ['moonjelly', 'compass', 'jellyfish', 'boxjelly', 'irukandji', 'combjelly', 'manowar', 'lionsmane'] },
-    { id: 'fossil', kind: 'coll', name: 'Lebende Fossilien', ico: '🦴', title: 'Zeitreisender', fx: 'ammonite', list: ['sturgeon', 'arowana', 'beluga', 'arapaima', 'chimaera', 'frilledshark', 'coelacanth'] },
+    { id: 'fossil', kind: 'coll', name: 'Lebende Fossilien', ico: '🦴', title: 'Zeitreisender', fx: 'ammonite', list: ['sturgeon', 'arowana', 'beluga', 'arapaima', 'chimaera', 'frilledshark', 'coelacanth', 'horseshoe'] },
     { id: 'sharks', kind: 'coll', name: 'Haie und Rochen', ico: '🦈', title: 'Hai-Flüsterer', fx: 'shark',
       list: ['reticulatus', 'bambooshark', 'epaulette', 'leopoldi', 'ray', 'hornshark', 'catshark', 'sawfish', 'shark', 'hammerhead', 'thresher', 'tigershark', 'manta', 'greatwhite', 'frilledshark', 'whaleshark'] },
     { id: 'squids', kind: 'coll', name: 'Tintenfische und Kraken', ico: '🦑', title: 'Tinten-Künstler', fx: 'ink', list: ['sepia', 'squid', 'prachtsepia', 'bluesquid', 'galaxysquid', 'saphirsepia', 'dumbo'] },
@@ -1282,10 +1364,10 @@
       list: ['beluga', 'tuna', 'napoleon', 'goliath', 'swordfish', 'arapaima', 'mola', 'manta', 'turtle', 'greatwhite', 'whaleshark', 'oarfish'] },
     { id: 'menu', kind: 'coll', name: 'Die Speisekarte', ico: '🍽️', title: 'Feinschmecker – nur gucken!', list: ['carp', 'trout', 'bream', 'dorade', 'salmon', 'aal', 'johndory', 'monkfish', 'tuna', 'swordfish'] },
     { id: 'winter', kind: 'coll', season: 'xmas', name: 'Winterwunderland', ico: '❄️', title: 'Schneeflöckchen', fx: 'snow', list: ['snowman', 'reindeer', 'xmashorse', 'halofish', 'polarbear', 'candyeel'] },
-    { id: 'snails', kind: 'crawl', name: 'Schnecken', ico: '🐌', title: 'Schneckentempo', list: ['seaslug', 'ramshorn', 'turbosnail', 'nerite', 'applesnail'] },
-    { id: 'stars', kind: 'crawl', name: 'Seesterne und Seeigel', ico: '⭐', title: 'Sternensammler', list: ['starfish', 'urchin', 'starfish_red', 'starfish_blue', 'brittlestar', 'urchin_diadem', 'urchin_pink', 'starfish_orange', 'urchin_pencil'] },
-    { id: 'shrimps', kind: 'crawl', name: 'Garnelen', ico: '🦐', title: 'Garnelen-Guru', list: ['cherryshrimp', 'amano', 'cleanershrimp', 'shrimp', 'bandedshrimp', 'harlequin', 'fireshrimp'] },
-    { id: 'crabs', kind: 'crawl', name: 'Krebse und Krabben', ico: '🦀', title: 'Scherenprofi', list: ['crab', 'fiddler', 'panthercrab', 'hermit', 'crayfish_blue', 'pompomcrab', 'hummer', 'lobster'] },
+    { id: 'snails', kind: 'crawl', name: 'Schnecken und Muscheln', ico: '🐌', title: 'Schneckentempo', list: ['seaslug', 'ramshorn', 'turbosnail', 'nerite', 'applesnail', 'spanishdancer', 'giantclam'] },
+    { id: 'stars', kind: 'crawl', name: 'Seesterne, Seeigel und Seegurken', ico: '⭐', title: 'Sternensammler', list: ['starfish', 'urchin', 'starfish_red', 'starfish_blue', 'brittlestar', 'urchin_diadem', 'urchin_pink', 'starfish_orange', 'urchin_pencil', 'seacucumber'] },
+    { id: 'shrimps', kind: 'crawl', name: 'Garnelen', ico: '🦐', title: 'Garnelen-Guru', list: ['cherryshrimp', 'amano', 'cleanershrimp', 'shrimp', 'bandedshrimp', 'harlequin', 'fireshrimp', 'tigershrimp', 'pistolgoby'] },
+    { id: 'crabs', kind: 'crawl', name: 'Krebse und Krabben', ico: '🦀', title: 'Scherenprofi', list: ['crab', 'fiddler', 'panthercrab', 'hermit', 'crayfish_blue', 'pompomcrab', 'hummer', 'lobster', 'decorator', 'arrowcrab', 'spidercrab'] },
     { id: 'flats', kind: 'crawl', name: 'Platt am Boden', ico: '🥞', title: 'Bodenständig', list: ['scholle', 'sole', 'turbot', 'torpedo'] },
     { id: 'deepcrawl', kind: 'crawl', name: 'Tiefsee-Krabbler', ico: '🦞', title: 'Yeti-Freund', list: ['isopod', 'seapig', 'yeticrab'] },
     { id: 'm_special', kind: 'master', titleId: 'special' }, { id: 'm_schools', kind: 'master', titleId: 'schools' }, { id: 'm_hybrid', kind: 'master', titleId: 'hybrid' },
@@ -1325,8 +1407,8 @@
   })();
   /* Optik: Textur-Maßstab je Beckengröße (Kies und Kulisse werden mit wachsendem Becken feiner, damit sie zur Größe passen),
      Tiefe der Seitenscheiben in Pixeln. Das Meeresbecken ist extra weit: alles darin ist kleiner gezeichnet (OCEAN_SPR). */
-  AA.TEX = [1.08, 0.93, 0.82, 0.72]; AA.TEX_OCEAN = 0.5; AA.OCEAN_SPR = 0.78;
-  AA.DEPTH = [26, 38, 52, 66]; AA.DEPTH_OCEAN = 104;
+  AA.TEX = [1.08, 0.93, 0.82, 0.72, 0.65, 0.58]; AA.TEX_OCEAN = 0.5; AA.OCEAN_SPR = 0.78;
+  AA.DEPTH = [26, 38, 52, 66, 78, 90]; AA.DEPTH_OCEAN = 104;
   AA.OCEAN.cap = 70;
 
   /* ================= Runde 9 ================= */

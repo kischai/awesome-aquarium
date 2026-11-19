@@ -412,6 +412,10 @@
   /* Runde 12: Becken-Hilfe und Geschenke (supabase/migrations/20261112130000_help_gifts.sql) */
   C.helpFriend = function (user, kind) { return rpc('help_friend', { p_user: user, p_kind: kind }).then(function (r) { C.loadCounts(); return r; }); };
   C.myHelps = function () { return rpc('my_helps', {}, 10000).then(function (l) { return Array.isArray(l) ? l : []; }); };
+  /* Runde 20f: Herz für Becken – eins am Tag (insgesamt), Wochen-Wertung, neue Herzen für mich */
+  C.giveHeart = function (user, tank, name) { return rpc('give_heart', { p_user: user, p_tank: tank | 0, p_name: String(name || '').slice(0, 30) }); };
+  C.heartWeek = function () { return rpc('heart_week', {}, 8000).then(function (r) { C.hearts = r && Array.isArray(r.list) ? r : null; C.heartsAt = Date.now(); return C.hearts; }); };
+  C.myHearts = function () { return rpc('my_hearts', {}, 10000).then(function (l) { return Array.isArray(l) ? l : []; }); };
   C.todayDone = function () { return rpc('today_done', {}, 8000).then(function (r) { C.done = r || { helped: [], gifted: [] }; C.doneDay = new Date().toISOString().slice(0, 10); return C.done; }); };
   C.sendGift = function (user, kind, item, amount) { return rpc('send_gift', { p_user: user, p_kind: kind, p_item: item || null, p_amount: amount || 1 }).then(function (r) { C.loadCounts(); return r; }); };
   C.myGifts = function () { return rpc('my_gifts', {}, 10000).then(function (l) { return Array.isArray(l) ? l : []; }); };

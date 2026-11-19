@@ -19,11 +19,11 @@
     const c = o.contracts && typeof o.contracts === 'object' ? o.contracts : {};
     const okC = function (x) { return x && AA.FISH_BY[x.sp] && x.n > 0 && x.pay > 0 && x.weeks > 0; };
     o.contracts = { day: typeof c.day === 'number' ? c.day : -1, offers: (Array.isArray(c.offers) ? c.offers : []).filter(okC), act: (Array.isArray(c.act) ? c.act : []).filter(okC) };
-    let ocean = false, deep = false;
+    let ocean = 0, deep = 0;
     o.tanks.forEach(function (t) {
       if (t.role && !AA.ROLES[t.role]) delete t.role;
-      if (t.ocean && t.water === 'salt' && !ocean) { ocean = true; t.ocean = true; t.size = AA.SIZES.length - 1; delete t.role; delete t.deep; } else delete t.ocean;
-      if (t.deep && t.water === 'salt' && !deep && !t.ocean) { deep = true; t.deep = true; t.size = AA.SIZES.length - 1; delete t.role; } else delete t.deep;      // Tiefsee-Becken (Runde 9): höchstens eins
+      if (t.ocean && t.water === 'salt' && ocean < AA.OCEAN.max) { ocean++; t.ocean = true; t.size = AA.SIZES.length - 1; delete t.role; delete t.deep; } else delete t.ocean;
+      if (t.deep && t.water === 'salt' && deep < AA.DEEP.max && !t.ocean) { deep++; t.deep = true; t.size = AA.SIZES.length - 1; delete t.role; } else delete t.deep;      // Tiefsee-Becken (Runde 9; Runde 20f: bis zu zwei)
       t.fish.forEach(function (f) {
         if (f.sp !== 'salmon') { delete f.sea; delete f.msea; }
         if (!AA.FISH_BY[f.sp].caviar) delete f.cav;
@@ -99,13 +99,18 @@
 
   /* ---------- Meeresbecken ---------- */
   AA.hasOcean = function () { return S().tanks.some(function (t) { return t.ocean; }); };
-  AA.oceanStatus = function () { const s = S(); return AA.hasOcean() ? 'owned' : (s.level < AA.OCEAN.lvl ? 'level' : (s.coins < AA.OCEAN.price ? 'coins' : 'ok')); };
+  AA.oceanCount = function () { return S().tanks.filter(function (t) { return t.ocean; }).length; };
+  /* Runde 20f: das nächste Meeresbecken (n = schon gekauft) – Preis und Level steigen; null, wenn alle drei da sind */
+  AA.oceanNext = function () { const n = AA.oceanCount(), O = AA.OCEAN; return n >= O.max ? null : { n: n, lvl: O.lvls[n], price: O.prices[n] }; };
+  AA.oceanStatus = function () { const s = S(), nx = AA.oceanNext(); return !nx ? 'owned' : (s.level < nx.lvl ? 'level' : (s.coins < nx.price ? 'coins' : 'ok')); };
+  /* freier Name für ein Sonder-Becken: „Meeresbecken“, dann „Meeresbecken 2“, „Meeresbecken 3“ … (umbenannte zählen nicht mit) */
+  AA.wideName = function (base) { const used = {}; S().tanks.forEach(function (t) { used[t.name] = 1; }); if (!used[base]) return base; let k = 2; while (used[base + ' ' + k]) k++; return base + ' ' + k; };
   AA.buyOcean = function () {
-    const s = S(), st = AA.oceanStatus();
+    const s = S(), st = AA.oceanStatus(), nx = AA.oceanNext();
     if (st !== 'ok') return st;
-    AA.addCoins(-AA.OCEAN.price);
+    AA.addCoins(-nx.price);
     const t = AA.newTank(s.tanks.length, 'salt');
-    t.ocean = true; t.size = AA.SIZES.length - 1; t.name = AA.OCEAN.name;
+    t.ocean = true; t.size = AA.SIZES.length - 1; t.name = AA.wideName(AA.OCEAN.name);
     s.tanks.push(t); s.active = s.tanks.length - 1;
     AA.emit('tankChanged');
     return true;
