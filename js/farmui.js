@@ -95,7 +95,8 @@
         '<div class="o-prog"><div class="bar q"><i style="width:' + Math.round(x.got / x.n * 100) + '%"></i><span>' + x.got + ' / ' + x.n + ' diese Woche</span></div>' +
         '<span class="o-due' + (hot ? ' hot' : '') + '" data-due="' + x.due + '">⏳ ' + dur(real(left)) + '</span></div></div>' +
         '<div class="q-act"><div class="o-pay">je <b>' + fmt(x.pay) + '</b> ' + coin() + '</div>' +
-        (open <= 0 ? '<button class="btn" disabled>✓ Woche erfüllt</button>' : (cand.length ? '<button class="btn green" data-act="cdel" data-id="' + x.id + '">📦 Liefern (' + Math.min(cand.length, open) + ')</button>' : '<button class="btn" disabled>Kein passender Fisch</button>')) +
+        (open <= 0 ? '<button class="btn" disabled>✓ Woche erfüllt</button>' : (function () { const all = AA.contractCandidates(x, true).length, kept = all - cand.length;      // Auswahl statt Automatik (js/fishlist.js)
+          return all ? '<button class="btn green" data-act="cdel" data-id="' + x.id + '">📦 Auswählen (' + all + (all === 1 ? ' passt' : ' passen') + (kept ? ', ' + kept + ' 🔒' : '') + ')</button>' : '<button class="btn" disabled>Kein passender Fisch</button>'; })()) +
         (open > 0 ? '<small class="o-fine">fehlt etwas: −' + fmt(Math.round(x.pay * K.penalty)) + ' je Fisch</small>' : '') + '</div></div>';
     }).join('');
     const offers = c.offers.map(function (x) {

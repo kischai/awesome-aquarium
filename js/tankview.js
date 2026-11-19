@@ -2099,6 +2099,7 @@
     if (AA.themeFx) AA.themeFx.glow(ctx, tank, t);     // Runde 19: Becken-Effekt, Leuchten (auch nachts hell)
     if (AA.lightFx) AA.lightFx(ctx, tank, t);          // Runde 12: Licht-Studio (js/extras.js)
     drawRips(ctx);
+    if (AA.drawLabels) AA.drawLabels(ctx);             // Schilder über den Fischen (Taste O, js/fishlist.js)
     ctx.drawImage(glassLayer(tank), 0, 0, W, H);      // Scheibe – bei Schmutz mit Trübung und Algen in einem Rutsch (Runde 14)
     if (V.cracks.length) drawCracks(ctx);              // Runde 20b: Glas-Riss (Fangschreckenkrebs)
     if (V.biteFx) drawBite(ctx);                       // Runde 20b: Bissspur (Titan-Drückerfisch)

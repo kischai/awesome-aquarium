@@ -217,10 +217,10 @@
     return o;
   };
   AA.contractFits = function (c, f) { return f.sp === c.sp && f.adult && !f.sick; };
-  AA.contractCandidates = function (c) {               // wie bei Kundenaufträgen: die mit den schwächsten Genen zuerst, Farbvarianten zuletzt
+  AA.contractCandidates = function (c, all) {          // wie bei Kundenaufträgen: die mit den schwächsten Genen zuerst, Farbvarianten zuletzt; all: auch geschützte
     const out = [];
     S().tanks.forEach(function (t, ti) { t.fish.forEach(function (f) {
-      if (!AA.contractFits(c, f) || AA.matingOf(t, f.id)) return;
+      if (!AA.contractFits(c, f) || AA.matingOf(t, f.id) || (!all && AA.isKept && AA.isKept(f))) return;
       out.push({ f: f, t: ti, rank: (f.v ? 100 : 0) + (f.msea ? 50 : 0) + AA.geneSum(f) + f.tricks.length * 3 });
     }); });
     return out.sort(function (a, b) { return a.rank - b.rank; });
@@ -231,6 +231,7 @@
     if (c.got >= c.n) return 'done';
     if (!f) { const k = AA.contractCandidates(c)[0]; if (!k) return 'nofish'; f = k.f; }
     if (!AA.contractFits(c, f)) return 'nofit';
+    if (f.keep) return 'locked';                         // 🔒 geschützt – erst freigeben
     const t = s.tanks.find(function (x) { return x.fish.indexOf(f) >= 0; }); if (!t) return 'unknown';
     AA.unmate(t, f);
     t.fish.splice(t.fish.indexOf(f), 1);

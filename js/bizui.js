@@ -39,7 +39,8 @@
         '<div class="o-prog"><div class="bar q"><i style="width:' + Math.round(o.got / o.n * 100) + '%"></i><span>' + o.got + ' / ' + o.n + ' geliefert</span></div>' +
         '<span class="o-due' + (hot ? ' hot' : '') + '" data-due="' + o.due + '">⏳ ' + dur(real(left)) + '</span></div></div>' +
         '<div class="q-act"><div class="o-pay">je <b>' + fmt(o.pay) + '</b> ' + coin() + '</div>' +
-        (cand.length ? '<button class="btn green" data-act="odeliver" data-id="' + o.id + '">📦 Liefern' + (cand.length > 1 ? ' (' + cand.length + ' passen)' : '') + '</button>' : '<button class="btn" disabled>Kein passender Fisch</button>') +
+        (function () { const all = AA.orderCandidates(o, true).length, kept = all - cand.length;      // Auswahl statt Automatik (js/fishlist.js)
+          return all ? '<button class="btn green" data-act="odeliver" data-id="' + o.id + '">📦 Auswählen' + ' (' + all + (all === 1 ? ' passt' : ' passen') + (kept ? ', ' + kept + ' 🔒' : '') + ')</button>' : '<button class="btn" disabled>Kein passender Fisch</button>'; })() +
         '<button class="lnk" data-act="odecline" data-id="' + o.id + '">Ablehnen (−' + AA.ORDERS.declineRep + ' Ruf)</button></div></div>';
     }).join('');
     const wait = s.orders.length < AA.ORDERS.max && s.orderNext - s.clock < 7 * 86400 ? '<div class="q-bonus">🔔 Nächster Kunde in <b data-due="' + s.orderNext + '">' + dur(real(Math.max(0, s.orderNext - s.clock))) + '</b></div>' : '';

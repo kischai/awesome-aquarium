@@ -149,10 +149,10 @@
     return f.sp === o.sp && f.adult && !f.sick && AA.classRank(AA.fishClass(f).id) >= AA.classRank(o.cls) && (!o.v || f.v === o.v);
   };
   /* passende Fische für einen Auftrag (alle Becken): billigste zuerst – deine Besten behältst du */
-  AA.orderCandidates = function (o) {
+  AA.orderCandidates = function (o, all) {           // all: auch geschützte (🔒, js/fishlist.js) – für die Auswahl im Büro
     const out = [];
     S().tanks.forEach(function (t, ti) { t.fish.forEach(function (f) {
-      if (!AA.orderFits(o, f) || AA.matingOf(t, f.id)) return;
+      if (!AA.orderFits(o, f) || AA.matingOf(t, f.id) || (!all && AA.isKept && AA.isKept(f))) return;
       out.push({ f: f, t: ti, rank: (f.v && !o.v ? 100 : 0) + AA.geneSum(f) });
     }); });
     return out.sort(function (a, b) { return a.rank - b.rank; });
@@ -167,6 +167,7 @@
     if (!o) return 'unknown';
     if (!f) { const c = AA.orderCandidates(o)[0]; if (!c) return 'nofish'; f = c.f; }
     if (!AA.orderFits(o, f)) return 'nofit';
+    if (f.keep) return 'locked';                         // 🔒 geschützt – erst freigeben
     const t = s.tanks.find(function (x) { return x.fish.indexOf(f) >= 0; }); if (!t) return 'unknown';
     AA.unmate(t, f);
     t.fish.splice(t.fish.indexOf(f), 1);

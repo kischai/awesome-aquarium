@@ -53,7 +53,8 @@
     if (UI.metaRefresh) UI.metaRefresh();              // Marken an „Aufträge“ und „Buch“ (js/metaui.js)
     if (UI.bizRefresh) UI.bizRefresh();
     if (UI.farmRefresh) UI.farmRefresh();
-    if (UI.ecoRefresh) UI.ecoRefresh();                // Marke am „Büro“ (js/bizui.js)
+    if (UI.ecoRefresh) UI.ecoRefresh();
+    if (UI.flistRefresh) UI.flistRefresh();             // Schutz für neue besondere Fische, Fisch-Übersicht auffrischen (js/fishlist.js)                // Marke am „Büro“ (js/bizui.js)
     if (UI.lifeRefresh) UI.lifeRefresh();              // Futter-Leiste, Titel, Schwarm-Meldungen (js/lifeui.js)
     UI.fitTop();
   };
@@ -79,7 +80,7 @@
   };
   const warn = { hunger: 0, dirt: 0, sick: 0, food: 0 };
   UI.tick = function () {
-    UI.refresh(); UI.updateCard();
+    UI.refresh(); UI.updateCard(); if (UI.flistCard) UI.flistCard();
     if (AA.visit) return;                             // zu Besuch: keine Mahnungen (Hunger, Algen) – ist ja nicht dein Becken
     const t = AA.tank(), s = AA.state, now = Date.now();
     $('#btn-store').classList.toggle('pulse', AA.count(t) === 0 && !UI.modalKind);
@@ -590,7 +591,7 @@
   function fishCardHtml(f) {
     const d = f.d, multi = AA.state.tanks.length > 1;
     return '<button class="x" data-act="desel" title="Schließen">✕</button>' +
-      '<div class="c-top"><div class="c-pic"><img id="c-img" alt=""></div><div class="c-id"><div class="c-name"><span id="c-name">' + esc(d.name) + '</span><span class="sex ' + d.sex + '">' + (d.sex === 'm' ? '♂' : '♀') + '</span><button class="mini" data-act="rename" title="Umbenennen">✏️</button></div><div class="c-sub" id="c-sub"></div><div id="c-var"></div><div id="c-gen"></div></div></div><div id="c-life"></div>' +
+      '<div class="c-top"><div class="c-pic"><img id="c-img" alt=""></div><div class="c-id"><div class="c-name"><span id="c-name">' + esc(d.name) + '</span><span class="sex ' + d.sex + '">' + (d.sex === 'm' ? '♂' : '♀') + '</span><button class="mini" data-act="rename" title="Umbenennen">✏️</button><button class="mini lock" data-act="keep" id="c-keep" title="Behalten: vor Verkauf und Lieferung schützen">🔓</button></div><div class="c-sub" id="c-sub"></div><div id="c-var"></div><div id="c-gen"></div></div></div><div id="c-life"></div>' +
       '<div class="bar grow"><i id="c-grow"></i><span id="c-growtext"></span></div>' +
       '<div class="bar hunger"><i id="c-hunger"></i><span id="c-hungertext"></span></div>' +
       '<div class="c-row"><span id="c-tricks"></span><span id="c-val"></span></div>' +
@@ -751,15 +752,13 @@
     if (AA.visit && act !== 'desel') return;          // zu Besuch: Karten sind nur zum Ansehen
     if (act === 'desel') { V.select(null); V.selectDeco(null); }
     else if (act === 'rename') startRename();
+    else if (act === 'keep' && f) { AA.setKeep(f.d, !f.d.keep); AA.save(); UI.flistCard(); UI.toast(f.d.keep ? '🔒 <b>' + esc(f.d.name) + '</b> ist geschützt – kein Verkauf, keine Lieferung.' : '🔓 <b>' + esc(f.d.name) + '</b> ist freigegeben.'); }
+    else if (act === 'sell' && f && f.d.keep) UI.toast('🔒 <b>' + esc(f.d.name) + '</b> ist geschützt – erst das Schloss oben auf der Karte öffnen.', 'warn');
     else if (act === 'sell' && f) {
       UI.pending = { kind: 'sell', obj: f.d };
       UI.open('confirm', head('Verkaufen?') + '<div class="confirm"><p><b>' + esc(f.d.name) + '</b> für <b>' + fmt(AA.fishValue(f.d)) + ' Münzen</b> verkaufen?' + (f.d.adult ? '' : ' Erwachsen wäre ' + (f.d.sex === 'm' ? 'er' : 'sie') + ' ' + fmt(f.def.sell) + ' wert.') + '</p>' +
-        (function () {                                 // Hinweise vor dem Verkauf: lieber an einen Kunden? Zuchttier?
-          const o = AA.bestOrderFor(f.d), cl = AA.fishClass(f.d).id, notes = [];
-          if (o && o.pay > AA.fishValue(f.d)) notes.push('📦 <b>' + esc(o.name) + '</b> zahlt ' + fmt(o.pay) + ' Münzen – liefern statt verkaufen (Knopf auf der Karte oder im Büro)?');
-          if (cl === 'S' || cl === 'A') notes.push('🧬 <b>Klasse ' + cl + '</b> – ein Zuchttier: Babys erben die Gene. Behalten lohnt sich oft mehr.');
-          if (f.d.v) notes.push('✨ <b>Farbvariante ' + esc(AA.VAR_BY[f.d.v].name) + '</b> (' + AA.VAR_BY[f.d.v].rare + '): vererbt ihre Farbe an ' + Math.round(AA.VAR.inherit1 * 100) + ' % der Eier.');
-          if (f.d.gift) notes.push('🎁 Ein Geschenk von <b>' + esc(f.d.gift) + '</b>.');
+        (function () {                                 // Hinweise vor dem Verkauf: Kunde zahlt mehr, Variante, Hybrid, Klasse, Tricks, letztes ♂/♀, Balz, Geschenk (js/fishlist.js)
+          const notes = AA.sellWarnings(f.d);
           return notes.length ? '<div class="note warn">' + notes.join('<br>') + '</div>' : '';
         })() +
         '<div class="row end"><button class="btn grey" data-act="close">Behalten</button><button class="btn green" data-act="sellyes">Verkaufen</button></div></div>', 'small');
@@ -807,6 +806,7 @@
     if (UI.r12Click && UI.r12Click(act, id, b)) return;           // Runde 12: Licht-Studio, Geschenke, Pokale (js/extrasui.js)
     if (UI.themeClick && UI.themeClick(act, id, b)) return;       // Runde 19: Themen-Sets (js/themesui.js)
     if (UI.xmasClick && UI.xmasClick(act, id, b)) return;         // Runde 19: Adventskalender (js/xmas.js)
+    if (UI.flistClick && UI.flistClick(act, id, b)) return;       // Fisch-Übersicht, Schutz, Liefern mit Auswahl (js/fishlist.js)
     if (UI.lifeClick && UI.lifeClick(act, id, b)) return;         // Kreuzen, Titel, Vorlagen, Alle füttern, Klang (js/lifeui.js)
     if (UI.extraClick && UI.extraClick(act, id, b)) return;       // Aufträge, Wochenkarte, Sammelbuch, Glitzer-Eier (js/metaui.js)
     if (UI.ecoClick && UI.ecoClick(act, id, b)) return;           // Boden-Form, Übersicht, Räuber-Schalter (js/ecoui.js)

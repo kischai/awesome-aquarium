@@ -457,7 +457,7 @@
   };
   AA.sellFish = function (f) {
     const s = AA.state, t = AA.tank(), i = t.fish.indexOf(f);
-    if (i < 0) return 0;
+    if (i < 0 || f.keep) return 0;                     // 🔒 geschützt (js/fishlist.js) – erst freigeben
     unmate(t, f);
     const v = AA.fishValue(f);
     t.fish.splice(i, 1);

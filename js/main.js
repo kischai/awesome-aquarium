@@ -236,6 +236,7 @@
     else if (k === 's') UI.openStore(); else if (k === 'e') UI.openMedals(); else if (k === 'g') UI.gift(); else if (k === 't') UI.openHunt();
     else if (k === 'a') UI.openQuests(); else if (k === 'b') { UI.bookSp = null; UI.openBook(); } else if (k === 'k') UI.openOffice(); else if (k === 'u') UI.openTanks();
     else if (k === 'f') UI.photo(); else if (k === 'l') UI.toggleNight(); else if (k === 'h' && UI.feedAll) UI.feedAll();
+    else if (k === 'i' && UI.openFishList) UI.openFishList({ fresh: true }); else if (k === 'o' && UI.toggleLabels) UI.toggleLabels();      // Fisch-Übersicht, Schilder (js/fishlist.js)
     else if (k === 'r' && UI.toggleFriends) UI.toggleFriends();
     else if (k === 'z' && UI.openRank) UI.openRank(); else if (k === 'c' && UI.openLogin7) UI.openLogin7();
     else if (k === 'm' && AA.music) { const on = AA.music.toggle(); UI.toast(on ? '🎵 Musik an' : '🔇 Musik aus'); }
@@ -425,7 +426,12 @@
     canvas.addEventListener('pointerup', onUp);
     canvas.addEventListener('pointercancel', onUp);
     canvas.addEventListener('pointerleave', function () { if (!V.pointer.down) V.pointer.inside = false; });
-    canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    canvas.addEventListener('contextmenu', function (e) {                // Rechtsklick auf einen Fisch: alle Aktionen als kleines Menü (js/fishlist.js)
+      e.preventDefault();
+      if (AA.visit || !UI.fishMenu || V.tool === 'deco' || UI.modalKind) return;
+      const p = pos(e), f = fishAt(p);
+      if (f) UI.fishMenu(f, e.clientX, e.clientY);
+    });
     canvas.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKey);
     document.addEventListener('visibilitychange', function () { if (document.hidden) { AA.save(); crumbOk(); } });
@@ -437,7 +443,8 @@
       if (UI.xmasInit) UI.xmasInit();                  // Runde 18: Adventskalender-Knopf (js/xmas.js)
       if (UI.themesInit) UI.themesInit();              // Runde 19: Themen-Sets – Ziel-Chip, Hinweise (js/themesui.js)
       if (AA.undoInit) AA.undoInit();                  // Runde 20a: Deko rückgängig (js/undo.js)
-      if (UI.keysInit) UI.keysInit();                  // Runde 20a: Spickzettel, Enter im Dialog, Langdruck am Handy (js/keysui.js)
+      if (UI.keysInit) UI.keysInit();
+      if (UI.flistInit) UI.flistInit();                // Fisch-Übersicht, Schutz „Behalten“, Liefern mit Auswahl, Schilder (js/fishlist.js)                  // Runde 20a: Spickzettel, Enter im Dialog, Langdruck am Handy (js/keysui.js)
       lastWall = Date.now();
       requestAnimationFrame(function (ts) { last = ts; requestAnimationFrame(frame); });
       if (V.prewarm) V.prewarm();                      // Runde 14: Nachbarbecken im Leerlauf vorbereiten
