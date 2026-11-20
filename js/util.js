@@ -38,5 +38,5 @@ window.AA = window.AA || {};
   // Mini-Eventbus
   const handlers = {};
   AA.on = function (ev, fn) { (handlers[ev] = handlers[ev] || []).push(fn); };
-  AA.emit = function (ev, a, b, c, d) { const hs = handlers[ev]; if (hs) for (let i = 0; i < hs.length; i++) hs[i](a, b, c, d); };
+  AA.emit = function (ev, a, b, c, d, e) { const hs = handlers[ev]; if (hs) for (let i = 0; i < hs.length; i++) hs[i](a, b, c, d, e); };      // Runde 20e: fünftes Argument (eggMade)
 })(window.AA);

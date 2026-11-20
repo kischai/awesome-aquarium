@@ -71,8 +71,8 @@
       if (pv.length === 2 && Math.random() < 0.5) pv.reverse();
       for (let i = 0; i < pv.length; i++) if (Math.random() < C.inherit1) return pv[i];
     }
-    if (a && a.sp === 'carp') {                       // Karpfen: jedes Ei würfelt seine Zuchtform (AA.CARP.roll)
-      const R = AA.CARP.roll; let sum = 0; for (const k in R) sum += R[k];
+    if (a && AA.FORMS[a.sp]) {                        // Karpfen, Kaiserbuntbarsch (Runde 20e): jedes Ei würfelt seine Zuchtform (AA.FORMS)
+      const R = AA.FORMS[a.sp].roll; let sum = 0; for (const k in R) sum += R[k];
       let r = Math.random() * sum; for (const k in R) { r -= R[k]; if (r <= 0) return k || undefined; }
       return undefined;
     }
@@ -101,11 +101,12 @@
   };
   AA.bookHas = function (sp, v) { const b = S().book[sp]; return b ? (v ? b.v[v] || 0 : b.n) : 0; };
   AA.bookCounts = function () {
-    const bk = S().book, out = { species: 0, speciesMax: AA.FISH.length, vars: 0, varsMax: AA.FISH.length * AA.VARIANTS.length, open: 0, full: 0 };
+    const bk = S().book, out = { species: 0, speciesMax: AA.FISH.length, vars: 0, varsMax: 0, open: 0, full: 0 };
+    AA.FISH.forEach(function (f) { out.varsMax += AA.variantsOf(f.id).length; });      // Runde 20e: der Kaiserbuntbarsch hat 6 Formen
     for (const sp in bk) {
       const b = bk[sp]; out.species++; if (b.n === 1) out.open++;
       let n = 0; for (const k in b.v) { n++; if (b.v[k] === 1) out.open++; }
-      out.vars += n; if (n === AA.VARIANTS.length) out.full++;
+      out.vars += n; if (n === AA.variantsOf(sp).length) out.full++;
     }
     return out;
   };

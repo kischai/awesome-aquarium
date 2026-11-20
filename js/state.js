@@ -69,7 +69,7 @@
       daily: { day: 0, chest: false, hunts: 0, gift: false },
       stats: defaultStats(), medals: {}, settings: defaultSettings(),
       lastSeen: Date.now(), created: Date.now(), intro: false,
-      r18: 1, x18: 1, r19: 1                         // Runde 18/19: ein neues Spiel hat nichts zu erstatten und braucht keine Weihnachts-Neuigkeit (der Reiter steht im Shop vorn)
+      r18: 1, x18: 1, r19: 1, r20e: 1, g20: 1, favs: []      // Runde 18/19/20: ein neues Spiel hat nichts zu erstatten und braucht keine Neuigkeiten (der Reiter steht im Shop vorn)
     };
     AA.metaFix(AA.state, true);                      // Sammelbuch, Aufträge, Wochenkarte (js/meta.js)
     AA.bizFix(AA.state);                             // Gene, Markt, Kunden, Kassenbuch (js/biz.js)
@@ -285,9 +285,13 @@
       o.food = Math.max(0, Math.round(+o.food || 0)); o.xp = Math.max(0, Math.round(+o.xp || 0));
       if (gone && !o.r18) { o.r18 = 1; o.coins += gone.coins; o.news = o.news || {}; o.news.gone = gone; }      // Merker r18: ein noch offenes altes Spiel erstattet nicht ein zweites Mal
       if (!guest) o.g20 = 1;                           // 19.11.2026: Merker – die Rückgabe (AA.GONE20) gibt es nur einmal
+      if (!Array.isArray(o.favs)) o.favs = [];          // Runde 20g: Favoriten im Shop (art:id) – nur bekannte behalten
+      o.favs = o.favs.filter(function (x) { const m = /^(fish|deco|crawl|food):([a-z0-9_]+)$/.exec(String(x)); return !!m && !!(m[1] === 'fish' ? AA.FISH_BY[m[2]] : (m[1] === 'food' ? AA.FOOD_BY && AA.FOOD_BY[m[2]] : AA.DECO_BY[m[2]])); }).slice(0, 200);
+      if (typeof o.lastBuy !== 'string' || !/^(fish|deco|crawl|food):[a-z0-9_]+$/.test(o.lastBuy)) delete o.lastBuy;      // Runde 20g: „Nochmal kaufen“
       if (gone20) { o.coins += gone20.coins; o.pearls += gone20.pearls; o.news = o.news || {}; o.news.gone20 = gone20; }
       if (!guest && !o.x18 && AA.season().xmas) { o.x18 = 1; o.news = o.news || {}; o.news.xmas18 = 1; }      // Runde 18: einmal Bescheid sagen, was es zu Weihnachten Neues gibt
       if (!guest && !o.r19) { o.r19 = 1; o.news = o.news || {}; o.news.r19 = 1; }      // Runde 19: einmal Bescheid sagen (Reiter „Specials“)
+      if (!guest && !o.r20e) { o.r20e = 1; o.news = o.news || {}; o.news.r20e = 1; }      // Runde 20e/20g: einmal Bescheid sagen (Afrika, Komfort)
       const was = Math.max(0, Math.round(+o.level || 0));
       o.level = AA.levelFor(o.xp);
       if (!guest && !o.r16) {                          // Runde 16, einmalig: flachere Level-Kurve ab Level 31 – wer dadurch aufsteigt, bekommt je Level eine Perle wie sonst auch.
@@ -563,7 +567,7 @@
     if (w > 0) return { ok: false, why: 'cdme', cd: w };
     if (f.sick || f.hunger < B.mateHungerMin) return { ok: false, why: 'hungryme', cd: 0 };
     const st = AA.mateStatus(f.sp, t);
-    if (st.why === 'sterile' || st.why === 'spawn') return st;
+    if (st.why === 'sterile' || st.why === 'spawn' || st.why === 'barren') return st;
     const mine = f.sex === 'm' ? st.males : st.females, other = f.sex === 'm' ? st.females : st.males;
     if (mine.indexOf(f) < 0) return st;
     if (!other.length) {                             // kein Partner frei: warum?
@@ -616,6 +620,7 @@
     egg.pa = [a.name, b.name]; if (m.cross) egg.hy = [a.sp, b.sp];       // Runde 12: fürs Info-Fenster des Eis
     t.eggs.push(egg);                                // das Ei zählt sofort als Bewohner
     s.stats.eggs++; s.stats.spMated[m.sp] = 1;
+    AA.emit('eggMade', egg, a, b, t, m);             // Runde 20e: auch beim Nachrechnen – Maulbrüter, Kuckuckswels (js/africa.js)
     if (!silent) AA.emit('eggLaid', egg, a, b, t);
     AA.checkMedals();
   }
@@ -658,7 +663,7 @@
     }
     for (let i = t.eggs.length - 1; i >= 0; i--) {
       const e = t.eggs[i];
-      e.hatch -= dt * hatchK;
+      e.hatch -= dt * hatchK * (AA.eggK ? AA.eggK(t, e) : 1);      // Runde 20e: Großfamilie brütet schneller (js/africa.js)
       if (e.hatch <= 0) {
         t.eggs.splice(i, 1);
         const baby = AA.makeFish(e.sp);

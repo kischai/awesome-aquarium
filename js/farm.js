@@ -145,7 +145,7 @@
     if (va && vb && va === vb) { add(va, C.inherit2); rest = 1 - C.inherit2; }
     else if (va && vb) { const q = 0.5 * C.inherit1 + 0.5 * (1 - C.inherit1) * C.inherit1; add(va, q); add(vb, q); rest = (1 - C.inherit1) * (1 - C.inherit1); }
     else if (va || vb) { add(va || vb, C.inherit1); rest = 1 - C.inherit1; }
-    if (sp === 'carp') { const R = AA.CARP.roll; let tot = 0; for (const k in R) tot += R[k]; for (const k in R) if (k) add(k, rest * R[k] / tot); }
+    if (AA.FORMS[sp]) { const R = AA.FORMS[sp].roll; let tot = 0; for (const k in R) tot += R[k]; for (const k in R) if (k) add(k, rest * R[k] / tot); }
     else { const ch = AA.variantChance(), vs = AA.variantsOf(sp); let w = 0; vs.forEach(function (v) { w += v.w; }); vs.forEach(function (v) { add(v.id, rest * ch * v.w / w); }); }
     let any = 0; for (const k in p) any += p[k];
     out.vars = Object.keys(p).map(function (k) { return { v: k, p: p[k] }; }).sort(function (x, y) { return y.p - x.p; });

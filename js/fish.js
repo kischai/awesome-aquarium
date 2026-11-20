@@ -268,7 +268,7 @@
 
   /* ---------- Runde 8: besonderes Verhalten ----------
      Gibt ein Ziel { tx, ty, b (Tempo-Faktor), r (Ankunfts-Radius), z, face } zurück – oder null (dann normales Umherschwimmen). */
-  const BEH = { den: 1, nestle: 1, patrol: 1, defend: 1, school: 1, clean: 1, hitch: 1, beg: 1, suck: 1, tend: 1 };
+  const BEH = AA.FISH_BEH = { den: 1, nestle: 1, patrol: 1, defend: 1, school: 1, clean: 1, hitch: 1, beg: 1, suck: 1, tend: 1 };      // Runde 20e: js/africa.js trägt eigene Zustände nach
   Fish.prototype.shoo = function (cx) {               // ein Clownfisch verjagt diesen Fisch von seiner Anemone
     if (this.busy() || this.state === 'hunt' || this.state === 'food') return;
     const dir = this.x < cx ? -1 : 1;
@@ -797,6 +797,7 @@
     this.face += (this.dir - this.face) * Math.min(1, dt * 9);
     let tl = AA.clamp(Math.atan2(this.vy, Math.abs(this.vx) + 24) * 0.8, -0.5, 0.5);
     if (this.sk && this.sk.on) tl = 0;
+    if (this.poseHold) tl = 0;                       // Runde 20e: in der Fels-Pose gibt die Pose die Lage vor
     if (starving) tl += 0.14;
     if (d.sick) tl += 0.22;
     this.tilt += (tl - this.tilt) * Math.min(1, dt * 5);
@@ -804,7 +805,7 @@
     const k2 = Math.min(4, sp2 / def.speed);
     const denRest = this.state === 'den' && this.resting;
     this.phase += dt * (denRest ? 1.2 : (3.0 + k2 * 5.0) * (d.adult ? 1 : 1.3) * (d.sick ? 0.6 : 1));
-    const at = denRest ? 0.1 : ((this.resting && sp2 < 12) || (this.sk && this.sk.on) ? (def.still ? 0.06 : 0.22) : AA.clamp(0.4 + 0.45 * k2, 0.4, 1.5));
+    const at = denRest || this.poseHold === 'dead' ? (this.poseHold === 'dead' ? 0.02 : 0.1) : ((this.resting && sp2 < 12) || (this.sk && this.sk.on) ? (def.still ? 0.06 : 0.22) : AA.clamp(0.4 + 0.45 * k2, 0.4, 1.5));      // tot gestellt: Flossen still
     this.amp += (at - this.amp) * Math.min(1, dt * 6);
 
     // Stimmung & Blasen
@@ -837,7 +838,7 @@
   };
   Fish.prototype.drawFish = function (ctx, t) {
     const img = this.img(), s = this.size(), ar = this.ar(), w = s, h = s * ar, rig = this.rig(), sk = this.sk, on = !!(sk && sk.on);
-    const bob = this.state === 'trick' || on || (this.def.still && this.resting) || (this.state === 'den' && this.resting) ? 0 : Math.sin(t * 1.4 + this.seed) * 2.2;      // Runde 14: Muräne in der Höhle wippt nicht
+    const bob = this.state === 'trick' || on || this.poseHold || (this.def.still && this.resting) || (this.state === 'den' && this.resting) ? 0 : Math.sin(t * 1.4 + this.seed) * 2.2;      // poseHold: Runde 20e (Fels-Pose, tot stellen)      // Runde 14: Muräne in der Höhle wippt nicht
     ctx.save();
     ctx.translate(this.x, this.y + bob);
     if (this.def.alpha) ctx.globalAlpha *= this.def.alpha;      // Runde 20b: Würfel- und Irukandji-Qualle sind fast durchsichtig
@@ -849,6 +850,8 @@
       AA.drawBody(ctx, img, w, h, this.phase, rig, this.amp);
       ctx.restore(); return;
     }
+    if (this.poseRot) ctx.rotate(this.poseRot);      // Runde 20e: Schlankcichlide klebt seitlich am Fels (Drehung in Weltkoordinaten, vor dem Spiegeln)
+    if (this.poseFlip !== undefined && this.poseFlip < 0.999) ctx.scale(1, this.poseFlip);      // … kopfüber unter der Decke · Schläfer liegt auf dem Rücken
     if (rig.kind === 'front') {                      // Kalmar: schaut immer nach vorn, neigt sich nur leicht in Schwimmrichtung
       ctx.rotate(AA.clamp(this.vx * 0.0022, -0.3, 0.3) + this.spin * this.dir + Math.sin(t * 1.1 + this.seed) * 0.03);
       if (this.chomp > 0) { const c = Math.sin(this.chomp * Math.PI); ctx.scale(1 + c * 0.07, 1 - c * 0.06); }

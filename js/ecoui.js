@@ -90,7 +90,10 @@
     if (money.length) sec.push('<div class="rp"><h4>💰 Kasse & Personal</h4>' + li(money) + '</div>');
     if (breed.length) sec.push('<div class="rp"><h4>🐣 Zucht</h4>' + li(breed) + '</div>');
     if (todo.length) sec.push('<div class="rp"><h4>📌 Jetzt zu tun</h4>' + li(todo) + '</div>');
-    if (!sec.length) sec.push('<div class="rp"><h4>🌊 Alles ruhig</h4><ul><li>Nichts Besonderes passiert.</li></ul></div>');
+    /* Runde 20g: Freunde – Geschenke, Hilfe beim Füttern/Putzen und Herzen kommen kurz nach dem Start aus der Wolke und landen hier (UI.awayNote) */
+    const fr = (UI.awayFriends || []).slice();
+    sec.push('<div class="rp friends' + (fr.length ? '' : ' hidden') + '" id="wb-friends"><h4>👥 Freunde</h4><ul>' + fr.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>');
+    if (!sec.some(function (x) { return x.indexOf('hidden') < 0; })) sec.push('<div class="rp"><h4>🌊 Alles ruhig</h4><ul><li>Nichts Besonderes passiert.</li></ul></div>');
     UI.open('welcome', '<div class="hero report"><div class="h2">Während du weg warst</div><div class="sub">' + AA.fmtDur(sum.real || sum.seconds) + (sum.days ? ' – das waren ' + sum.days + (sum.days === 1 ? ' Spieltag' : ' Spieltage') : '') + '</div>' + sec.join('') +
       '<div class="row end"><button class="btn" data-act="opentanks">🗂️ Becken-Übersicht</button><button class="btn green lg" data-act="close">Weiter</button></div></div>', 'small hero-m report-m');
   };

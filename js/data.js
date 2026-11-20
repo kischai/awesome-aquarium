@@ -411,6 +411,43 @@
       info: 'Eine winzige Meeresschnecke, silber-blau mit Finger-Fransen. Treibt bauchoben an der Oberfläche und knabbert am liebsten an der Portugiesischen Galeere – dann ist er satt.' },
     { id: 'lionsmane', name: 'Löwenmähnen-Qualle', lvl: 52, price: 5300, pearls: 50, sell: 5960, hours: 110, len: 170, speed: 12, egg: '#ff7a1a', hab: 'open', jelly: true, venom: true, big: true,
       info: 'Legendär: die größte Qualle der Welt. Ihre Tentakel-Mähne reicht durchs halbe Becken – gibt es für Münzen oder Perlen und braucht ein großes Becken.' },
+    /* ---------- Runde 20e (20.11.2026): Afrika-Legenden – Malawisee, Tanganjikasee, Kongo und Westafrika. Verhalten: js/africa.js (docs/MECHANIK.md § 11p)
+       carry: 'mouth' + carrySex: 'f' = die Mama brütet die Eier im Maul aus · cavebrood = legt die Eier an eine Höhle/Felsspalte · needCave = laicht nur mit Höhle im Becken
+       group = erst ab so vielen Artgenossen glücklich (sonst traurig, wächst langsamer) · family = Großfamilie: erwachsene Geschwister helfen bei der Brut
+       rockface = klebt seitlich oder kopfüber an Felsen · slip = flitzt durch Felsspalten · playdead = stellt sich tot · cuckoo = Brutparasit ---------- */
+    { id: 'kribensis', name: 'Prachtbarsch (Kribensis)', lvl: 8, water: 'fresh', price: 40, sell: 46, hours: 20, len: 98, speed: 40, egg: '#ff7aa8', cavebrood: true, needCave: true,
+      info: 'Rosa Bauch, gelb gesäumte Flossen – aus Westafrika. Ein Höhlenbrüter: Zum Laichen braucht er eine Ton-Laichhöhle oder eine Kokosnuss im Becken.' },
+    { id: 'yellowlab', name: 'Elektrischer Gelber', lvl: 10, water: 'fresh', price: 44, sell: 50, hours: 20, len: 104, speed: 42, egg: '#ffd400', carry: 'mouth', carrySex: 'f',
+      info: 'Knallgelb mit schwarzen Flossenkanten – der Anfänger-Liebling aus dem Malawisee. Die Mama brütet die Eier im Maul aus.' },
+    { id: 'congotetra', name: 'Kongosalmler', lvl: 12, water: 'fresh', price: 50, sell: 57, hours: 22, len: 104, speed: 56, egg: '#7ac8ff',
+      info: 'Schillert wie ein Regenbogen und trägt lange Schleierflossen. Ein Schwarmfisch aus dem Kongo – ab 6 schwimmen sie zusammen.' },
+    { id: 'demasoni', name: 'Demasoni', lvl: 15, water: 'fresh', price: 66, sell: 76, hours: 24, len: 92, speed: 44, egg: '#2a7de1', carry: 'mouth', carrySex: 'f', group: 5,
+      info: 'Klein, frech, blau-schwarz gestreift – aus dem Malawisee. Nur in der Gruppe ab 5 zufrieden: Dann verteilt sich das Gezanke auf alle.' },
+    { id: 'lemoncichlid', name: 'Zitronenbuntbarsch', lvl: 17, water: 'fresh', price: 76, sell: 87, hours: 26, len: 104, speed: 42, egg: '#ffb000', cavebrood: true,
+      info: 'Knallgelb bis orange wie eine reife Zitrone. Wohnt im Tanganjikasee zwischen Steinen und legt seine Eier in eine kleine Höhle.' },
+    { id: 'peacock', name: 'Kaiserbuntbarsch', lvl: 19, water: 'fresh', price: 90, sell: 103, hours: 30, len: 116, speed: 44, egg: '#ff5a2a', carry: 'mouth', carrySex: 'f', forms: 'peacock',
+      info: 'Aulonocara aus dem Malawisee: Männchen leuchten blau und rot. Aus seinen Eiern schlüpfen viele Zuchtformen – Sunshine, Rubin, OB und Drachenblut.' },
+    { id: 'julie', name: 'Schlankcichlide', lvl: 20, water: 'fresh', price: 96, sell: 110, hours: 30, len: 108, speed: 34, egg: '#e8c020', cavebrood: true, rockface: true,
+      info: 'Julidochromis regani: gelb mit schwarzen Längsstreifen. Klebt an Felsen gern seitlich oder kopfüber – der Bauch zeigt immer zum Stein.' },
+    { id: 'burundi', name: 'Prinzessin von Burundi', lvl: 21, water: 'fresh', price: 118, sell: 135, hours: 32, len: 112, speed: 38, egg: '#f2d6b0', cavebrood: true, family: true,
+      info: 'Zartbeige, mit weißen Fahnen am Leierschwanz. Lebt in Großfamilien: Erwachsene Geschwister bleiben da und passen auf – mit Helfern schlüpfen und wachsen die Babys schneller.' },
+    { id: 'tropheus', name: 'Brabantbuntbarsch (Tropheus)', lvl: 23, water: 'fresh', price: 126, sell: 144, hours: 30, len: 108, speed: 44, egg: '#ff3b1f', carry: 'mouth', carrySex: 'f', group: 6,
+      info: 'Tropheus moorii: schwarz mit leuchtend rotem Bauchband. Nur in der Gruppe ab 6 glücklich – allein wird er traurig und wächst langsamer.' },
+    { id: 'venustus', name: 'Giraffenbuntbarsch', lvl: 25, water: 'fresh', price: 150, sell: 172, hours: 34, len: 140, speed: 40, egg: '#e8b830', carry: 'mouth', carrySex: 'f',
+      info: 'Gelb mit braunen Giraffen-Flecken, das Männchen trägt ein blaues Gesicht. Ein ruhiger Riese aus dem Malawisee.' },
+    { id: 'livingstoni', name: 'Schläfer', lvl: 26, water: 'fresh', price: 165, sell: 189, hours: 38, len: 140, speed: 34, egg: '#c89a6a', carry: 'mouth', carrySex: 'f', playdead: true,
+      info: 'Nimbochromis livingstonii: legt sich auf den Grund und stellt sich tot. Kommen kleine Fische gucken, schnappt er zu – im Spiel nur ein großer Schreck.' },
+    { id: 'calvus', name: 'Calvus', lvl: 28, water: 'fresh', price: 205, sell: 234, hours: 42, len: 112, speed: 30, egg: '#3a3a4a', cavebrood: true, slip: true,
+      info: 'Altolamprologus calvus: schmal wie ein Blatt, schwarz mit weißen Perlpunkten. Damit flitzt er durch Felsspalten, in die sonst keiner passt.' },
+    { id: 'cuckoocat', name: 'Kuckuckswels', lvl: 30, water: 'fresh', price: 255, sell: 290, hours: 44, len: 112, speed: 40, egg: '#e8dcc0', hab: 'bottom', cuckoo: true,
+      info: 'Getupfter Wels aus dem Tanganjikasee mit frechem Trick: Laicht ein Maulbrüter-Buntbarsch, schmuggelt er sein Ei dazwischen. Die Buntbarsch-Mama brütet es mit aus – Überraschungs-Baby!' },
+    { id: 'frontosa', name: 'Frontosa', lvl: 37, water: 'fresh', price: 860, pearls: 16, sell: 965, hours: 48, len: 176, speed: 26, egg: '#dde4ff', carry: 'mouth', carrySex: 'f',
+      info: 'Legende aus dem Tanganjikasee: weiß mit schwarzen Binden und dickem Stirnbuckel. Schwimmt langsam und majestätisch – gibt es für Münzen oder Perlen.' },
+    /* Gäste im Afrika-Set: echte Zuchtformen aus Mittelamerika-Buntbarschen (Runde 20e) */
+    { id: 'bloodparrot', name: 'Blutpapagei', lvl: 22, water: 'fresh', price: 112, sell: 129, hours: 32, len: 112, speed: 30, egg: '#ff7a1a', guest: true, sterile: true,
+      info: 'Gast im Afrika-Set: eine echte Zuchtform aus Mittelamerika-Buntbarschen – rund, orange, mit kleinem Papageien-Mund. Fast immer unfruchtbar, darum gibt es ihn nur zu kaufen.' },
+    { id: 'flowerhorn', name: 'Flowerhorn', lvl: 32, water: 'fresh', price: 340, sell: 386, hours: 46, len: 150, speed: 34, egg: '#ff3a5a', guest: true,
+      info: 'Gast im Afrika-Set: eine echte Zuchtform aus Mittelamerika-Buntbarschen, mit pinkrotem Stirnbuckel, Perlpunkten und schwarzen „Blumen“-Flecken. In Asien ein Glücksbringer.' },
     /* ---------- Runde 18: Weihnachten – im Shop nur in der Weihnachtszeit (season: 'xmas', Reiter „Weihnachten“, AA.season); wer sie hat, behält sie ---------- */
     { id: 'xmashorse', name: 'Weihnachts-Seepferdchen', season: 'xmas', lvl: 10, price: 80, sell: 92, hours: 20, len: 60, speed: 27, egg: '#ff2a3a',
       info: 'Rot-weiß geringelt wie eine Zuckerstange, mit Weihnachtsmütze. Hält sich am liebsten an der Mistelzweig-Alge fest.' },
@@ -434,7 +471,10 @@
     /* Runde 9: Tintenfisch-Hybride */
     { id: 'galaxysquid', a: 'squid', b: 'bluesquid', name: 'Galaxie-Kalmar', egg: '#6a4ad6', glow: '#b48aff', info: 'Kalmar × Blauer Kalmar: violett-blauer Verlauf mit Sternenstaub auf dem Mantel. Leuchtet im Tiefsee-Becken wie ein Nachthimmel.' },
     { id: 'prachtsepia', a: 'sepia', b: 'squid', name: 'Prachtsepia', egg: '#ff4ab8', info: 'Sepia × Kalmar: Bänder in Violett, Magenta und Gelb wie bei der echten Prachtsepia – ein wandelndes Feuerwerk.' },
-    { id: 'saphirsepia', a: 'sepia', b: 'bluesquid', name: 'Saphir-Sepia', egg: '#2a7ad6', info: 'Sepia × Blauer Kalmar: die Streifen der Sepia in tiefem Saphirblau mit türkisem Flossensaum.' }
+    { id: 'saphirsepia', a: 'sepia', b: 'bluesquid', name: 'Saphir-Sepia', egg: '#2a7ad6', info: 'Sepia × Blauer Kalmar: die Streifen der Sepia in tiefem Saphirblau mit türkisem Flossensaum.' },
+    /* Runde 20e: Afrika – erfundene Spiel-Hybride */
+    { id: 'sunkaiser', a: 'yellowlab', b: 'peacock', name: 'Sonnen-Kaiser', egg: '#ffb020', info: 'Elektrischer Gelber × Kaiserbuntbarsch: gelb wie die Sonne, mit blauem Kaiser-Gesicht, orangem Schulterfleck und Eiflecken auf der Flosse. Gibt es nur im Spiel.' },
+    { id: 'zebraprincess', a: 'demasoni', b: 'burundi', name: 'Zebra-Prinzessin', egg: '#3a6ad6', info: 'Demasoni × Prinzessin von Burundi: der elegante Leierschwanz der Prinzessin im blau-schwarzen Zebra-Look. Gibt es nur im Spiel – in der Natur leben die beiden in verschiedenen Seen.' }
   ];
   (function () {
     const by = {}; AA.FISH.forEach(function (f) { by[f.id] = f; });
@@ -494,11 +534,24 @@
     { id: 'cblack', name: 'Schwarzer Karpfen', rare: 'Legendär', tier: 4, w: 3, pearls: 5, xp: 1000, col: '#16181d', only: 'carp', info: 'Tiefschwarz mit Samtglanz. Der teuerste Karpfen überhaupt.' }
   ];
   AA.CARP = { roll: { '': 40, cwild: 25, czeil: 18, albino: 9, rainbow: 5, cblack: 3 }, names: { '': 'Schuppenkarpfen', albino: 'Albino-Karpfen', rainbow: 'Regenbogenkarpfen' } };
+  /* Runde 20e: Kaiserbuntbarsch – eigene Zuchtformen wie beim Karpfen (Bilder umgefärbt in js/variants.js) */
+  AA.PEACOCK_FORMS = [
+    { id: 'psun', name: 'Sunshine', rare: 'Häufig', tier: 1, w: 24, pearls: 1, xp: 80, col: '#ffcf2a', only: 'peacock', info: 'Goldgelber Körper, blaues Gesicht – die beliebteste Zuchtform.' },
+    { id: 'prubin', name: 'Rubin', rare: 'Selten', tier: 2, w: 16, pearls: 2, xp: 160, col: '#c8143c', only: 'peacock', info: 'Tief rubinrot, das Gesicht schimmert violett.' },
+    { id: 'pob', name: 'OB (Orange Blotch)', rare: 'Sehr selten', tier: 2, w: 10, pearls: 2, xp: 240, col: 'linear-gradient(90deg,#ff8a2a 55%,#1f2a44 55%,#1f2a44 75%,#3a7bff 75%)', only: 'peacock', info: 'Orange mit blauen und schwarzen Klecksen – jeder sieht ein bisschen anders aus.' },
+    { id: 'pdragon', name: 'Drachenblut', rare: 'Episch', tier: 3, w: 4, pearls: 3, xp: 500, col: '#ff8fa0', only: 'peacock', info: 'Rosa-weiß mit feurig rotem Körper – eine moderne Zuchtform.' }
+  ];
+  /* Arten mit eigenen Zuchtformen: jedes Ei würfelt seine Form (roll, Gewichte; '' = Grundform) · list = Reihenfolge im Sammelbuch · plain = Name der Grundform */
+  AA.FORMS = {
+    carp: { roll: AA.CARP.roll, list: ['cwild', 'czeil', 'albino', 'rainbow', 'cblack'], plain: 'Schuppenkarpfen', col: '#c9a227' },
+    peacock: { roll: { '': 40, psun: 24, prubin: 16, pob: 10, pdragon: 4, albino: 4, rainbow: 2 }, list: ['psun', 'prubin', 'pob', 'pdragon', 'albino', 'rainbow'], plain: 'Rot-Blau', col: '#ff5a2a' }
+  };
   AA.VAR_BY = {};
   AA.VARIANTS.forEach(function (v) { AA.VAR_BY[v.id] = v; });
   AA.CARP_FORMS.forEach(function (v) { AA.VAR_BY[v.id] = v; });
+  AA.PEACOCK_FORMS.forEach(function (v) { AA.VAR_BY[v.id] = v; });
   /* die Varianten, die es bei dieser Art gibt (Reihenfolge = Reihenfolge im Sammelbuch) */
-  AA.variantsOf = function (sp) { return sp === 'carp' ? [AA.VAR_BY.cwild, AA.VAR_BY.czeil, AA.VAR_BY.albino, AA.VAR_BY.rainbow, AA.VAR_BY.cblack] : AA.VARIANTS; };
+  AA.variantsOf = function (sp) { const F = AA.FORMS[sp]; return F ? F.list.map(function (id) { return AA.VAR_BY[id]; }) : AA.VARIANTS; };
   AA.varFits = function (sp, v) { return AA.variantsOf(sp).some(function (x) { return x.id === v; }); };
   AA.VAR = { chance: 0.01, pity: 0.001, pityMax: 0.05, inherit1: 0.3, inherit2: 0.75 };      // Runde 15: vorher 4 % / 0,4 % / 20 % – beim neuen Tempo gäb’s sonst alle ~40 Min eine je Paar
   AA.speciesName = function (sp, v) { const d = AA.FISH_BY[sp]; if (sp === 'carp' && v && AA.VAR_BY[v]) return AA.CARP.names[v] || AA.VAR_BY[v].name; return (d ? d.name : sp) + (v && AA.VAR_BY[v] ? ' (' + AA.VAR_BY[v].name + ')' : ''); };
@@ -800,6 +853,11 @@
     { id: 'coconut', name: 'Kokosnuss-Höhle', cat: 'rock', lvl: 4, price: 45, w: 130, sink: 5, hide: [0, 0.3], cave: true, info: 'Der Klassiker: eine halbe Kokosnuss mit Eingang. Höhlenbrüter lieben sie.' },
     { id: 'claycave', name: 'Ton-Laichhöhle', cat: 'rock', lvl: 6, price: 60, w: 170, sink: 5, hide: [0.2, 0.32], cave: true, info: 'Eine Tonröhre und ein kleiner Tonbogen – Höhlen zum Verstecken und Laichen für Buntbarsche und Welse.' },
     { id: 'mosstree', name: 'Moosbaum', cat: 'plant', lvl: 12, price: 140, w: 150, sink: 5, home: 'fresh', sway: 0.015, size: [0.5, 1.8], info: 'Ein Bonsai aus Wurzelholz mit Javamoos-Krone – ein kleiner Baum unter Wasser.' },
+    // Runde 20e: Afrika (selbst gezeichnet: tools/redo20e/deco.py)
+    { id: 'shellpile', name: 'Muschel-Haufen', cat: 'rock', lvl: 12, price: 70, w: 160, sink: 5, hide: [0, 0.26], size: [0.5, 2.4],
+      info: 'Leere Schneckenhäuser aus dem Tanganjikasee, zu einem Hügel aufgetürmt. Dort unten gibt es ganze Felder davon – kleine Buntbarsche wohnen darin.' },
+    { id: 'limestone', name: 'Kalkfelsen (Lochgestein)', cat: 'rock', lvl: 14, price: 90, w: 170, sink: 6, hide: [0.22, 0.42], size: [0.5, 2.4],
+      info: 'Heller Kalkstein voller Löcher und Grübchen – so sieht es im Malawi- und Tanganjikasee unter Wasser aus. Buntbarsche kleben an seinen Wänden und verstecken sich in den Löchern.' },
     { id: 'trophy_bronze', name: 'Bronzepokal', cat: 'prop', lvl: 1, price: 0, w: 86, sink: 4, trophy: 3, info: 'Platz 3 in der Wochen-Rangliste. Gibt es nicht zu kaufen – nur zu gewinnen.' },
     { id: 'trophy_silver', name: 'Silberpokal', cat: 'prop', lvl: 1, price: 0, w: 90, sink: 4, trophy: 2, info: 'Platz 2 in der Wochen-Rangliste. Gibt es nicht zu kaufen – nur zu gewinnen.' },
     { id: 'trophy_gold', name: 'Goldpokal', cat: 'prop', lvl: 1, price: 0, w: 96, sink: 4, trophy: 1, info: 'Platz 1 in der Wochen-Rangliste! Gibt es nicht zu kaufen – nur zu gewinnen.' },
@@ -1180,7 +1238,7 @@
   ];
   AA.GENE_SHOP = [20, 40, 32, 8, 0];                   // Gewichte für 1…5 bei Fischen aus dem Shop (meist Klasse C/B)
   AA.GENE_RULE = { down: 0.2, up: 0.22, jump: 0.05 };  // Vererbung je Wert: Mittel der Eltern, dann 20 % −1, 22 % +1, extra 5 % „Sprung“ +1
-  AA.VAR_VALUE = { albino: 2, gold: 3, amethyst: 3, night: 5, rainbow: 10, cwild: 1.3, czeil: 1.8, cblack: 15 };   // Preis-Faktor der Farbvarianten
+  AA.VAR_VALUE = { albino: 2, gold: 3, amethyst: 3, night: 5, rainbow: 10, cwild: 1.3, czeil: 1.8, cblack: 15, psun: 1.3, prubin: 1.8, pob: 2.2, pdragon: 4 };   // Preis-Faktor der Farbvarianten
   /* Markt: Tageskurs je Art (0,75–1,25), dazu zwei Trend-Arten (×1,35–1,6). Verkauf drückt den Preis (Sättigung); der Druck halbiert sich
      alle satHalf Spiel-Sekunden (Runde 15: 30 Min statt über Nacht, und je Verkauf halb so stark wie vorher). */
   AA.MARKET = { kMin: 0.75, kMax: 1.25, trends: 2, tMin: 1.35, tMax: 1.6, satStep: 0.06, satFloor: 0.4, satHalf: 1800 };
@@ -1262,7 +1320,14 @@
       fish: ['trout', 'aal', 'tench', 'carp', 'salmon', 'pike', 'frog', 'otter'] },
     { id: 'adria', name: 'Adria-Küste', ico: '🏖️', water: 'salt', walls: ['adria', 'lagoon'], floors: ['finesand', 'whitegravel', 'shells', 'coralsand'],
       deco: ['posidonia', 'pinna', 'amphora', 'caulerpa', 'halimeda', 'ulva', 'rock_grey', 'roundboulder', 'pebblepile', 'limeslab', 'anchor', 'columns', 'seaweed_lime', 'redkelp'],
-      fish: ['scorpionfish', 'weever', 'bream', 'medmoray', 'garfish', 'dorade', 'seahorse', 'sepia', 'squid', 'jellyfish', 'seal'] }
+      fish: ['scorpionfish', 'weever', 'bream', 'medmoray', 'garfish', 'dorade', 'seahorse', 'sepia', 'squid', 'jellyfish', 'seal'] },
+    /* Runde 20e: die beiden großen afrikanischen Seen */
+    { id: 'malawi', name: 'Malawisee', ico: '🌅', water: 'fresh', walls: ['malawi'], floors: ['finesand', 'sand', 'whitegravel', 'riverstone'],
+      deco: ['limestone', 'rock_grey', 'roundboulder', 'pebblepile', 'cave', 'crevice', 'arch', 'miniarch', 'dome', 'stepstone', 'tablerock', 'vallisneria'],
+      fish: ['yellowlab', 'demasoni', 'peacock', 'venustus', 'livingstoni'] },
+    { id: 'tanganjika', name: 'Tanganjikasee', ico: '🐚', water: 'fresh', walls: ['tanganyika'], floors: ['tanganyika', 'finesand', 'shells', 'sand'],
+      deco: ['shellpile', 'limestone', 'rock_grey', 'crevice', 'cave', 'slate', 'tiltslabs', 'limeslab', 'claycave', 'jagged', 'vallisneria'],
+      fish: ['lemoncichlid', 'julie', 'burundi', 'tropheus', 'calvus', 'cuckoocat', 'frontosa'] }
   ];
   /* Runde 20b: die neuen Arten in ihren Biotopen (zählen damit auch in den Regionen der Themen-Sets) */
   /* Runde 20f: neue Kulissen, Böden und Deko in passenden Biotopen */
@@ -1292,7 +1357,7 @@
   /* ================= Runde 8: Verhalten, Schwärme, Sammelbuch-Sets, Kreuzen, Optik ================= */
   /* Schwarmfische: ab `min` Tieren derselben Art in einem Becken schwimmen sie sichtbar im Schwarm (+grow Wachstum),
      unter `lonely` sind sie unglücklich (schauen traurig, wachsen langsamer). */
-  AA.SCHOOL = { min: 6, lonely: 3, grow: 1.15, lonelyGrow: 0.85, species: ['neon', 'danio', 'chromis', 'tigerbarb', 'cory', 'clownloach', 'piranha', 'banggai', 'lanternfish'] };
+  AA.SCHOOL = { min: 6, lonely: 3, grow: 1.15, lonelyGrow: 0.85, species: ['neon', 'danio', 'chromis', 'tigerbarb', 'cory', 'clownloach', 'piranha', 'banggai', 'lanternfish', 'congotetra'] };      // Runde 20e: + Kongosalmler
   AA.SCHOOL.species.forEach(function (id) { AA.FISH_BY[id].school = true; });
   /* Kreuzen: Chance auf ein Ei, Kosten-Faktor (auf die Paarungsgebühren beider Eltern). Pause der Eltern: wie beim Hybriden (sein f.pause, Runde 15) */
   AA.CROSS = { chance: 1, cost: 1.5 };                 // Runde 11: jede Kreuzung bringt ein Ei; Pause je Fisch
@@ -1342,6 +1407,11 @@
     { id: 'paris', kind: 'coll', name: 'Paris', ico: '🗼', title: 'Bon Vivant', fx: 'champagne',      // Runde 20d (Pokal: der goldene Eiffelturm)
       list: ['sardine', 'seabass', 'redmullet', 'dorade', 'redgurnard', 'zander', 'johndory', 'monkfish', 'escargot', 'sole', 'turbot'] },
     { id: 'snakes', kind: 'coll', name: 'Seeschlangen', ico: '🐍', title: 'Schlangenbeschwörer', list: ['snake_laticauda', 'snake_belcher', 'snake_dubois', 'snake_platurus'] },      // Runde 20c
+    { id: 'malawi', kind: 'region', bio: 'malawi', lv: [0, 99], name: 'Malawisee', ico: '🌅', title: 'Sternensee-Fischer', fx: 'lakestars', wall: 'malawi' },      // Runde 20e
+    { id: 'tanganjika', kind: 'region', bio: 'tanganjika', lv: [0, 99], name: 'Tanganjikasee', ico: '🐚', title: 'Schneckenhaus-Kenner', fx: 'shellglint', wall: 'tanganyika' },
+    { id: 'africa', kind: 'coll', name: 'Afrika-Legenden', ico: '🌍', title: 'Afrika-Legende', fx: 'savanna',
+      list: ['kribensis', 'yellowlab', 'congotetra', 'demasoni', 'lemoncichlid', 'peacock', 'julie', 'burundi', 'tropheus', 'venustus', 'livingstoni', 'calvus', 'cuckoocat', 'frontosa',
+        'sunkaiser', 'zebraprincess', 'bloodparrot', 'flowerhorn'] },
     { id: 'jellies', kind: 'coll', name: 'Quallen-Ballett', ico: '🎐', title: 'Quallen-Dirigent', fx: 'jellyglow', list: ['moonjelly', 'compass', 'jellyfish', 'boxjelly', 'irukandji', 'combjelly', 'manowar', 'lionsmane'] },
     { id: 'fossil', kind: 'coll', name: 'Lebende Fossilien', ico: '🦴', title: 'Zeitreisender', fx: 'ammonite', list: ['sturgeon', 'arowana', 'beluga', 'arapaima', 'chimaera', 'frilledshark', 'coelacanth', 'horseshoe'] },
     { id: 'sharks', kind: 'coll', name: 'Haie und Rochen', ico: '🦈', title: 'Hai-Flüsterer', fx: 'shark',
@@ -1367,7 +1437,8 @@
   ];
   AA.THEME_FX = { sunspots: 'Sonnenkringel', colorbubbles: 'Bunte Blasen', manta: 'Manta-Schatten', rain: 'Regen', leaves: 'Treibende Blätter', blossoms: 'Kirschblüten',
     autumn: 'Herbstlaub', spray: 'Gischt', wavelight: 'Wellenlicht', plankton: 'Leuchtplankton', marinesnow: 'Meeresschnee', hearts: 'Herzchen-Blasen', sandpuffs: 'Sandwölkchen',
-    sparks: 'Funken', ammonite: 'Ammoniten-Schatten', shark: 'Hai-Schatten', ink: 'Tintenwölkchen', trails: 'Leuchtspuren', whale: 'Walhai in der Ferne', snow: 'Schneeflocken', jellyglow: 'Leuchtende Quallen', champagne: 'Champagner-Perlen' };
+    sparks: 'Funken', ammonite: 'Ammoniten-Schatten', shark: 'Hai-Schatten', ink: 'Tintenwölkchen', trails: 'Leuchtspuren', whale: 'Walhai in der Ferne', snow: 'Schneeflocken', jellyglow: 'Leuchtende Quallen', champagne: 'Champagner-Perlen',
+    lakestars: 'Sternensee-Lichter', shellglint: 'Perlmutt-Glitzern', savanna: 'Savannen-Sonne' };      // Runde 20e
   AA.THEME_BY = {};
   AA.THEMES.forEach(function (T) {
     AA.THEME_BY[T.id] = T;

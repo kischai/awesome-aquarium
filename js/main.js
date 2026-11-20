@@ -71,6 +71,30 @@
     UI.updateCard(); AA.save();
   }
 
+  /* Runde 20g: gedrückt halten = wiederholen – Futter-Werkzeug streut weiter Prisen, der Schwamm putzt weiter (dort, wo der Zeiger gerade ist).
+     Startet nach einer kurzen Pause; hört auf beim Loslassen, wenn alle satt sind bzw. das Becken sauber ist (ohne Meldungs-Flut). */
+  const HOLD = { delay: 380, feed: 230, scrub: 170 };
+  let rptT = 0, rptIv = 0;
+  function holdStop() { clearTimeout(rptT); clearInterval(rptIv); rptT = rptIv = 0; }
+  function holdStart(tool) {
+    holdStop();
+    rptT = setTimeout(function () {
+      rptIv = setInterval(function () {
+        const P = V.pointer;
+        if (!P.down || V.tool !== tool || UI.modalKind || !P.inside) { holdStop(); return; }
+        if (tool === 'food') {
+          const r = V.sprinkle(P.x, V.foodKind || 'normal');
+          if (r !== true && r !== 'wait') { holdStop(); if (r === 'nofood') feed(P.x); }      // 'wait' = noch genug im Wasser: kurz aussetzen
+        } else {
+          const tank = AA.tank();
+          if (tank.dirt <= 0) { holdStop(); return; }
+          scrub({ x: P.x, y: P.y });
+          if (tank.dirt <= 0) holdStop();
+        }
+      }, tool === 'food' ? HOLD.feed : HOLD.scrub);
+    }, HOLD.delay);
+  }
+  let decoTap = null;                               // Runde 20g: Doppelklick/Doppeltipp auf Deko = Deko-Modus mit diesem Stück
   function onDown(e) {
     if (e.button !== undefined && e.button !== 0) return;
     AA.audio.unlock();
@@ -107,13 +131,24 @@
         return;
       }
       if (o && V.pokeCrawler) V.pokeCrawler(o);       // Runde 20f: Riesenmuschel klappt zu
+      if (o && !deco && !AA.DECO_BY[o.type].crawl) {   // zweimal schnell auf dasselbe Stück: ab in den Deko-Modus, Stück bleibt gewählt
+        const now = performance.now();
+        if (decoTap && decoTap.o === o && now - decoTap.t < 420 && Math.hypot(p.x - decoTap.x, p.y - decoTap.y) < 30) {
+          decoTap = null; UI.setTool('deco'); V.selectDeco(o); AA.audio.play('pop');
+          if (UI.decoSync) UI.decoSync();
+          const st0 = V.stackInfo(o);
+          drag = { o: o, ox: p.x - (st0 ? st0.x : o.x), oy: p.y - (st0 ? st0.y : AA.floorY(o.z, o.x)), sx: p.x, sy: p.y, moved: false };
+          return;
+        }
+        decoTap = { o: o, t: now, x: p.x, y: p.y };
+      }
       if (o) {                                       // ox/oy: wo die Maus relativ zum Fuß des Stücks zugepackt hat (Kies-Linie bzw. Oberseite der Plattform)
         const st = V.stackInfo(o);
         V.selectDeco(o); drag = { o: o, ox: p.x - (st ? st.x : o.x), oy: p.y - (st ? st.y : AA.floorY(o.z, o.x)), sx: p.x, sy: p.y, moved: false }; return;
       }
       V.select(null); V.selectDeco(null);
-    } else if (V.tool === 'food') feed(p.x);
-    else if (V.tool === 'sponge') scrub(p);
+    } else if (V.tool === 'food') { feed(p.x); holdStart('food'); }
+    else if (V.tool === 'sponge') { scrub(p); holdStart('sponge'); }
     else if (V.tool === 'tap') { V.holdId++; V.knock(p.x, p.y); }
   }
   function onMove(e) {
@@ -155,6 +190,7 @@
   }
   function onUp() {
     V.pointer.down = false;
+    holdStop();
     if (drag && drag.egg) {
       const egg = drag.egg;
       if (drag.moved) { V.dragEgg = null; AA.audio.play('pop'); AA.save(); }
@@ -325,6 +361,9 @@
       UI.toast('✨ <b>' + vd.rare + '!</b> Aus dem Ei schlüpft ein <b>' + AA.esc(AA.speciesName(baby.sp, baby.v)) + '</b> – ' + AA.esc(baby.name) + '.' +
         (fresh ? '<br><small>Neu im Sammelbuch: Belohnung abholen (Taste B).</small>' : ''), 'big');
       AA.save();
+    } else if (egg && egg.cuckoo && AA.FISH_BY[egg.cuckoo]) {      // Runde 20e: das Kuckucksei
+      V.floatText(p.x, p.y - 60, '🤫 Kuckuck!', '#ffe9a8');
+      UI.toast('🤫🐣 <b>Überraschung!</b> Im Maul der Mama („' + AA.esc(AA.FISH_BY[egg.cuckoo].name) + '“) ist ein <b>Kuckuckswels</b> geschlüpft – sein Ei hat er heimlich dazugeschmuggelt. Willkommen, ' + AA.esc(baby.name) + '!', 'gold');
     } else UI.toast('🐣 Geschlüpft: Baby-' + AA.esc(AA.FISH_BY[baby.sp].name) + ' ' + AA.esc(baby.name) + ' – und sehr hungrig!');
     const cl = AA.fishClass(baby);
     if (cl.id === 'S' || cl.id === 'A') {            // Top-Gene: kleiner Auftritt

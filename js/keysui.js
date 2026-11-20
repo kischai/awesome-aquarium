@@ -7,11 +7,11 @@
 (function (AA) {
   const UI = AA.ui, $ = AA.$, esc = AA.esc;
   const KEYS = [
-    ['Werkzeuge', [['1', 'Auswahl / Hand'], ['2', 'Füttern'], ['3', 'Putzen'], ['4', 'Tricks / ans Glas klopfen'], ['5', 'Deko-Modus'], ['H', 'Alle Becken füttern']]],
+    ['Werkzeuge', [['1', 'Auswahl / Hand'], ['2', 'Füttern'], ['3', 'Putzen'], ['4', 'Tricks / ans Glas klopfen'], ['5', 'Deko-Modus'], ['H', 'Alle Becken füttern'], ['Halten', 'Füttern / Putzen gedrückt halten = weiter']]],
     ['Fenster', [['S', 'Shop'], ['B', 'Sammelbuch'], ['A', 'Aufträge'], ['K', 'Büro'], ['U', 'Alle Becken'], ['I', 'Fisch-Übersicht'], ['O', 'Schilder über den Fischen'], ['E', 'Erfolge'], ['G', 'Tagesgeschenk'], ['T', 'Schatzsuche'],
       ['C', 'Kalender (7 Tage)'], ['Z', 'Rangliste'], ['R', 'Freunde-Leiste'], [',', 'Einstellungen'], ['Tab', 'Menü ☰'], ['?', 'dieser Spickzettel']]],
     ['Becken', [['← →', 'voriges / nächstes Becken'], ['F', 'Foto'], ['L', 'Licht an/aus'], ['M', 'Musik an/aus'], ['N', 'Ton an/aus']]],
-    ['Deko-Modus', [['Q  E', 'drehen'], ['X', 'spiegeln'], ['+  −', 'größer / kleiner'], ['Strg/⌘ + Z', 'rückgängig (letzte 10 Schritte)']]],
+    ['Deko-Modus', [['Q  E', 'drehen'], ['X', 'spiegeln'], ['+  −', 'größer / kleiner'], ['Strg/⌘ + Z', 'rückgängig (letzte 10 Schritte)'], ['Doppelklick', 'auf Deko: Deko-Modus mit diesem Stück']]],
     ['In Fenstern', [['Enter', 'Hauptknopf (Kaufen, OK …)'], ['Esc', 'schließen']]]
   ];
   UI.openKeys = function () {

@@ -854,6 +854,18 @@
     if (u < 0 || u >= 1) return false;
     return m.a[Math.min(m.h - 1, Math.floor((1 - v) * m.h)) * m.w + Math.floor(u * m.w)] === 1;
   }
+  /* Runde 20e: Außenkante eines Deko-Stücks auf Höhe v (0 = Fuß, 1 = Spitze), links (side −1) oder rechts (+1) – aus der Bildmaske; null = dort nichts */
+  V.decoEdge = function (o, v, side) {
+    const b = V.decoBox(o), img = V.decoImg(o), m = img && decoMask(img);
+    if (!m) return side < 0 ? b.x + b.w * 0.1 : b.x + b.w * 0.9;
+    const row = Math.min(m.h - 1, Math.max(0, Math.floor((1 - v) * m.h))), fromLeft = (side < 0) !== !!o.flip;
+    let k = -1;
+    if (fromLeft) { for (let i = 0; i < m.w; i++) if (m.a[row * m.w + i] === 1) { k = i; break; } }
+    else { for (let i = m.w - 1; i >= 0; i--) if (m.a[row * m.w + i] === 1) { k = i + 1; break; } }
+    if (k < 0) return null;
+    const u = o.flip ? 1 - k / m.w : k / m.w;
+    return b.x + u * b.w;
+  };
   V.hitDeco = function (x0, y0) {
     const tank = AA.tank(); let best = null, bestZ = -1;
     for (let i = 0; i < tank.deco.length; i++) {
@@ -916,12 +928,13 @@
     }
     const sc = AA.depthScale(e.z); return { x: e.x, y: AA.floorY(e.z, e.x) - 16 * sc, r: 19 * sc };
   };
-  /* Runde 20f: wer trägt dieses Ei? Ein erwachsenes Männchen der Art (bleibt derselbe, solange es da ist) */
+  /* Runde 20f: wer trägt dieses Ei? Ein erwachsenes Männchen der Art (bleibt derselbe, solange es da ist) – Runde 20e: bzw. das Tier aus e.cid (die Mama) */
   V.eggCarrier = function (e) {
     if (!e.carry) return null;
     let f = null;
     for (let i = 0; i < V.fish.length; i++) { const q = V.fish[i]; if (q.d.id === e.cid && !q.ghost && q.state !== 'leave') { f = q; break; } }
-    if (!f) for (let i = 0; i < V.fish.length; i++) { const q = V.fish[i]; if (q.d.sp === e.sp && q.d.sex === 'm' && q.d.adult && !q.ghost && q.state !== 'leave') { f = q; e.cid = q.d.id; break; } }
+    const csp = e.host || e.sp, cd = AA.FISH_BY[csp], csx = (cd && cd.carrySex) || 'm';      // Runde 20e: afrikanische Maulbrüter – die Mama trägt (auch das Kuckucks- und das Hybrid-Ei)
+    if (!f) for (let i = 0; i < V.fish.length; i++) { const q = V.fish[i]; if (q.d.sp === csp && q.d.sex === csx && q.d.adult && !q.ghost && q.state !== 'leave') { f = q; e.cid = q.d.id; break; } }
     return f;
   };
   V.hitEgg = function (x, y) {
@@ -1486,6 +1499,7 @@
       const f = V.fish[i]; f.isLeader = false; f.lonely = false;
       if (f.ghost) continue;
       if (f.def.school) { (by[f.d.sp] = by[f.d.sp] || []).push(f); f.lonely = (cnt[f.d.sp] || 0) < AA.SCHOOL.lonely; }
+      else if (f.def.group) { let n = 0; for (let j = 0; j < tank.fish.length; j++) if (tank.fish[j].sp === f.d.sp) n++; f.lonely = n < f.def.group; }      // Runde 20e: Tropheus, Demasoni
     }
     const old = V.schools; V.schools = {};
     for (const sp in by) {
@@ -2047,7 +2061,7 @@
     const p0 = e.carry ? V.eggPos(e) : null;
     if (p0 && p0.car) { drawCarried(ctx, e, p0, t); return; }
     const p = p0 || V.eggPos(e), r = p.r, soon = e.hatch < e.total * 0.04, done = AA.clamp(1 - e.hatch / (e.total || 1), 0, 1);
-    const col = (AA.FISH_BY[e.sp] || {}).egg || '#ffd27a', held = e === V.dragEgg;
+    const col = (AA.FISH_BY[e.cuckoo || e.sp] || {}).egg || '#ffd27a', held = e === V.dragEgg;      // Runde 20e: das Kuckucksei sieht aus wie die anderen
     if (e.v) eggGlow(ctx, e, p, r, t);
     ctx.fillStyle = 'rgba(40,30,50,' + (held ? 0.1 : 0.18) + ')';
     ctx.beginPath(); ctx.ellipse(p.x, p.y + r * 0.95, r * 0.9, r * 0.28, 0, 0, TAU); ctx.fill();

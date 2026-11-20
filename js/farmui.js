@@ -52,8 +52,9 @@
       }).join('') + '</div>';
       h += '<div class="fc-genes">' + ['c', 's', 'v'].map(function (k) { return '<span title="' + AA.GENE_NAMES[k][0] + '">' + AA.GENE_NAMES[k][1] + ' ⌀ ' + F.genes[k].mean.toFixed(1).replace('.', ',') + ' <small>(bis ' + F.genes[k].max + ')</small></span>'; }).join('') + '</div>';
       const vs = F.vars.filter(function (x) { return x.p >= 0.001; });
-      h += '<div class="p-h">' + (P.sp === 'carp' ? 'Zuchtform' : 'Farbvariante') + '</div><div class="fc-vars">' + (P.sp === 'carp' ? '<span class="fc-v"><span class="vchip sm t1" style="--vc:#c9a227">Schuppenkarpfen</span> ' + pc(F.plain) + '</span>' : '') +
-        vs.map(function (x) { return '<span class="fc-v">' + UI.varChip(x.v, true) + ' ' + pc(x.p) + '</span>'; }).join('') + (P.sp === 'carp' ? '' : '<span class="fc-v plain">normale Farbe ' + pc(F.plain) + '</span>') + '</div>';
+      const FM = AA.FORMS[P.sp];                        // Karpfen, Kaiserbuntbarsch (Runde 20e): Zuchtformen statt Farbvarianten
+      h += '<div class="p-h">' + (FM ? 'Zuchtform' : 'Farbvariante') + '</div><div class="fc-vars">' + (FM ? '<span class="fc-v"><span class="vchip sm t1" style="--vc:' + FM.col + '">' + esc(FM.plain) + '</span> ' + pc(F.plain) + '</span>' : '') +
+        vs.map(function (x) { return '<span class="fc-v">' + UI.varChip(x.v, true) + ' ' + pc(x.p) + '</span>'; }).join('') + (FM ? '' : '<span class="fc-v plain">normale Farbe ' + pc(F.plain) + '</span>') + '</div>';
       h += '<div class="wk-note">Jede Balz bringt ' + (F.eggs > 1 ? 'gleich ' + F.eggs + ' Eier' : 'ein Ei') + ' – danach ruhen sich die beiden ' + AA.fmtDur(real(AA.mateCooldown(AA.tank(), P.sp, false))) + ' aus, alle anderen Paare dürfen weiter. Die Werte oben gelten für jedes Ei.</div>' +
         '<button class="btn green big" data-act="plan-go">❤ Paaren · ' + fmt(F.cost) + ' ' + coin() + '</button>';
     } else h += '<div class="wk-note">Wähle links einen Vater und eine Mutter – dann siehst du hier, was aus dem Ei wird.</div>';
@@ -142,7 +143,7 @@
     });
     pairs.sort(function (x, y) { return (y.F.cls.S + y.F.cls.A * 0.3) - (x.F.cls.S + x.F.cls.A * 0.3); });
     const rows = pairs.map(function (p) {
-      const def = AA.FISH_BY[p.sp], why = p.st.ok ? '' : (p.st.why === 'cd' ? 'wieder in ' + dur(real(p.st.cd)) : ({ busy: 'Balz läuft', dirty: 'Becken zu schmutzig', full: 'Becken voll', coins: 'zu wenig Münzen', spawn: 'laicht nur im Süßwasser' }[p.st.why] || 'gerade nicht'));
+      const def = AA.FISH_BY[p.sp], why = p.st.ok ? '' : (p.st.why === 'cd' ? 'wieder in ' + dur(real(p.st.cd)) : ({ busy: 'Balz läuft', dirty: 'Becken zu schmutzig', full: 'Becken voll', coins: 'zu wenig Münzen', spawn: 'laicht nur im Süßwasser', cave: 'braucht eine Höhle', barren: 'unfruchtbar' }[p.st.why] || 'gerade nicht'));
       return '<div class="quest order' + (p.st.ok ? ' ready' : '') + '"><div class="o-pic"><img src="' + fishImg(p.bp.a) + '" alt=""></div><div class="q-main"><div class="q-title">' + esc(def.name) + '</div>' +
         '<div class="q-desc">Bestes Paar: <b>' + esc(p.bp.a.name) + '</b> ' + UI.clsChip(p.bp.a) + ' × <b>' + esc(p.bp.b.name) + '</b> ' + UI.clsChip(p.bp.b) + '</div>' +
         '<div class="q-desc"><small>Chance auf Klasse S ' + pc(p.F.cls.S) + ' · A ' + pc(p.F.cls.A) + (p.F.vars.length && p.F.vars[0].p >= 0.05 ? ' · ' + esc(AA.VAR_BY[p.F.vars[0].v].name) + ' ' + pc(p.F.vars[0].p) : '') + '</small></div></div>' +
@@ -250,7 +251,7 @@
   };
   UI.farmInit = function () {
     const lab = $('#tank-label');
-    if (lab) { lab.title = 'Klicken: Becken umbenennen'; lab.style.cursor = 'pointer'; lab.addEventListener('click', function () { AA.audio.play('click'); UI.renameTank(); }); }
+    if (lab) { lab.title = 'Klicken: Becken umbenennen'; lab.style.cursor = 'pointer'; lab.addEventListener('click', function (e) { if (e.target && e.target.closest && e.target.closest('#tank-count')) return; AA.audio.play('click'); UI.renameTank(); }); }
     const live = function () { return !AA.quiet && AA.ready; };
     AA.on('contractMiss', function (c, missing, fine) { if (live()) { UI.toast('📜 <b>' + esc(c.name) + '</b>: ' + missing + ' von ' + c.n + ' ' + esc(AA.FISH_BY[c.sp].name) + ' fehlten – Strafe ' + fmt(fine) + ' Münzen, −' + AA.CONTRACTS.failRep + ' Ruf.', 'warn'); AA.audio.play('fail'); } });
     AA.on('contractDone', function (c, bonus) { if (live()) { UI.toast('🏆 Vertrag mit <b>' + esc(c.name) + '</b> erfüllt: +' + fmt(bonus) + ' Münzen Bonus, +' + AA.CONTRACTS.doneRep + ' Ruf.', 'big'); AA.audio.play('chest'); } });

@@ -23,14 +23,46 @@
   UI.fail = function (code) { UI.toast('⚠️ ' + (ERR[code] || 'Das geht gerade nicht.'), 'warn'); AA.audio.play('error'); };
 
   /* ---------- HUD ---------- */
+  /* Runde 20g: Münzen und Perlen zählen hoch bzw. runter statt zu springen (kurz, mit Abbremsen; bei Hintergrund-Tab sofort) */
+  function countTo(el, v) {
+    if (!el) return;
+    if (el.dataset.v === undefined || document.hidden || window.AA_NO_COUNT) { el.dataset.v = v; el.textContent = fmt(v); return; }
+    const to = +el.dataset.v; if (to === v) return;
+    const from = el.dataset.shown !== undefined ? +el.dataset.shown : to;
+    el.dataset.v = v;
+    if (Math.abs(v - from) < 2) { el.textContent = fmt(v); return; }
+    const t0 = performance.now(), dur = Math.min(950, 320 + 140 * Math.log10(1 + Math.abs(v - from)));
+    el.classList.toggle('up', v > from); el.classList.toggle('down', v < from);
+    cancelAnimationFrame(el._raf);
+    const step = function (now) {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3), x = Math.round(from + (v - from) * e);
+      el.dataset.shown = x; el.textContent = fmt(x);
+      if (k < 1) el._raf = requestAnimationFrame(step); else { delete el.dataset.shown; setTimeout(function () { el.classList.remove('up', 'down'); }, 250); }
+    };
+    el._raf = requestAnimationFrame(step);
+  }
+  UI.countTo = countTo;
+  /* Runde 20g: Schildchen an ◀ ▶ – was im Nachbarbecken los ist (krank 🤒, Hunger 🍽️, schmutzig 🧽, Eier schlüpfen gleich 🐣) */
+  function tankBadge(btn, t, label) {
+    if (!btn) return;
+    let w = null;
+    if (t) { const st = AA.tankStatus(t); st.warn.forEach(function (x) { if (x[2] >= 2 && (!w || x[2] > w[2])) w = x; }); if (!w) w = st.warn.find(function (x) { return x[0] === '🐣'; }) || null; }
+    const key = w ? w[0] + w[2] : '';
+    if (btn.dataset.tb !== key) {
+      btn.dataset.tb = key;
+      let i = btn.querySelector('.tb'); if (i) i.parentNode.removeChild(i);
+      if (w) { i = document.createElement('i'); i.className = 'tb w' + w[2]; i.textContent = w[0]; btn.appendChild(i); }
+    }
+    btn.title = label + (t ? ' – „' + t.name + '“' + (w ? ': ' + w[1] : '') : '');
+  }
   function setBar(sel, v) { const el = $(sel); el.style.width = Math.round(AA.clamp(v, 0, 1) * 100) + '%'; el.parentNode.parentNode.classList.toggle('low', v < 0.25); }
   UI.refresh = function () {
     const s = AA.state, t = AA.tank(), xp = AA.xpProgress();
     $('#lvl-num').textContent = s.level;
     $('#xp-fill').style.width = Math.round(Math.min(1, xp.frac) * 100) + '%';
     $('#xp-text').textContent = xp.max ? 'Max-Level' : fmt(xp.cur) + ' / ' + fmt(xp.need) + ' XP';
-    $('#coins').textContent = fmt(s.coins);
-    $('#pearls').textContent = fmt(s.pearls);
+    countTo($('#coins'), s.coins);
+    countTo($('#pearls'), s.pearls);
     $('#food').textContent = fmt(s.food);
     $('#food-n').textContent = s.food > 999 ? '999+' : s.food;
     $('#food-n').classList.toggle('zero', s.food <= 0);
@@ -41,6 +73,9 @@
     const multi = s.tanks.length > 1;
     $('#tank-prev').style.visibility = multi ? 'visible' : 'hidden';
     $('#tank-next').style.visibility = multi ? 'visible' : 'hidden';
+    const n = s.tanks.length;
+    tankBadge($('#tank-prev'), multi ? s.tanks[(s.active - 1 + n) % n] : null, 'Vorheriges Aquarium (←)');
+    tankBadge($('#tank-next'), multi ? s.tanks[(s.active + 1) % n] : null, 'Nächstes Aquarium (→)');
     $('#btn-sound').textContent = s.settings.sound ? '🔊' : '🔇';
     $('#btn-light').textContent = s.settings.night ? '☀️' : '🌙';
     $('#medal-dot').classList.toggle('hidden', AA.claimable() === 0);
@@ -148,7 +183,7 @@
   function fishCard(f) {                               // Runde 18: eigene Funktion – auch der Reiter „Weihnachten“ baut damit seine Karten
       const s = AA.state, t = AA.tank(), full = AA.count(t) >= AA.cap(t), W = AA.WATER;
       const locked = s.level < f.lvl, w = AA.waterOf(f), why = AA.whyNot(f, t), wrong = !!why;
-      return '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '">' +
+      return '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '" data-sid="fish:' + f.id + '">' + favBtn('fish:' + f.id) +
         '<div class="pic' + (f.inv ? ' inv' : '') + '">' + tpic('fish/' + f.id + '_m') + tpic('fish/' + f.id + '_b', 'baby') + '</div>' +
         '<div class="nm">' + esc(f.name) + '</div><div class="info">' + esc(f.info) + '</div>' +
         '<div class="stats"><span title="' + W[w].name + '">' + W[w].ico + '</span>' + 
@@ -210,7 +245,7 @@
         (UI.wildDecoTags ? UI.wildDecoTags(d) : '') + (UI.decorTags ? UI.decorTags(d) : '') +
         (d.home ? '<span title="In der Natur zu Hause im ' + AA.WATER[d.home].name + ' – passt trotzdem in jedes Becken">' + AA.WATER[d.home].ico + ' ' + AA.WATER[d.home].name + '-Typ</span>' : '') +
         (rg ? '<span title="So klein und so groß lässt es sich im Becken ziehen">📐 ' + pct(rg[0]) + '–' + pct(rg[1]) + ' %</span>' : '<span title="Lässt sich nicht größer oder kleiner ziehen">🔒 Feste Größe</span>');
-      return '<div class="card' + (locked ? ' is-locked' : '') + '">' +
+      return '<div class="card' + (locked ? ' is-locked' : '') + '" data-sid="deco:' + d.id + '">' + (d.trophy ? '' : favBtn('deco:' + d.id)) +
         '<div class="pic deco">' + tpic('deco/' + d.id) + '</div>' +
         '<div class="nm">' + esc(d.name) + '</div>' + (d.info ? '<div class="info">' + esc(d.info) + '</div>' : '') +
         '<div class="stats">' + tags + '</div>' +
@@ -237,7 +272,7 @@
       const tags = (job ? '<span class="tag-job" title="Job in der Putzkolonne">' + job.ico + ' ' + job.name + '</span>' : '') + (d.clean ? '<span title="Bremst das Veralgen">🧽 −' + Math.round(d.clean * 100) + ' % Schmutz</span>' : '') + (d.eats && d.job !== 'food' ? '<span title="Frisst Futter, das am Boden liegen bleibt">🍽️ Räumt Futterreste weg</span>' : '') +
         (d.glass ? '<span title="Klettert auch an die Scheibe und die Seitenwände – dort sieht man die Unterseite">🪟 Klettert ans Glas</span>' : '') +
         (!d.clean && !d.eats && !d.glass && !job ? '<span>✨ Einfach hübsch</span>' : '');
-      return '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '">' +
+      return '<div class="card' + (locked ? ' is-locked' : '') + (wrong ? ' is-other' : '') + '" data-sid="crawl:' + d.id + '">' + favBtn('crawl:' + d.id) +
         '<div class="pic deco">' + tpic('deco/' + d.id) + '</div>' +
         '<div class="nm">' + esc(d.name) + '</div><div class="info">' + esc(d.info || '') + '</div>' +
         '<div class="stats"><span title="' + AA.WATER[w].name + '">' + AA.WATER[w].ico + '</span>' + tags + (UI.themeTag ? UI.themeTag(d.id) : '') + '</div>' +
@@ -339,12 +374,81 @@
       here.map(fishCard).join('') + (other.length ? otherWaterSec('Specials') + other.map(fishCard).join('') : '');
   }
   UI.storeTabs = function () { return (AA.season().xmas ? [['xmas', '🎄 Weihnachten']] : []).concat(TABS); };
+  /* ---------- Runde 20g: Suche, Filter, Favoriten, „Nochmal kaufen“ (gilt für Fische, Specials, Krabbler, Deko und Weihnachten) ----------
+     UI.shopQ bleibt beim Reiterwechsel und Neuzeichnen erhalten; gefiltert wird direkt an den Karten (data-sid = Art:ID). */
+  const SEARCH_TABS = { fish: 1, special: 1, crawl: 1, deco: 1, xmas: 1 };
+  UI.shopQ = { q: '', buy: false, miss: false, water: '', fav: false, sort: '' };
+  UI.favs = function () { const s = AA.state; if (!Array.isArray(s.favs)) s.favs = []; return s.favs; };
+  function favBtn(sid) { const on = UI.favs().indexOf(sid) >= 0; return '<button class="fav' + (on ? ' on' : '') + '" data-act="fav" data-id="' + sid + '" title="' + (on ? 'Favorit – antippen zum Entfernen' : 'Als Favorit merken') + '">' + (on ? '★' : '☆') + '</button>'; }
+  function sidDef(sid) { const i = sid.indexOf(':'), k = sid.slice(0, i), id = sid.slice(i + 1); return { k: k, id: id, d: k === 'fish' ? AA.FISH_BY[id] : (k === 'food' ? AA.FOOD_BY[id] : AA.DECO_BY[id]) }; }
+  function sidPrice(x) { const d = x.d; if (!d) return 0; if (x.k === 'fish') return d.pearlOnly ? d.pearls : (AA.priceOf ? AA.priceOf(d) : d.price); return d.pearls || d.price || 0; }
+  function norm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function sidTest(x) {                                 // passt diese Karte zu den Filtern?
+    const s = AA.state, t = AA.tank(), d = x.d, Q = UI.shopQ;
+    if (!d) return false;
+    if (Q.q) { const words = norm(Q.q).split(/\s+/).filter(Boolean), hay = norm(d.name + ' ' + (d.info || '')); if (!words.every(function (w) { return hay.indexOf(w) >= 0; })) return false; }
+    if (Q.fav && UI.favs().indexOf(x.k + ':' + x.id) < 0) return false;
+    if (Q.water && (x.k === 'fish' || x.k === 'crawl')) { const w = AA.waterOf(d); if (w !== 'both' && w !== Q.water) return false; }
+    if (Q.miss) {
+      if (x.k === 'fish' && AA.bookHas(x.id)) return false;
+      if (x.k === 'crawl' && s.critters && s.critters[x.id]) return false;
+      if (x.k === 'deco' && (s.tanks.some(function (tk) { return tk.deco.some(function (o) { return o.type === x.id; }); }) || (s.storage || []).some(function (o) { return o.type === x.id; }))) return false;
+    }
+    if (Q.buy) {
+      if (d.trophy || (d.season && !AA.season()[d.season]) || (s.level < d.lvl && !d.trophy)) return false;
+      const pr = sidPrice(x), pearls = x.k === 'fish' ? !!d.pearlOnly : !!d.pearls;
+      if ((pearls ? s.pearls : s.coins) < pr) return false;
+      if (x.k === 'fish' && (AA.whyNot(d, t) || AA.count(t) >= AA.cap(t))) return false;
+      if (x.k === 'crawl' && (!AA.decoFits(d, t) || AA.decoCount(t, true) >= AA.crawlMax(t))) return false;
+    }
+    return true;
+  }
+  UI.shopActive = function () { const Q = UI.shopQ; return !!(Q.q || Q.buy || Q.miss || Q.water || Q.fav || Q.sort); };
+  function shopBar() {
+    const Q = UI.shopQ, tab = UI.storeTab, s = AA.state, chip = function (id, txt, on, tip) { return '<button class="chip' + (on ? ' on' : '') + '" data-act="sq" data-id="' + id + '" title="' + tip + '">' + txt + '</button>'; };
+    const water = tab !== 'deco' ? chip('salt', '🌊 Salz', Q.water === 'salt', 'Nur Meerwasser-Arten') + chip('fresh', '🌿 Süß', Q.water === 'fresh', 'Nur Süßwasser-Arten') : '';
+    const sortTxt = { '': '↕ Level', up: '💰 Günstig zuerst', down: '💰 Teuer zuerst' }[Q.sort || ''];
+    const lb = s.lastBuy && sidDef(s.lastBuy), again = lb && lb.d && !lb.d.trophy ? '<button class="chip again" data-act="again" title="Den letzten Kauf wiederholen">↻ Nochmal: ' + esc(lb.d.name) + '</button>' : '';
+    return '<div class="shopbar"><input id="shop-q" type="search" placeholder="🔍 Suchen …" value="' + esc(Q.q) + '" autocomplete="off" spellcheck="false" aria-label="Im Shop suchen">' +
+      chip('buy', '🛒 Kaufbar', Q.buy, 'Nur, was du jetzt kaufen kannst (Level, Geld, passendes Becken)') + chip('miss', '📖 Fehlt mir', Q.miss, 'Nur, was du noch nie hattest') + water +
+      chip('fav', '★ Favoriten', Q.fav, 'Nur deine Favoriten (Stern an der Karte)') + chip('sort', sortTxt, !!Q.sort, 'Sortieren: Level · günstig zuerst · teuer zuerst') +
+      (UI.shopActive() ? '<button class="chip clear" data-act="sq" data-id="clear" title="Alle Filter aus">✕</button>' : '') + again + '</div>';
+  }
+  UI.applyShopQ = function () {
+    const g = $('#modal .grid'); if (!g || UI.modalKind !== 'store' || !SEARCH_TABS[UI.storeTab]) return;
+    const act = UI.shopActive(), kids = Array.prototype.slice.call(g.children);
+    if (!g.dataset.oi) { kids.forEach(function (el, i) { el.dataset.oi = i; }); g.dataset.oi = '1'; }
+    else kids.sort(function (a, b) { return (+a.dataset.oi || 0) - (+b.dataset.oi || 0); }).forEach(function (el) { g.appendChild(el); });      // erst die ursprüngliche Reihenfolge
+    const cards = Array.prototype.slice.call(g.querySelectorAll('.card[data-sid]'));
+    let n = 0;
+    cards.forEach(function (c) { const ok = sidTest(sidDef(c.dataset.sid)); c.classList.toggle('q-hide', !ok); if (ok) n++; });
+    g.querySelectorAll('.sec, .card:not([data-sid]), .wk-note').forEach(function (el) { el.classList.toggle('q-hide', act); });
+    if (UI.shopQ.q && !UI.shopQ.sort) {                // Suche: Treffer im Namen zuerst, dann die in der Beschreibung
+      const words = norm(UI.shopQ.q).split(/\s+/).filter(Boolean), byName = function (c) { const x = sidDef(c.dataset.sid); return x.d && words.every(function (w) { return norm(x.d.name).indexOf(w) >= 0; }); };
+      cards.filter(byName).concat(cards.filter(function (c) { return !byName(c); })).forEach(function (c) { g.appendChild(c); });
+    }
+    if (UI.shopQ.sort) {                               // sortieren: alle Karten in eine Reihe (die Abschnitts-Köpfe sind dann aus)
+      const k = UI.shopQ.sort === 'down' ? -1 : 1;
+      cards.sort(function (a, b) { return k * (sidPrice(sidDef(a.dataset.sid)) - sidPrice(sidDef(b.dataset.sid))); }).forEach(function (c) { g.appendChild(c); });
+    }
+    let none = g.querySelector('.q-none');
+    if (act && !n) { if (!none) { none = document.createElement('div'); none.className = 'sec q-none'; g.appendChild(none); } none.textContent = '🔍 Nichts gefunden – andere Suche oder Filter ✕ aus.'; none.classList.remove('q-hide'); }
+    else if (none) none.parentNode.removeChild(none);
+  };
+  /* teuer = mehr als 10 % des Kontostands (ab 100 Münzen bzw. 3 Perlen) – dann einmal nachfragen, sonst kaufen wir direkt */
+  UI.costly = function (price, pearls) { const s = AA.state; return pearls ? price >= 3 && price > s.pearls * 0.1 : price >= 100 && price > s.coins * 0.1; };
+  UI.askBuy = function (act, id, name, price, pearls) {
+    const s = AA.state, have = pearls ? s.pearls : s.coins, pc = have > 0 ? Math.round(price / have * 100) : 100;
+    UI.open('confirm', head('Wirklich kaufen?') + '<div class="confirm"><p><b>' + esc(name) + '</b> für ' + (pearls ? PEARL : COIN) + ' <b>' + fmt(price) + '</b> ' + (pearls ? 'Perlen' : 'Münzen') +
+      ' – das sind ' + pc + ' % von dem, was du hast.</p><div class="row end"><button class="btn grey" data-act="askno">Abbrechen</button><button class="btn green" data-act="' + act + '" data-id="' + id + '" data-ok="1">Ja, kaufen</button></div></div>', 'small');
+  };
   function storeHtml() {
     const s = AA.state, t = AA.tank(), tabs = UI.storeTabs();
     if (!tabs.some(function (tb) { return tb[0] === UI.storeTab; })) UI.storeTab = 'fish';      // Weihnachtszeit vorbei: zurück zu den Fischen
     const body = { xmas: xmasCards, fish: fishCards, special: specialCards, crawl: crawlCards, food: foodCards, deco: decoCards, look: lookCards, tank: tankCards, perk: perkCards }[UI.storeTab]();
     return head('🛒 Shop', '<div class="m-coins"><span id="m-coins">' + COIN + ' <b>' + fmt(s.coins) + '</b></span><span id="m-pearls">' + PEARL + ' <b>' + fmt(s.pearls) + '</b></span><small>Level ' + s.level + ' · ' + AA.count(t) + '/' + AA.cap(t) + ' 🐟</small></div>') +
       '<div class="tabs">' + tabs.map(function (tb) { return '<button class="tab' + (tb[0] === UI.storeTab ? ' active' : '') + '" data-act="tab" data-id="' + tb[0] + '">' + tb[1] + '</button>'; }).join('') + '</div>' +
+      (SEARCH_TABS[UI.storeTab] ? shopBar() : '') +
       '<div class="grid g-' + UI.storeTab + '">' + body + '</div>';
   }
   /* Boden- und Kulissen-Bilder kommen päckchenweise nach (js/assets.js): Ist der Shop gerade offen, die Vorschau an Ort und Stelle auffrischen –
@@ -360,9 +464,24 @@
     if (tab) UI.storeTab = tab;
     const g = $('#modal .grid'), sc = (UI.modalKind === 'store' && g && !tab) ? g.scrollTop : 0;
     UI.open('store', storeHtml(), 'store');
+    UI.applyShopQ();                                   // Runde 20g: Suche und Filter
     AA.assets.refreshImgs();                           // Vorschaubilder einsetzen, die schon da sind (der Rest kommt mit seinem Päckchen)
     const g2 = $('#modal .grid'); if (g2) g2.scrollTop = sc;
+    bindShopQ();
   };
+  function bindShopQ() {                              // Suchfeld: tippen filtert sofort (ohne Neuzeichnen – der Fokus bleibt im Feld)
+    const q = $('#shop-q'); if (!q) return;
+    q.addEventListener('input', function () {
+      UI.shopQ.q = q.value;
+      const g = $('#modal .grid'); if (g) g.scrollTop = 0;
+      UI.applyShopQ();
+      const bar = $('#modal .shopbar'), cl = bar && bar.querySelector('.clear');
+      if (bar && !!cl !== UI.shopActive()) {           // ✕ ein- bzw. ausblenden
+        const pos = q.selectionStart; bar.outerHTML = shopBar();
+        const q2 = $('#shop-q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (e) { /* egal */ } bindShopQ(); }
+      }
+    });
+  }
 
   /* ---------- Fisch kaufen: erst das Geschlecht, dann der Name ---------- */
   function buyHtml() {
@@ -384,13 +503,14 @@
     UI.open('egginfo', eggHtml(egg), 'small');
   };
   function eggHtml(egg) {
-    const f = AA.FISH_BY[egg.sp], done = AA.clamp(1 - egg.hatch / (egg.total || egg.hatch || 1), 0, 1), g = egg.g;
+    const f = AA.FISH_BY[egg.cuckoo || egg.sp], done = AA.clamp(1 - egg.hatch / (egg.total || egg.hatch || 1), 0, 1), g = egg.g;
     const stage = done < 0.25 ? 'Frisch gelegt – noch ganz klar, man sieht den Dotter.' : done < 0.6 ? 'Im Ei wächst schon ein kleiner Schatten heran.' : done < 0.92 ? 'Das Kleine ist gut zu sehen und zuckt ab und zu.' : 'Gleich ist es so weit – das Ei wackelt schon!';
     let h = head('🥚 Ei: ' + esc(f.name)) + '<div class="eggbox"><div class="pic big">' + pic('fish/' + f.id + '_b', 'baby') + '</div><div class="form">';
     h += '<div class="eggrow"><b>Schlüpft in</b><span id="egg-left">' + AA.fmtDur(real(egg.hatch)) + '</span></div>';
     h += '<div class="bar grow"><i style="width:' + Math.round(done * 100) + '%"></i><span>' + Math.round(done * 100) + ' % ausgebrütet</span></div>';
     h += '<div class="note">' + stage + '</div>';
     if (egg.pa) h += '<div class="eggrow"><b>Eltern</b><span>' + esc(egg.pa[0]) + ' &amp; ' + esc(egg.pa[1]) + '</span></div>';
+    if (egg.cuckoo && done >= 0.5) h += '<div class="eggrow"><b>🤔 Hm …</b><span>Dieses Ei ist ein bisschen anders als die anderen.</span></div>';      // Runde 20e: Kuckucksei (verrät sich erst beim Schlüpfen)
     if (egg.hy && AA.FISH_BY[egg.hy[0]] && AA.FISH_BY[egg.hy[1]]) h += '<div class="eggrow"><b>🧬 Kreuzung</b><span>' + esc(AA.FISH_BY[egg.hy[0]].name) + ' × ' + esc(AA.FISH_BY[egg.hy[1]].name) + '</span></div>';
     if (egg.v) h += '<div class="eggrow gold"><b>✨ Es glitzert!</b><span>Da schlüpft eine Farbvariante – welche, siehst du erst beim Schlüpfen.</span></div>';
     if (g) {
@@ -410,8 +530,8 @@
     if (!tank || tank.eggs.indexOf(UI.egg) < 0) { el.textContent = 'geschlüpft! 🐣'; return; }
     el.textContent = AA.fmtDur(real(UI.egg.hatch));
   }, 1000);
-  UI.buyFishDialog = function (id) {
-    UI.buy = { id: id, sex: Math.random() < 0.5 ? 'm' : 'f', name: AA.pick(AA.NAMES) };
+  UI.buyFishDialog = function (id, sex) {
+    UI.buy = { id: id, sex: sex === 'm' || sex === 'f' ? sex : (Math.random() < 0.5 ? 'm' : 'f'), name: AA.pick(AA.NAMES) };
     UI.open('buyfish', buyHtml(), 'small');
     const inp = $('#buy-name'); if (inp) { inp.focus(); inp.select(); }
   };
@@ -499,6 +619,12 @@
     if (n.themes && n.themes.list && !n.r19) {         // Runde 19: beim ersten Laden still gutgeschrieben (js/themes.js) – steht sonst schon oben bei den Themen-Sets
       const k = n.themes.list.length;
       li.push('🎉 <b>Schon geschafft:</b> ' + k + (k === 1 ? ' Set-Stufe' : ' Set-Stufen') + ' aus deiner bisherigen Sammlung sind gutgeschrieben' + (n.themes.pearls ? ' – <b>+' + n.themes.pearls + ' Perlen</b>' : '') + '. Was genau, steht im Sammelbuch unter 🗺️ Themen-Sets.');
+    }
+    if (n.r20e) {                                      // Runde 20e/20g (20.11.2026)
+      li.push('🌍 <b>Neu: Afrika-Legenden</b> (Shop → Fische, Süßwasser): 14 Arten aus Malawi- und Tanganjikasee, Kongo und Westafrika – vom Prachtbarsch (Lv 8) bis zur Frontosa (Lv 37). Dazu Flowerhorn und Blutpapagei als Gäste, Muschel-Haufen und Kalkfelsen.');
+      li.push('👄 <b>Maulbrüter:</b> Bei den meisten trägt die Mama das Ei im Maul. 🤫 Und lebt ein <b>Kuckuckswels</b> im Becken, schmuggelt er manchmal sein Ei dazu – Überraschungs-Baby! 😵 Der <b>Schläfer</b> stellt sich tot, 🧗 der Schlankcichlide klebt am Fels, 💨 Calvus flitzt durch Spalten.');
+      li.push('🌈 <b>Kaiserbuntbarsch</b> hat eigene Zuchtformen (Sunshine, Rubin, OB, Drachenblut) · 🧬 Hybride: Sonnen-Kaiser und Zebra-Prinzessin · 🗺️ Sets Malawisee, Tanganjikasee und Afrika-Legenden mit drei neuen Becken-Effekten.');
+      li.push('✨ <b>Komfort:</b> Füttern und Putzen gedrückt halten · Shop-Suche mit Filtern, ★ Favoriten und „Nochmal kaufen“ · Sammelbuch-Suche und „Wo bekomme ich das?“ · Schildchen an ◀ ▶ zeigen, wo Hunger ist · Doppelklick auf Deko öffnet den Deko-Modus.');
     }
     if (n.xmas18) li.push('🎄 <b>Weihnachts-Update:</b> neuer Reiter „Weihnachten“ im Shop mit Rentier, Eisbär, Schneemann, drei Weihnachts-Fischen und 15 Deko-Teilen – nur bis 6. Januar. Dazu zwei Winterböden und links der Adventskalender (bald verfügbar).');
     if (n.gone) {                                      // Runde 18: Steinkopf mit Hut, Brücken und Wege sind raus (js/state.js, AA.dropGone)
@@ -656,12 +782,13 @@
     UI.syncSize();
     V.cardZone = card.classList.contains('hidden') ? null : { x0: card.offsetLeft, x1: card.offsetLeft + card.offsetWidth, y1: card.offsetTop + card.offsetHeight };
   };
-  const MATE_TXT = { busyme: 'Balzt gerade …', hungryme: 'Erst satt werden', busy: 'Partner balzt …', nomale: 'Kein ♂ da', nofemale: 'Kein ♀ da', hungry: 'Paar ist hungrig', dirty: 'Becken zu schmutzig', full: 'Becken voll', coins: 'Zu wenig Münzen', spawn: 'Laicht nur im Süßwasser', sterile: '🧬 Unfruchtbar' };
+  const MATE_TXT = { busyme: 'Balzt gerade …', hungryme: 'Erst satt werden', busy: 'Partner balzt …', nomale: 'Kein ♂ da', nofemale: 'Kein ♀ da', hungry: 'Paar ist hungrig', dirty: 'Becken zu schmutzig', full: 'Becken voll', coins: 'Zu wenig Münzen', spawn: 'Laicht nur im Süßwasser', sterile: '🧬 Unfruchtbar', barren: '🚫 Unfruchtbar', cave: '🕳️ Braucht eine Höhle' };
   const MATE_HINT = { nomale: 'Zum Paaren fehlt ein erwachsenes ♂ Männchen dieser Art.', nofemale: 'Zum Paaren fehlt ein erwachsenes ♀ Weibchen dieser Art.',
     hungryme: 'Zum Balzen muss dieser Fisch satt und gesund sein.', busyme: 'Dieser Fisch balzt gerade – gleich liegt das Ei im Becken.', cdme: 'Nach der Balz ruht sich jeder Fisch so lange aus, bis sein Junges erwachsen wäre (Ei + Großwerden). Andere Paare dürfen in der Zeit trotzdem.',
     hungry: 'Beide Eltern müssen satt und gesund sein.', dirty: 'Erst putzen – gepaart wird nur im sauberen Becken.', full: 'Kein Platz für ein Ei: Becken vergrößern oder Fische verkaufen.',
     coins: 'Die Paarung kostet den halben Kaufpreis.', cd: 'Alle passenden Partner ruhen sich gerade nach ihrer Balz aus.', busy: 'Alle passenden Partner balzen gerade schon.', spawn: 'Lachse laichen nur im Süßwasser – setz das Paar in ein Süßwasser-Becken um.', pair: 'Dieses Paar kann gerade nicht.',
-    sterile: 'Hybride sind unfruchtbar – einen neuen gibt es nur, wenn du die beiden Eltern-Arten wieder kreuzt.' };
+    sterile: 'Hybride sind unfruchtbar – einen neuen gibt es nur, wenn du die beiden Eltern-Arten wieder kreuzt.',
+    barren: 'Diese Zuchtform ist fast immer unfruchtbar – neue gibt es nur im Shop.', cave: 'Laicht nur in einer Höhle: Stell eine Ton-Laichhöhle oder eine Kokosnuss (Shop → Deko) ins Becken.' };
   const PHASE_TXT = ['Baby · Phase 1 von 4', 'Baby · Phase 2 von 4', 'Jungfisch · Phase 3 von 4', 'Jungfisch · Phase 4 von 4', 'Erwachsen'];
   UI.updateCard = function () {
     const card = $('#card'), t = AA.tank();
@@ -803,8 +930,46 @@
   };
   function onModalClick(e) {
     const b = e.target.closest('[data-act]'); if (!b) return;
-    const act = b.dataset.act, id = b.dataset.id, s = AA.state;
+    runAct(b.dataset.act, b.dataset.id, b);
+  }
+  UI.runAct = function (act, id, b) { runAct(act, id, b || { dataset: {} }); };
+  function runAct(act, id, b) {
+    const s = AA.state, ok = !!(b && b.dataset && b.dataset.ok);
     AA.audio.play('click');
+    if (act === 'sq') {                                // Runde 20g: Shop-Filter
+      const Q = UI.shopQ;
+      if (id === 'clear') { Q.q = ''; Q.buy = Q.miss = Q.fav = false; Q.water = ''; Q.sort = ''; }
+      else if (id === 'salt' || id === 'fresh') Q.water = Q.water === id ? '' : id;
+      else if (id === 'sort') Q.sort = Q.sort === '' ? 'up' : (Q.sort === 'up' ? 'down' : '');
+      else Q[id] = !Q[id];
+      UI.openStore(); const g = $('#modal .grid'); if (g) g.scrollTop = 0;
+      return;
+    }
+    if (act === 'fav') {
+      const L = UI.favs(), i = L.indexOf(id);
+      if (i >= 0) L.splice(i, 1); else L.push(id);
+      if (b && b.classList) { b.classList.toggle('on', i < 0); b.textContent = i < 0 ? '★' : '☆'; b.title = i < 0 ? 'Favorit – antippen zum Entfernen' : 'Als Favorit merken'; }
+      if (i < 0) AA.audio.play('pop');
+      AA.save(); if (UI.shopQ.fav) UI.applyShopQ();
+      return;
+    }
+    if (act === 'again') {
+      const x = s.lastBuy && sidDef(s.lastBuy);
+      if (!x || !x.d) return;
+      if (x.k === 'fish') { UI.buyFishDialog(x.id, s.lastSex); return; }
+      runAct(x.k === 'food' ? 'buyfood' : 'buydeco', x.id, { dataset: {} });
+      return;
+    }
+    if (act === 'askno') { UI.openStore(); return; }
+    if (!ok && UI.modalKind === 'store') {             // Runde 20g: teure Käufe (mehr als 10 % des Kontostands) einmal bestätigen
+      let ask = null;
+      if (act === 'buydeco' && AA.DECO_BY[id]) { const d = AA.DECO_BY[id]; ask = [d.name, d.pearls || d.price, !!d.pearls]; }
+      else if (act === 'buyfood' && AA.FOOD_BY[id]) { const d = AA.FOOD_BY[id]; ask = [d.name, d.pearls || d.price, !!d.pearls]; }
+      else if (act === 'upgradetank') { const t = AA.tank(), rq = t.size < AA.SIZES.length - 1 ? AA.tankReqFor(s.active, t.size + 1) : null; if (rq) ask = ['Becken vergrößern (' + AA.SIZES[t.size + 1].gal + ' Gallonen)', rq.price, false]; }
+      else if (act === 'buytank') { const rq = AA.newTankReq(id === 'bonus'); ask = [id === 'salt' ? 'Neues Meerwasser-Becken' : 'Neues Süßwasser-Becken', rq.price, false]; }
+      else if (act === 'setwall' && AA.WALL_BY[id] && s.walls.indexOf(id) < 0 && AA.WALL_BY[id].pearls) ask = ['Hintergrund „' + AA.WALL_BY[id].name + '“', AA.WALL_BY[id].pearls, true];
+      if (ask && UI.costly(ask[1], ask[2]) && (ask[2] ? s.pearls : s.coins) >= ask[1]) { UI.askBuy(act, id, ask[0], ask[1], ask[2]); return; }
+    }
     if (UI.cloudClick && UI.cloudClick(act, id, b)) return;       // Anmelden, Profil, Freunde, Besuch (js/cloudui.js) – sperrt im Besuch alles außer „Schließen“
     if (UI.wildClick && UI.wildClick(act, id, b)) return;         // Tiefsee-Becken (js/wildui.js)
     if (UI.socialClick && UI.socialClick(act, id, b)) return;     // Runde 11: Profil, Musik (js/socialui.js)
@@ -829,18 +994,19 @@
       const name = ($('#buy-name').value || '').trim().slice(0, 14) || AA.pick(AA.NAMES);
       const r = AA.buyFish(UI.buy.id, name, UI.buy.sex, act === 'confirmfishp');
       if (typeof r === 'string') UI.fail(r);
-      else { UI.close(); UI.toast('🐟 ' + esc(r.name) + ' ist eingezogen – und hat Hunger!'); }
+      else { s.lastBuy = 'fish:' + UI.buy.id; s.lastSex = UI.buy.sex; UI.close(); UI.toast('🐟 ' + esc(r.name) + ' ist eingezogen – und hat Hunger!'); }
     }
     else if (act === 'buyfood') {
       const r = AA.buyFood(id), def = AA.FOOD_BY[id];
       if (typeof r === 'string') UI.fail(r);
-      else { AA.audio.play('buy'); UI.toast(def.days ? '⏲️ Futterautomat läuft: ' + def.days + ' Tage Ruhe in „' + esc(AA.tank().name) + '“.' : (def.kind ? def.ico + ' +' + def.n + '× ' + esc(def.name) + ' – beim Füttern in der Leiste über dem Werkzeug wählen.' : '🥫 +' + def.food + ' Prisen Futter')); UI.openStore(); }
+      else { s.lastBuy = 'food:' + id; AA.audio.play('buy'); UI.toast(def.days ? '⏲️ Futterautomat läuft: ' + def.days + ' Tage Ruhe in „' + esc(AA.tank().name) + '“.' : (def.kind ? def.ico + ' +' + def.n + '× ' + esc(def.name) + ' – beim Füttern in der Leiste über dem Werkzeug wählen.' : '🥫 +' + def.food + ' Prisen Futter')); UI.openStore(); }
     }
     else if (act === 'gift') { UI.gift(); UI.openStore(); }
     else if (act === 'buydeco') {
       const r = AA.buyDeco(id);
       if (typeof r === 'string') UI.fail(r);
       else {
+        s.lastBuy = (AA.DECO_BY[id].crawl ? 'crawl:' : 'deco:') + id;      // Runde 20g: „Nochmal kaufen“
         UI.close(); AA.audio.play('buy');
         if (id === 'bubbleclam') { if (s.active !== 0) AA.switchTank(0); UI.toast('🦪 Die Blubber-Muschel ersetzt jetzt die Schatzkiste in Aquarium 1.', 'gold'); }
         else if (AA.DECO_BY[id].crawl) { UI.setTool('hand'); UI.toast('🦀 ' + esc(AA.DECO_BY[id].name) + ' ist eingezogen und erkundet jetzt den Kies.'); }

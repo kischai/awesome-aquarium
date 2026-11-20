@@ -25,6 +25,45 @@
     const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
     O[0] = hue2(p, q, h + 1 / 3) * 255; O[1] = hue2(p, q, h) * 255; O[2] = hue2(p, q, h - 1 / 3) * 255;
   }
+  /* Runde 20e: Zuchtformen des Kaiserbuntbarschs richten sich nach der Farbe im Bild: warmer Körper, blaue Kopf-/Flossenpartie, violette Binden */
+  function hueOf(r, g, b) {
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    if (d < 1) return -1;
+    let h = mx === r ? ((g - b) / d) % 6 : (mx === g ? (b - r) / d + 2 : (r - g) / d + 4);
+    h *= 60; return h < 0 ? h + 360 : h;
+  }
+  function inHue(h, a, b, soft) {                      // 1 im Bereich a…b (Grad), weicher Rand
+    if (h < 0) return 0;
+    const mid = (a + b) / 2, half = (b - a) / 2; let d = Math.abs(h - mid); if (d > 180) d = 360 - d;
+    return 1 - sm(half, half + soft, d);
+  }
+  function hash2(x, y) { let h = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+  function vnoise(x, y) {                              // weiches Wertrauschen 0…1 (OB-Kleckse)
+    const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const a = hash2(xi, yi), b = hash2(xi + 1, yi), c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+    return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+  }
+  const T2 = [0, 0, 0];
+  function peacockPixel(v, r, g, b, l, u, vv) {        // setzt O; Rückgabe: Anteil, wie stark umgefärbt wird (Faktor auf w)
+    const hu = hueOf(r, g, b), cool = inHue(hu, 186, 236, 14), bar = inHue(hu, 244, 316, 16);
+    if (v === 'psun') { hsl(46 - 8 * bar, 0.95, (l * 1.02 + 0.07) * (1 - 0.3 * bar)); return 1 - cool; }
+    if (v === 'prubin') {
+      hsl(282, 0.6, l * 0.92); T2[0] = O[0]; T2[1] = O[1]; T2[2] = O[2];
+      hsl(350 - 6 * bar, 0.86, l * (0.84 - 0.22 * bar));
+    } else if (v === 'pdragon') {
+      hsl(350, 0.42, 0.62 + 0.32 * l); T2[0] = O[0]; T2[1] = O[1]; T2[2] = O[2];
+      hsl(6 + 10 * bar, 0.86, 0.44 + 0.36 * l);
+    } else {                                           // pob: Orange mit blauen und schwarzen Klecksen
+      const n = vnoise(u * 8.5 + 3.1, vv * 6.5 + 7.7), blk = sm(0.6, 0.68, n), blu = 1 - sm(0.22, 0.3, n);
+      hsl(214, 0.85, 0.32 + 0.32 * l); const br = O[0], bg = O[1], bb = O[2];
+      hsl(26, 0.96, 0.18 + 0.72 * l);
+      O[0] += (br - O[0]) * blu; O[1] += (bg - O[1]) * blu; O[2] += (bb - O[2]) * blu;
+      const k = 0.85 * blk; O[0] += (24 - O[0]) * k; O[1] += (26 - O[1]) * k; O[2] += (40 - O[2]) * k;
+      return 1;
+    }
+    O[0] += (T2[0] - O[0]) * cool; O[1] += (T2[1] - O[1]) * cool; O[2] += (T2[2] - O[2]) * cool;
+    return 1;
+  }
   function strHash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 
   function unrle(a, W, H, flipSum) {                  // Maske aus js/varmask.js auspacken; flipSum: Zeile y landet bei flipSum - y
@@ -114,6 +153,10 @@
     } else if (v === 'night') {                        // dunkles Nachtblau; helle Zeichnung bleibt hell (Mondlicht)
       const k = sm(0.7, 0.9, l) * (1 - sm(0.08, 0.25, ch));          // nur Weißes bleibt hell, blasse Farben werden dunkel
       h = 232; s = 0.5 - 0.25 * k; lt = (0.07 + 0.2 * l) * (1 - k) + (0.2 + 0.78 * l) * k;
+    } else if (v === 'psun' || v === 'prubin' || v === 'pob' || v === 'pdragon') {      // Runde 20e: Kaiserbuntbarsch-Formen (setzen O selbst)
+      w *= peacockPixel(v, r, g, b, l, u, vv);
+      O[0] = r + (O[0] - r) * w; O[1] = g + (O[1] - g) * w; O[2] = b + (O[2] - b) * w;
+      return;
     } else if (v === 'cwild') {                        // Karpfen-Formen: Wildkarpfen = gedecktes Olivbraun
       h = 44 + 10 * sm(0.3, 0.8, l); s = 0.4; lt = l * 0.8 + 0.02;
     } else if (v === 'czeil') {                        // Zeilkarpfen: blass, silbrig-ledern

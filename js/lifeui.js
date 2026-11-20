@@ -130,6 +130,16 @@
       else if (sc.lonely) chip('😢 Einsam (' + sc.n + ' von ' + AA.SCHOOL.lonely + ')', 'Schwarmfisch mit zu wenig Artgenossen: unglücklich und wächst ' + Math.round((1 - AA.SCHOOL.lonelyGrow) * 100) + ' % langsamer. Ab ' + AA.SCHOOL.lonely + ' ist er zufrieden, ab ' + AA.SCHOOL.min + ' schwimmen sie im Schwarm.', 'bad');
       else chip('🐟 Schwarmfisch (' + sc.n + ' von ' + AA.SCHOOL.min + ')', 'Ab ' + AA.SCHOOL.min + ' Artgenossen im Becken schwimmen sie sichtbar im Schwarm und wachsen ' + pct(AA.SCHOOL.grow) + ' % schneller.');
     }
+    const gs = AA.groupState ? AA.groupState(d, t) : null;      // Runde 20e: Tropheus, Demasoni
+    if (gs) {
+      if (gs.ok) chip('👥 In der Gruppe (' + gs.n + ')', 'Genug Artgenossen: zufrieden und wächst ' + pct(AA.SCHOOL.grow) + ' % schneller.', 'ok');
+      else chip('😢 Zu wenige (' + gs.n + ' von ' + gs.need + ')', 'Braucht eine Gruppe: unter ' + gs.need + ' Tieren dieser Art traurig und wächst ' + Math.round((1 - AA.SCHOOL.lonelyGrow) * 100) + ' % langsamer.', 'bad');
+    }
+    if (def.family && AA.famHelpers) {
+      const n = AA.famHelpers(t, d.sp);
+      chip('👨‍👩‍👧 ' + (n ? n + (n === 1 ? ' Helfer' : ' Helfer') : 'Noch keine Helfer'), 'Großfamilie: Jedes erwachsene Tier über das Elternpaar hinaus hilft (höchstens ' + AA.AFRICA.help.max + '). Je Helfer schlüpfen die Eier ' + Math.round(AA.AFRICA.help.hatch * 100) + ' % und wachsen die Babys ' + Math.round(AA.AFRICA.help.grow * 100) + ' % schneller.', n ? 'ok' : '');
+    }
+    if (def.needCave) chip(AA.hasCave(t) ? '🕳️ Höhle da' : '🕳️ Sucht eine Höhle', 'Laicht nur in einer Höhle: Ton-Laichhöhle oder Kokosnuss (Shop → Deko).', AA.hasCave(t) ? 'ok' : 'bad');
     if (d.sp === 'clown') {
       const n = AA.hostCount(t);
       chip(n ? '🏠 Wohnt in der Anemone' : '🏠 Sucht eine Anemone', n ? 'Bleibt bei seiner Anemone, verteidigt sie und legt seine Eier daneben. Nach der Balz ist er hier ein Viertel schneller wieder bereit.' : 'Mit einer Anemone (Shop → Deko) hat er ein Zuhause: nach der Balz ein Viertel schneller wieder bereit, die Eier liegen geschützt daneben.', n ? 'ok' : '');
@@ -145,6 +155,7 @@
     if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; el.classList.toggle('hidden', !html); }
     const bb = $('#c-breed'); if (!bb) return;
     if (def.hybrid) { bb.disabled = true; bb.textContent = '🧬 Unfruchtbar'; return; }
+    if (def.sterile) { bb.disabled = true; bb.textContent = '🚫 Unfruchtbar'; return; }      // Runde 20e: Blutpapagei
     if (d.adult && !AA.fishMateStatus(d, t).ok) {      // Reinzucht geht nicht – aber vielleicht eine Kreuzung
       const st = crossFor(d, t);
       if (st) { bb.disabled = false; bb.textContent = st.ok ? '🧬 Kreuzen · ' + fmt(st.cost) : '🧬 Kreuzen …'; const hn = $('#c-hint'); if (hn && !d.sick) hn.textContent = 'Mit ' + sp(st.h.a === d.sp ? st.h.b : st.h.a).name + ' kreuzen: Daraus schlüpft sicher ein Hybrid.'; }

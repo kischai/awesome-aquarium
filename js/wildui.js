@@ -21,6 +21,18 @@
     else if (f.deep === 1) a.push(['🌌 Tiefsee', 'Tiefsee-Tier: lebt nur im Tiefsee-Becken.']);
     else if (f.big) a.push(['📐 Großes Becken', 'Braucht Platz: erst ab ' + big() + ' Gallonen oder im Meeresbecken.']);
     if (f.deep === 2) a.push(['🌌 Auch Tiefsee', 'Darf auch ins Tiefsee-Becken.']);
+    /* Runde 20e: Afrika */
+    if (f.carry === 'mouth' && f.carrySex === 'f') a.push(['👄 Maulbrüter', 'Die Mama trägt das Ei im Maul, bis das Baby schlüpft.']);
+    if (f.needCave) a.push(['🕳️ Höhlenbrüter', 'Laicht nur, wenn eine Höhle im Becken steht: Ton-Laichhöhle oder Kokosnuss (Shop → Deko).']);
+    else if (f.cavebrood) a.push(['🪨 Höhlenbrüter', 'Legt sein Ei an eine Höhle oder an einen Fels.']);
+    if (f.group) a.push(['👥 Gruppe ab ' + f.group, 'Erst ab ' + f.group + ' Tieren dieser Art im Becken glücklich: darunter traurig und es wächst langsamer, ab ' + f.group + ' schneller.']);
+    if (f.family) a.push(['👨‍👩‍👧 Großfamilie', 'Jedes erwachsene Tier über das Elternpaar hinaus hilft (höchstens 3): Je Helfer schlüpfen die Eier 15 % und wachsen die Babys 10 % schneller.']);
+    if (f.rockface) a.push(['🧗 Felskletterer', 'Klebt seitlich am Fels – der Bauch zeigt immer zum Stein – oder kopfüber unter der Decke einer Höhle.']);
+    if (f.slip) a.push(['💨 Spaltenflitzer', 'Flitzt durch Felsspalten: hinter dem Stein durch und auf der anderen Seite wieder heraus.']);
+    if (f.playdead) a.push(['😵 Stellt sich tot', 'Legt sich ab und zu auf den Grund. Kommen kleine Fische gucken, schnappt er zu – nur ein Schreck, keiner wird gefressen.']);
+    if (f.cuckoo) a.push(['🤫 Kuckuck', 'Balzt im selben Becken eine Maulbrüterin (Elektrischer Gelber, Kaiserbuntbarsch & Co.), schmuggelt er manchmal sein Ei dazu (35 %) – es schlüpft sogar etwas früher.']);
+    if (f.guest) a.push(['🌎 Gast aus Mittelamerika', 'Echte Zuchtform aus Mittelamerika-Buntbarschen – gehört als Gast zum Afrika-Set.']);
+    if (f.sterile) a.push(['🚫 Unfruchtbar', 'Lässt sich nicht züchten – gibt es nur im Shop.']);
     return a;
   }
   UI.wildTags = function (f) { return traits(f).map(function (x) { return '<span class="tag-wild" title="' + esc(x[1]) + '">' + x[0] + '</span>'; }).join(''); };

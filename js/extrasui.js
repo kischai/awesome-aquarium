@@ -184,12 +184,22 @@
   }
 
   /* ================= Zu Hause: Belohnungen, Testi, Hilfen und Geschenke der Familie ================= */
+  /* Runde 20g: Ist gerade die Karte „Während du weg warst“ offen, kommen Geschenke, Hilfen und Herzen dort in den Abschnitt „Freunde“
+     statt einzeln als Meldung (die ersten 90 Sekunden nach dem Start werden außerdem gesammelt, falls die Karte noch kommt). */
+  const bootAt = Date.now();
+  UI.awayFriends = [];
+  UI.awayNote = function (html, kind) {
+    if (Date.now() - bootAt < 90000) UI.awayFriends.push(html);
+    const box = UI.modalKind === 'welcome' && document.getElementById('wb-friends');
+    if (box) { const ul = box.querySelector('ul'), li = document.createElement('li'); li.innerHTML = html; ul.appendChild(li); box.classList.remove('hidden'); return; }
+    UI.toast(html, kind);
+  };
   function applyHelp(h) {                              // ein Freund (oder Testi) hat bei dir geholfen
     const s = AA.state, t = s.tanks[s.active] || s.tanks[0];
     AA.lastHelp = h;                                   // für Tests
     if (h.kind === 'clean') t.dirt = Math.max(0, (t.dirt || 0) - 0.6);
     else t.fish.forEach(function (f) { f.hunger = Math.max(f.hunger, 0.95); f.starve = 0; });
-    UI.toast((h.kind === 'clean' ? '🧽 <b>' + esc(h.name) + '</b> hat dein Becken geputzt!' : '🍽️ <b>' + esc(h.name) + '</b> hat deine Fische gefüttert!') + ' Wie lieb. 💛', 'love');
+    UI.awayNote((h.kind === 'clean' ? '🧽 <b>' + esc(h.name) + '</b> hat dein Becken geputzt!' : '🍽️ <b>' + esc(h.name) + '</b> hat deine Fische gefüttert!') + ' Wie lieb. 💛', 'love');
   }
   let cloudAt = 0, busy = false;
   function homeTick() {
@@ -221,8 +231,8 @@
         C.myHearts ? C.myHearts().catch(function () { return []; }) : Promise.resolve([])]).then(function (r) {
         busy = false;
         r[0].forEach(applyHelp);
-        r[1].forEach(function (g) { const txt = AA.applyGift(g); UI.toast('🎁 <b>' + esc(g.name) + '</b> hat dir ein Geschenk geschickt: ' + txt + '.', 'gold'); });
-        (r[3] || []).forEach(function (h) { UI.toast('❤️ <b>' + esc(h.name) + '</b> hat ' + (h.tank ? 'deinem Becken „' + esc(h.tank) + '“' : 'deinem Becken') + ' ein Herz geschenkt!', 'love'); });      // Runde 20f
+        r[1].forEach(function (g) { const txt = AA.applyGift(g); UI.awayNote('🎁 <b>' + esc(g.name) + '</b> hat dir ein Geschenk geschickt: ' + txt + '.', 'gold'); });
+        (r[3] || []).forEach(function (h) { UI.awayNote('❤️ <b>' + esc(h.name) + '</b> hat ' + (h.tank ? 'deinem Becken „' + esc(h.tank) + '“' : 'deinem Becken') + ' ein Herz geschenkt!', 'love'); });      // Runde 20f
         if (r[0].length || r[1].length || (r[3] || []).length) { AA.audio.play('chest'); AA.save(); }
         if (UI.refreshFriends) UI.refreshFriends();
       }, function () { busy = false; });

@@ -421,6 +421,60 @@
         ctx.restore();
       }
     },
+    lakestars: {                                       // Runde 20e: Malawisee – „See der Sterne“: Laternen der Fischer funkeln oben am Wasserspiegel
+      step: function (dt) {
+        if (!st.init) { st.init = true; for (let i = 0; i < 16; i++) P.push({ x: rnd(30, W - 30), y: G.top + rnd(6, 46), vx: rnd(-6, 6), ph: Math.random() * TAU, f: rnd(0.8, 2.2), s: rnd(1.6, 3.2), warm: Math.random() < 0.6 }); }
+        P.forEach(function (p) { p.x += p.vx * dt; p.ph += dt * p.f; if (p.x < 10) p.x = W - 12; if (p.x > W - 10) p.x = 12; });
+      },
+      glow: function (ctx, tank, t) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        P.forEach(function (p) {
+          const tw = 0.5 + 0.5 * Math.sin(p.ph), a = 0.25 + 0.55 * tw * tw, col = p.warm ? '#ffd27a' : '#fff6d8', r = p.s * (3.4 + 1.6 * tw);
+          ctx.globalAlpha = a; ctx.drawImage(glow(col), p.x - r, p.y - r, r * 2, r * 2);
+          ctx.globalAlpha = a * 0.9; ctx.strokeStyle = col; ctx.lineWidth = 1;          // Sternzacken
+          ctx.beginPath(); ctx.moveTo(p.x - r * 0.7, p.y); ctx.lineTo(p.x + r * 0.7, p.y); ctx.moveTo(p.x, p.y - r * 0.7); ctx.lineTo(p.x, p.y + r * 0.7); ctx.stroke();
+          ctx.globalAlpha = a * 0.35; ctx.drawImage(glow(col), p.x - r * 0.6, p.y + 6 + Math.sin(t * 2 + p.ph) * 2, r * 1.2, r * 0.5);      // Spiegelung im Wasser
+        });
+        ctx.restore();
+      }
+    },
+    shellglint: {                                      // Runde 20e: Tanganjikasee – Sonnenlicht blitzt auf Schneckenhäusern und Muscheln am Grund (Perlmutt)
+      step: function (dt) {
+        st.spawn -= dt;
+        if (st.spawn <= 0 && P.length < 18) { st.spawn = rnd(0.25, 0.6); const x = rnd(50, W - 50), z = rnd(0.05, 0.98); P.push({ x: x, y: floorAt(z, x) - rnd(2, 10), life: 0, dur: rnd(0.9, 1.6), s: rnd(5, 9), hue: rnd(170, 330) }); }
+        for (let i = P.length - 1; i >= 0; i--) { const p = P[i]; p.life += dt; if (p.life >= p.dur) P.splice(i, 1); }
+      },
+      glow: function (ctx) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+        P.forEach(function (p) {
+          const q = Math.sin(Math.PI * p.life / p.dur), r = p.s * q, col = 'hsl(' + Math.round(p.hue) + ',90%,80%)';
+          ctx.globalAlpha = 0.55 * q; ctx.drawImage(glow(col), p.x - r * 2, p.y - r * 2, r * 4, r * 4);
+          ctx.globalAlpha = 0.9 * q; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.3;
+          ctx.beginPath(); ctx.moveTo(p.x - r, p.y); ctx.lineTo(p.x + r, p.y); ctx.moveTo(p.x, p.y - r); ctx.lineTo(p.x, p.y + r);
+          ctx.moveTo(p.x - r * 0.45, p.y - r * 0.45); ctx.lineTo(p.x + r * 0.45, p.y + r * 0.45); ctx.moveTo(p.x + r * 0.45, p.y - r * 0.45); ctx.lineTo(p.x - r * 0.45, p.y + r * 0.45); ctx.stroke();
+        });
+        ctx.restore();
+      }
+    },
+    savanna: {                                         // Runde 20e: Afrika-Legenden – warme Abendsonne fällt in breiten Strahlen schräg ins Becken
+      step: function (dt) {
+        if (!st.init) { st.init = true; for (let i = 0; i < 5; i++) P.push({ x: rnd(0, W), w: rnd(70, 150), ph: Math.random() * TAU, f: rnd(0.15, 0.35), sp: rnd(6, 14) }); }
+        P.forEach(function (p) { p.ph += dt * p.f; p.x += p.sp * dt; if (p.x > W + 260) p.x = -260; });
+      },
+      back: function (ctx, tank) {
+        if (tank.deep) return;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const top = G.top, bot = G.fTop + 120;
+        P.forEach(function (p) {
+          const a = 0.06 + 0.05 * Math.sin(p.ph), sk = (bot - top) * 0.42;
+          const g = ctx.createLinearGradient(0, top, 0, bot);
+          g.addColorStop(0, 'rgba(255,190,90,' + (a * 1.6).toFixed(3) + ')'); g.addColorStop(0.6, 'rgba(255,150,70,' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,140,60,0)');
+          ctx.fillStyle = g; ctx.beginPath();
+          ctx.moveTo(p.x, top); ctx.lineTo(p.x + p.w, top); ctx.lineTo(p.x + p.w * 1.7 + sk, bot); ctx.lineTo(p.x + p.w * 0.4 + sk, bot); ctx.closePath(); ctx.fill();
+        });
+        ctx.restore();
+      }
+    },
     whale: { pass: PASS.whale },
     snow: { flakes: { n: 56, vy: [14, 26], s: [1.6, 3.4], sw: 14, col: 'rgba(255,255,255,0.9)' } }
   };

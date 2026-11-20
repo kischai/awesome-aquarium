@@ -1140,3 +1140,40 @@ span.fl-lock { border: none; background: none; }
 .wheel-list { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 4px 0 10px; }
 .wheel-prize { border-radius: 999px; padding: 2px 9px; font-size: 0.82em; font-weight: 700; color: #2a2a3a; }
 .rk-tank { display: block; font-size: 0.72em; opacity: 0.75; font-weight: 600; }
+
+/* ---------- Runde 20g: Komfort ---------- */
+/* Shop: Suchleiste, Filter-Chips, Favoriten-Stern, Nochmal kaufen */
+.shopbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 18px; padding: 8px 10px; background: #fff; border: 2px solid #cfeaf1; border-bottom: none; flex: none; }
+.shopbar + .grid { border-radius: 0 0 14px 14px; border-top: 1px dashed #d5eef4; }
+.shopbar input[type="search"] { flex: 1 1 160px; min-width: 120px; font: 800 14px var(--font); color: var(--navy); padding: 7px 12px; border-radius: 12px; border: 2px solid #cfeaf1; background: #f4fbfd; outline: none; user-select: text; -webkit-user-select: text; }
+.shopbar input[type="search"]:focus { border-color: #35c8d2; background: #fff; }
+.shopbar .chip { font: 800 12px var(--font); padding: 6px 10px; border-radius: 12px; border: 2px solid #d5eef4; background: #eef9fc; color: #0d4a66; cursor: pointer; white-space: nowrap; }
+.shopbar .chip.on { background: #35c8d2; border-color: #2aa9b2; color: #fff; }
+.shopbar .chip.clear { padding: 6px 9px; background: #ffe9e9; border-color: #ffc9c9; color: #a33; }
+.shopbar .chip.again { margin-left: auto; background: linear-gradient(#fff6c2, #ffd75a); border-color: #f2c23a; color: #6a4a00; }
+@media (hover: hover) { .shopbar .chip:hover { filter: brightness(1.05); } }
+.card { position: relative; }
+.card .fav { position: absolute; top: 8px; left: 8px; z-index: 2; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: rgba(255, 255, 255, .85); color: #9ab3bf; font: 900 16px/22px var(--font); cursor: pointer; padding: 0; box-shadow: 0 1px 3px rgba(0, 40, 60, .2); }
+.card .fav.on { color: #f2a900; background: #fff6c2; }
+@media (hover: hover) { .card .fav:hover { color: #f2a900; } }
+.q-hide { display: none !important; }
+.grid .q-none { grid-column: 1 / -1; }
+/* HUD: Zahlen zählen hoch bzw. runter und blitzen kurz */
+#coins.up, #pearls.up { color: #1d8a2e; text-shadow: 0 0 6px rgba(80, 220, 110, .6); }
+#coins.down, #pearls.down { color: #b4361f; }
+/* Becken-Wechsler: was im vorigen/nächsten Becken los ist */
+.tankswitch button .tb { position: absolute; top: -7px; right: -7px; font-size: 13px; line-height: 1; padding: 2px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 40, 60, .35); font-style: normal; pointer-events: none; }
+.tankswitch button .tb.w3 { background: #ffd9d4; } .tankswitch button .tb.w2 { background: #fff1c2; }
+/* Sammelbuch: Suche und „Wo bekomme ich das?“ */
+.booksearch { display: flex; gap: 6px; align-items: center; margin: 8px 18px 0; }
+.booksearch input[type="search"] { flex: 1; font: 800 14px var(--font); color: var(--navy); padding: 7px 12px; border-radius: 12px; border: 2px solid #cfeaf1; background: #f4fbfd; outline: none; user-select: text; -webkit-user-select: text; }
+.booksearch input[type="search"]:focus { border-color: #35c8d2; background: #fff; }
+.bwhere { margin: 8px 0 0; padding: 10px 12px; border-radius: 14px; background: #f0fbf4; border: 2px solid #bfe8cd; font: 700 13px/1.45 var(--font); }
+.bwhere b { font-weight: 900; }
+.bwhere .row { margin-top: 8px; gap: 8px; flex-wrap: wrap; }
+/* Runde 20g: am Handy (kompakt) die Such-Leiste in einer Zeile zum Wischen */
+#stage.compact .shopbar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 6px 8px; }
+#stage.compact .shopbar::-webkit-scrollbar { display: none; }
+#stage.compact .shopbar input[type="search"] { flex: 0 0 150px; min-width: 150px; }
+#stage.compact .shopbar .chip.again { margin-left: 0; }
+#stage.compact .card .fav { width: 26px; height: 26px; font-size: 15px; line-height: 20px; }

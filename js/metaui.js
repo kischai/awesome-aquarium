@@ -91,6 +91,39 @@
 
   /* ================= Sammelbuch ================= */
   UI.bookTab = 'all'; UI.bookSp = null; UI.bookForm = ''; UI.bookSex = 'm';
+  UI.bookQ = ''; UI.bookWhere = false;               // Runde 20g: Suche im Sammelbuch, Kasten „Wo bekomme ich das?“
+  function bnorm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function bookFilter() {
+    const g = $('#modal .grid.g-book'); if (!g || UI.bookSp) return;
+    const words = bnorm(UI.bookQ).split(/\s+/).filter(Boolean);
+    let n = 0;
+    g.querySelectorAll('.bcard').forEach(function (c) { const ok = words.every(function (w) { return (c.dataset.q || '').indexOf(w) >= 0; }); c.classList.toggle('q-hide', !ok); if (ok) n++; });
+    let none = g.querySelector('.q-none');
+    if (words.length && !n) { if (!none) { none = document.createElement('div'); none.className = 'sec q-none'; g.appendChild(none); } none.textContent = '🔍 Keine Art gefunden.'; }
+    else if (none) none.parentNode.removeChild(none);
+  }
+  /* „Wo bekomme ich das?“ – Weg zur Art (bzw. zur gewählten Farbvariante/Zuchtform) in Worten, dazu ein Knopf in den Shop */
+  function whereBox(sp, v) {
+    const s = AA.state, f = AA.FISH_BY[sp], t = AA.tank(), W = AA.WATER[AA.waterOf(f)], li = [];
+    let go = null;
+    if (v) {
+      const F = AA.FORMS && AA.FORMS[sp], d = AA.VAR_BY[v];
+      if (F) { let tot = 0; for (const k in F.roll) tot += F.roll[k]; li.push('✨ <b>' + esc(d.name) + '</b> ist eine Zuchtform: Sie schlüpft nur aus Eiern von ' + esc(f.name) + ' – jedes Ei würfelt seine Form (' + Math.round((F.roll[v] || 0) / tot * 100) + ' %).'); }
+      else li.push('✨ <b>' + esc(d.name) + '</b> schlüpft nur aus Eiern: ' + esc(f.name) + ' züchten (♂ + ♀). Eltern mit dieser Farbe geben sie oft weiter, Farbfutter 🌈 verdoppelt die Chance, und das Glitzer-Ei von der Wochenkarte hilft auch.');
+    }
+    if (f.hybrid) li.push('🧬 Nur durch Kreuzen: <b>' + esc(AA.FISH_BY[f.hybrid[0]].name) + '</b> × <b>' + esc(AA.FISH_BY[f.hybrid[1]].name) + '</b> – ein erwachsenes ♂ der einen und ein ♀ der anderen Art im selben Becken, dann im Zuchtplaner kreuzen (ab Level ' + f.lvl + ').');
+    else if (f.season) li.push('🎄 Gibt es nur in der Weihnachtszeit (1. Dezember bis 6. Januar): Shop → Weihnachten.');
+    else if (f.special) { li.push('⭐ Shop → Specials, für <b>' + fmt(f.pearls) + ' Perlen</b>, ab Level ' + f.lvl + '.'); go = 'special'; }
+    else { li.push('🛒 Shop → Fische, ab Level ' + f.lvl + ' für <b>' + fmt(AA.priceOf ? AA.priceOf(f) : f.price) + ' Münzen</b>' + (f.pearls ? ' oder ' + fmt(f.pearls) + ' Perlen' : '') + '.'); go = 'fish'; }
+    if (f.sterile) li.push('🚫 Lässt sich nicht züchten – nur kaufen.');
+    const why = AA.whyNot(f, t);
+    li.push(W.ico + ' Lebt im ' + W.name + (f.ocean ? ', nur im Meeresbecken' : (f.deep === 1 ? ', nur im Tiefsee-Becken' : (f.big ? ', braucht ein großes Becken' : ''))) + ' – ' + (why ? 'passt <b>nicht</b> in „' + esc(t.name) + '“.' : 'passt in „' + esc(t.name) + '“.'));
+    if (s.level < f.lvl) li.push('🔒 Du bist Level ' + s.level + ' – noch ' + (f.lvl - s.level) + (f.lvl - s.level === 1 ? ' Level.' : ' Level.'));
+    const sets = (AA.THEMES || []).filter(function (T) { return (T.kind === 'region' || T.kind === 'coll') && AA.themeItems(T).indexOf(sp) >= 0; }).map(function (T) { return T.ico + ' ' + esc(T.name); });
+    if (sets.length) li.push('🗺️ Gehört zu: ' + sets.join(', ') + '.');
+    return '<div class="bwhere">' + li.map(function (x) { return '<div>' + x + '</div>'; }).join('') +
+      (go ? '<div class="row"><button class="btn green sm" data-act="bookshop" data-id="' + go + '" data-q="' + esc(f.name) + '">🛒 Im Shop zeigen</button></div>' : '') + '</div>';
+  }
   function dots(sp) {
     const b = AA.state.book[sp];
     return '<div class="vdots">' + AA.variantsOf(sp).map(function (v) { const st = b ? b.v[v.id] || 0 : 0; return '<i class="' + (st ? 'on' : '') + (st === 1 ? ' new' : '') + '" style="--vc:' + v.col + '" title="' + esc(v.name) + ' · ' + v.rare + (st ? '' : ' – noch nicht entdeckt') + '"></i>'; }).join('') + '</div>';
@@ -100,7 +133,7 @@
     const list = AA.FISH.filter(function (f) { return UI.bookTab === 'all' || (UI.bookTab === 'hyb' ? !!f.hybrid : (UI.bookTab === 'var' ? (s.book[f.id] && AA.keys(s.book[f.id].v) > 0) : AA.waterOf(f) === UI.bookTab)); });
     const cards = list.map(function (f) {
       const b = s.book[f.id], open = b ? (b.n === 1 ? 1 : 0) + Object.keys(b.v).filter(function (k) { return b.v[k] === 1; }).length : 0, full = AA.setComplete ? AA.setComplete(f.id) : (b && AA.keys(b.v) === AA.VARIANTS.length);
-      return '<button class="bcard' + (b ? '' : ' unknown') + (open ? ' hasnew' : '') + (full ? ' full' : '') + '" data-act="booksp" data-id="' + f.id + '">' +
+      return '<button class="bcard' + (b ? '' : ' unknown') + (open ? ' hasnew' : '') + (full ? ' full' : '') + '" data-act="booksp" data-id="' + f.id + '" data-q="' + esc(bnorm(f.name + ' ' + (f.hybrid ? 'hybrid' : ''))) + '">' +
         (open ? '<i class="ribbon">' + (open > 1 ? open + ' neu' : 'Neu') + '</i>' : '') + (full ? '<i class="crown" title="Set komplett: alle Farbvarianten entdeckt – jeder Fisch dieser Art ist ' + Math.round(((AA.SETBONUS || 1.1) - 1) * 100) + ' % mehr wert">👑</i>' : '') +
         '<div class="bpic' + (f.inv ? ' inv' : '') + '"><img src="' + AA.assets.thumb('fish/' + f.id + '_m', true) + '" alt=""></div><div class="bnm">' + (b ? esc(f.name) : '???') + '</div>' +
         (b ? dots(f.id) : '<div class="blvl">' + (f.hybrid ? '🧬 ' + esc(AA.FISH_BY[f.hybrid[0]].name) + ' × ' + esc(AA.FISH_BY[f.hybrid[1]].name) : AA.WATER[AA.waterOf(f)].ico + ' ab Level ' + f.lvl) + '</div>') + '</button>';
@@ -113,6 +146,7 @@
       '<div><small>Farbvarianten</small><div class="bar xp"><i style="width:' + Math.max(pV, C.vars ? 2 : 0) + '%"></i><span>' + C.vars + ' von ' + C.varsMax + '</span></div></div>' +
       (C.open ? '<button class="btn green" data-act="bookall">Alle ' + C.open + ' Belohnungen abholen</button>' : '<div class="bhint">Neue Arten: kaufen. Farbvarianten: nur aus Eiern (Zucht, Glitzer-Ei) – nächstes Ei: ' + (Math.round(AA.variantChance() * 1000) / 10).toString().replace('.', ',') + ' %.</div>') + '</div>' +
       '<div class="tabs">' + TABS.map(function (tb) { return '<button class="tab' + (tb[0] === UI.bookTab ? ' active' : '') + '" data-act="booktab" data-id="' + tb[0] + '">' + tb[1] + '</button>'; }).join('') + '</div>' +
+      (UI.bookTab !== 'titel' && UI.bookTab !== 'sets' ? '<div class="booksearch"><input id="book-q" type="search" placeholder="🔍 Art suchen …" value="' + esc(UI.bookQ) + '" autocomplete="off" spellcheck="false" aria-label="Im Sammelbuch suchen"></div>' : '') +
       (UI.bookTab === 'titel' && UI.lifeTitles ? '<div class="grid g-book titles"><div class="list">' + UI.lifeTitles() + '</div></div>' :
       UI.bookTab === 'sets' && UI.themesBook ? '<div class="grid g-book sets"><div class="list">' + UI.themesBook() + '</div></div>' :
       '<div class="grid g-book">' + (cards || '<div class="sec">' + (UI.bookTab === 'hyb' ? 'Hybride gibt es nur durch Kreuzen.' : 'Noch keine Farbvariante entdeckt. Züchte fleißig – jedes Ei ohne Mutation erhöht die Chance fürs nächste.') + '</div>') + '</div>');
@@ -140,9 +174,9 @@
     const tiles = [''].concat(AA.variantsOf(sp).map(function (x) { return x.id; })).map(function (x) { return formTile(sp, x); }).join('');
     const idx = AA.FISH.indexOf(f), prev = AA.FISH[(idx - 1 + AA.FISH.length) % AA.FISH.length], next = AA.FISH[(idx + 1) % AA.FISH.length];
     return head('📖 ' + (b ? esc(f.name) : '???') + (d ? ' ' + varChip(v) : ''), '<div class="m-coins book"><button class="lnkbtn" data-act="booksp" data-id="' + prev.id + '" title="Vorherige Art">◀</button><small>' + (idx + 1) + ' / ' + AA.FISH.length + '</small><button class="lnkbtn" data-act="booksp" data-id="' + next.id + '" title="Nächste Art">▶</button></div>') +
-      '<div class="bdetail"><div class="bstage' + (d ? ' t' + d.tier : '') + '">' + pics + '</div><div class="binfo">' + info + '</div>' +
+      '<div class="bdetail"><div class="bstage' + (d ? ' t' + d.tier : '') + '">' + pics + '</div><div class="binfo">' + info + (UI.bookWhere ? whereBox(sp, v) : '') + '</div>' +
       '<div class="ftiles">' + tiles + '</div>' +
-      '<div class="bfoot"><button class="btn grey" data-act="bookback">← Zur Übersicht</button><small>Farbvarianten schlüpfen nur aus Eiern. Beim Züchten: Grundchance ' + Math.round(AA.VAR.chance * 100) + ' % je Ei, mit jedem Ei ohne Mutation etwas mehr. ' +
+      '<div class="bfoot"><button class="btn grey" data-act="bookback">← Zur Übersicht</button><button class="btn blue" data-act="bookwhere">' + (UI.bookWhere ? '🧭 Weg ausblenden' : '🧭 Wo bekomme ich das?') + '</button><small>Farbvarianten schlüpfen nur aus Eiern. Beim Züchten: Grundchance ' + Math.round(AA.VAR.chance * 100) + ' % je Ei, mit jedem Ei ohne Mutation etwas mehr. ' +
       'Eltern geben ihre Variante oft weiter (ein Elternteil ' + Math.round(AA.VAR.inherit1 * 100) + ' %, beide gleich ' + Math.round(AA.VAR.inherit2 * 100) + ' %).</small></div></div>';
   }
   UI.openBook = function (sp) {
@@ -152,6 +186,9 @@
     UI.open('book', UI.bookSp ? bookDetail(UI.bookSp) : bookGrid(), 'store book');
     AA.assets.refreshImgs();                           // Vorschaubilder einsetzen (js/assets.js: As.thumb mit lazy)
     const g2 = $('#modal .grid.g-book'); if (g2) g2.scrollTop = UI.bookSp ? 0 : sc;
+    bookFilter();
+    const q = $('#book-q');
+    if (q) q.addEventListener('input', function () { UI.bookQ = q.value; const g3 = $('#modal .grid.g-book'); if (g3) g3.scrollTop = 0; bookFilter(); });
   };
 
   /* ================= Klicks in den neuen Dialogen ================= */
@@ -185,6 +222,8 @@
     if (act === 'booktab') { UI.bookTab = id; UI.themeSel = null; UI.bookScroll = 0; const g = $('#modal .grid.g-book'); if (g) g.scrollTop = 0; UI.openBook(); return true; }
     if (act === 'booksp') { UI.openBook(id); return true; }
     if (act === 'bookback') { UI.bookSp = null; UI.openBook(); return true; }
+    if (act === 'bookwhere') { UI.bookWhere = !UI.bookWhere; UI.openBook(); return true; }      // Runde 20g
+    if (act === 'bookshop') { const Q = UI.shopQ; if (Q) { Q.q = (b && b.dataset.q) || ''; Q.buy = Q.miss = Q.fav = false; Q.water = ''; Q.sort = ''; } UI.close(); UI.openStore(id); return true; }
     if (act === 'bookform') { UI.bookForm = id; UI.openBook(); return true; }
     if (act === 'bookclaim') {
       const r = AA.bookClaim(UI.bookSp, id || undefined);

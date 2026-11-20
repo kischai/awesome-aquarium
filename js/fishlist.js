@@ -442,7 +442,7 @@
     AA.on('hatched', function (baby) { AA.autoKeep(baby); });
     AA.on('stateLoaded', function () { sweep(); });
     const bt = $('#btn-fish'); if (bt) bt.addEventListener('click', function () { UI.openFishList({ fresh: true }); });
-    const lb = $('#tank-label'); if (lb) { lb.style.cursor = 'pointer'; lb.addEventListener('click', function () { UI.openFishList({ fresh: true }); }); }
+    const lb = $('#tank-count'); if (lb) { lb.style.cursor = 'pointer'; lb.addEventListener('click', function (e) { e.stopPropagation(); UI.openFishList({ fresh: true }); }); }      // nur die Zahl öffnet die Übersicht – der Name daneben benennt das Becken um (js/farmui.js)
     document.addEventListener('change', function (e) { if (e.target && e.target.id === 'fl-sort') { UI.fl.sort = e.target.value; UI.openFishList(); } });
   };
 })(window.AA);
