@@ -1116,14 +1116,14 @@
     { id: 'feeder3', name: 'Futterautomat (3 Tage)', ico: '⏲️', lvl: 4, price: 60, days: 3, info: 'Hält die Fische im aktuellen Becken 3 Tage lang satt – auch wenn du weg bist.' },
     { id: 'feeder7', name: 'Futterautomat (7 Tage)', ico: '⏲️', lvl: 10, pearls: 4, days: 7, info: 'Eine Woche Ruhe im aktuellen Becken. Kostet Perlen.' },
     /* Runde 8: Spezialfutter – wird gezielt gestreut (Futter-Werkzeug, Sorte oben wählen) */
-    { id: 'color5', name: 'Farbfutter', ico: '🌈', kind: 'color', lvl: 8, price: 90, n: 5, info: '5 Prisen. Wer davon frisst, hat bei seinen nächsten 3 Eiern doppeltes Glück auf Farbvarianten.' },
+    { id: 'color5', name: 'Farbfutter', ico: '🌈', kind: 'color', lvl: 8, price: 90, n: 5, info: '5 Prisen für erwachsene Fische. Wer davon frisst, hat bei seinen nächsten 3 Eiern mindestens 15 % Chance auf eine Farbvariante (sonst rund 1 %) – bei Zuchtformen kommen die seltenen 3× so oft.' },
     { id: 'turbo5', name: 'Turbofutter', ico: '⚡', kind: 'turbo', lvl: 5, price: 70, n: 5, info: '5 Prisen. Jungfische, die davon fressen, wachsen einen halben Tag lang 50 % schneller.' },
     { id: 'med3', name: 'Medizin', ico: '💊', kind: 'med', lvl: 3, price: 45, n: 3, info: '3 Prisen. Ein Bissen macht einen kranken Fisch sofort gesund – Kranke schwimmen gezielt hin.' },
     { id: 'live5', name: 'Lebendfutter (Futterfische)', ico: '🐟', kind: 'live', lvl: 18, price: 110, n: 5, info: '5 Portionen à 3 kleine Futterfische. Nur große Jäger (Hecht, Wels, Hai & Co.) schnappen sie – und sind danach lange satt.' }
   ];
   /* Spezialfutter: dur = Wirkdauer in Spiel-Sekunden, fill = wie satt ein Bissen macht */
   AA.FOOD2 = {
-    color: { name: 'Farbfutter', ico: '🌈', eggs: 3, luck: 2, cols: ['#ff5b5b', '#ffb13b', '#ffe44d', '#6fdc6f', '#58b8ff', '#b77cff'] },
+    color: { name: 'Farbfutter', ico: '🌈', eggs: 3, luck: 3, min: 0.15, max: 0.6, rare: 10, cols: ['#ff5b5b', '#ffb13b', '#ffe44d', '#6fdc6f', '#58b8ff', '#b77cff'] },
     turbo: { name: 'Turbofutter', ico: '⚡', dur: 43200, grow: 1.5, cols: ['#4fd8ff', '#2aa8ff', '#9af2ff'] },
     med: { name: 'Medizin', ico: '💊', cols: ['#ffffff', '#ff5a6a'] },
     live: { name: 'Lebendfutter', ico: '🐟', fill: 0.45, per: 3, life: 120 }

@@ -1177,3 +1177,5 @@ span.fl-lock { border: none; background: none; }
 #stage.compact .shopbar input[type="search"] { flex: 0 0 150px; min-width: 150px; }
 #stage.compact .shopbar .chip.again { margin-left: 0; }
 #stage.compact .card .fav { width: 26px; height: 26px; font-size: 15px; line-height: 20px; }
+/* Runde 21a: Farbfutter in der Brut-Prognose */
+.fc-color { margin-top: 6px; font: 800 12.5px var(--font); color: #7a3fd6; background: linear-gradient(90deg, #fff0f0, #fff8e0, #eefbe8, #e8f4ff, #f3ecff); border-radius: 8px; padding: 4px 8px; display: inline-block; }

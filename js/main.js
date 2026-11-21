@@ -343,7 +343,7 @@
     if (AA.quiet) return;
     const vd = baby.v && AA.VAR_BY[baby.v];
     if (t !== AA.tank()) {                             // anderes Becken: nur bei einer Farbvariante Bescheid sagen
-      if (vd) { AA.audio.play('sparkle'); UI.toast('✨ In „' + AA.esc(t.name) + '“ ist eine Farbvariante geschlüpft: <b>' + AA.esc(AA.speciesName(baby.sp, baby.v)) + '</b> (' + vd.rare + ')' + (fresh ? ' – neu im Sammelbuch!' : '') + '.', 'big'); }
+      if (vd) { AA.audio.play('sparkle'); UI.toast('✨ In „' + AA.esc(t.name) + '“ ist eine Farbvariante geschlüpft: <b>' + AA.esc(AA.speciesName(baby.sp, baby.v)) + '</b> (' + vd.rare + ')' + (fresh ? ' – neu im Sammelbuch!' : '') + '.' + (egg && egg.lucky ? ' 🌈' : ''), 'big'); }
       return;
     }
     V.sync();
@@ -359,6 +359,7 @@
       V.floatText(p.x, p.y - 60, '✨ ' + vd.name + '!', '#fff3a6');
       AA.audio.play(vd.tier >= 3 ? 'level' : 'chest'); AA.audio.play('sparkle');
       UI.toast('✨ <b>' + vd.rare + '!</b> Aus dem Ei schlüpft ein <b>' + AA.esc(AA.speciesName(baby.sp, baby.v)) + '</b> – ' + AA.esc(baby.name) + '.' +
+        (egg && egg.lucky ? '<br><small>🌈 Das Farbfutter hat geholfen.</small>' : '') +
         (fresh ? '<br><small>Neu im Sammelbuch: Belohnung abholen (Taste B).</small>' : ''), 'big');
       AA.save();
     } else if (egg && egg.cuckoo && AA.FISH_BY[egg.cuckoo]) {      // Runde 20e: das Kuckucksei

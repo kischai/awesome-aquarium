@@ -75,8 +75,11 @@
   /* Farbvariante eines Hybrid-Eis: vererbt nur, wenn beide Eltern dieselbe (beim Hybrid mögliche) Variante tragen – sonst spontane Mutation */
   AA.crossVariant = function (a, b, t, hid) {
     const C = AA.VAR;
+    AA.lastLuck = false;
     if (a.v && a.v === b.v && AA.varFits(hid, a.v) && Math.random() < C.inherit2) return a.v;
-    if (Math.random() < AA.variantChance(t)) return AA.pickVariant(1, null, hid);
+    let ch = AA.variantChance(t); const lucky = AA.colorFed(a, b);
+    if (lucky) { ch = AA.colorChance(ch); AA.colorUse(a, b); }                 // Farbfutter wirkt auch bei Hybrid-Eiern
+    if (Math.random() < ch) { if (lucky) AA.lastLuck = true; return AA.pickVariant(1, null, hid); }
     return undefined;
   };
   AA.crossForecast = function (a, b, hid) {
@@ -84,7 +87,8 @@
     F.egg = 1; F.eggs = 1; F.cost = AA.crossStatus(hid).cost;
     const p = {}; let rest = 1;
     if (a.v && a.v === b.v && AA.varFits(hid, a.v)) { p[a.v] = AA.VAR.inherit2; rest = 1 - AA.VAR.inherit2; }
-    const ch = AA.variantChance(AA.tank()), vs = AA.variantsOf(hid); let w = 0; vs.forEach(function (v) { w += v.w; });
+    let ch = AA.variantChance(AA.tank()); if (AA.colorFed(a, b)) { ch = AA.colorChance(ch); F.color = true; }
+    const vs = AA.variantsOf(hid); let w = 0; vs.forEach(function (v) { w += v.w; });
     vs.forEach(function (v) { p[v.id] = (p[v.id] || 0) + rest * ch * v.w / w; });
     let any = 0; for (const k in p) any += p[k];
     F.vars = Object.keys(p).map(function (k) { return { v: k, p: p[k] }; }).sort(function (x, y) { return y.p - x.p; }); F.plain = Math.max(0, 1 - any);
@@ -204,20 +208,13 @@
     if (kind === 'live') { f.hunger = Math.min(1, f.hunger + F.fill); f.starve = 0; return 'live'; }
     return null;
   };
-  /* Farbfutter: Eier von Eltern mit Farbfutter im Bauch haben doppeltes Glück */
-  let luckBoost = 1;
-  const chance0 = AA.variantChance;
-  AA.variantChance = function (t) { return Math.min(0.75, chance0(t) * luckBoost); };
-  const roll0 = AA.rollVariant;
-  AA.rollVariant = function (a, b, t) {
-    const now = S().clock;
-    const boosted = [a, b].filter(function (x) { return x && x.colorN > 0; });
-    luckBoost = boosted.length ? AA.FOOD2.color.luck : 1;
-    try { return roll0(a, b, t); } finally {
-      luckBoost = 1;
-      boosted.forEach(function (x) { x.colorN--; if (x.colorN <= 0) delete x.colorN; });      // ein Ei mit Glück verbraucht
-    }
-  };
+  /* Farbfutter (Runde 21a): Eltern mit Farbfutter im Bauch → das Ei würfelt mit viel mehr Glück: mindestens 15 % auf eine Farbvariante
+     (sonst ~1 %, mit Pech-Schutz bis 5 %), bei Zuchtformen kommen die seltenen (Gewicht ≤ 10) 3× so oft. Verbraucht wird je Ei eine Ladung –
+     aber nur, wenn das Ei wirklich würfelt (erbt es die Farbe der Eltern, bleibt das Futter im Bauch). Würfeln: js/meta.js, Hybride: unten. */
+  AA.colorFed = function (a, b) { return !!((a && a.colorN > 0) || (b && b.colorN > 0)); };
+  AA.colorUse = function (a, b) { [a, b].forEach(function (x) { if (x && x.colorN > 0) { x.colorN--; if (x.colorN <= 0) delete x.colorN; } }); };
+  AA.colorChance = function (ch) { const F = AA.FOOD2.color; return Math.min(F.max, Math.max(ch * F.luck, F.min)); };
+  AA.colorForms = function (R) { const F = AA.FOOD2.color, o = {}; for (const k in R) o[k] = k && R[k] <= F.rare ? R[k] * F.luck : R[k]; return o; };
   const buy0 = AA.buyFood;
   AA.buyFood = function (id) {
     const def = AA.FOOD_BY[id];

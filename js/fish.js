@@ -623,13 +623,15 @@
         let best = null, bd = 1e9;
         this.faceLock = 0; this.resting = false;
         const wantLive = def.pred && d.hunger < 0.95 && V.live && V.live.length;
-        if ((hungry || d.sick || d.hunger < 0.97 || wantLive) && (V.food.length || wantLive)) {   // Futter suchen
+        const wantColor = V.food.length && d.adult && !def.sterile && (d.colorN | 0) < AA.FOOD2.color.eggs && V.food.some(function (fl) { return fl.kind === 'color' && !fl.eaten; });   // Runde 21a: Farbfutter auch satt
+        if ((hungry || d.sick || d.hunger < 0.97 || wantLive || wantColor) && (V.food.length || wantLive)) {   // Futter suchen
           const m = this.mouth(), floorY = AA.floorY(this.z, this.x);
           for (let i = 0; i < V.food.length; i++) {
             const fl = V.food[i];
             if (fl.eaten) continue;
             const k = fl.kind;                       // Spezialfutter (js/life.js): Medizin für Kranke, Farb-/Turbofutter auch ohne großen Hunger
-            if (k === 'med' ? !d.sick : (k === 'color' || k === 'turbo' ? d.hunger >= 0.97 : !hungry)) continue;
+            if (k === 'color' ? (!d.adult || def.sterile || (d.colorN | 0) >= AA.FOOD2.color.eggs)      // Runde 21a: Farbfutter ist ein Leckerli – Erwachsene fressen es auch satt; Babys und Volle lassen es liegen
+              : (k === 'med' ? !d.sick : (k === 'turbo' ? d.hunger >= 0.97 : !hungry))) continue;
             if (def.hab === 'bottom' && !fl.landed && floorY - fl.y > 150 && d.hunger > 0.05) continue;   // Bodenfische warten, bis es herabsinkt
             if (def.hab === 'lurk' && !night && Math.abs(fl.x - this.x) > 380) continue;                  // Lauerer: nur was nah an der Höhle ist
             if (def.still && d.hunger > 0.3 && Math.hypot(fl.x - this.x, fl.y - this.y) > 340) continue;         // Steinfisch: nur was ihm fast vors Maul fällt – erst mit richtig Hunger rafft er sich auf

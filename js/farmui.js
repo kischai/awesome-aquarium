@@ -54,7 +54,8 @@
       const vs = F.vars.filter(function (x) { return x.p >= 0.001; });
       const FM = AA.FORMS[P.sp];                        // Karpfen, Kaiserbuntbarsch (Runde 20e): Zuchtformen statt Farbvarianten
       h += '<div class="p-h">' + (FM ? 'Zuchtform' : 'Farbvariante') + '</div><div class="fc-vars">' + (FM ? '<span class="fc-v"><span class="vchip sm t1" style="--vc:' + FM.col + '">' + esc(FM.plain) + '</span> ' + pc(F.plain) + '</span>' : '') +
-        vs.map(function (x) { return '<span class="fc-v">' + UI.varChip(x.v, true) + ' ' + pc(x.p) + '</span>'; }).join('') + (FM ? '' : '<span class="fc-v plain">normale Farbe ' + pc(F.plain) + '</span>') + '</div>';
+        vs.map(function (x) { return '<span class="fc-v">' + UI.varChip(x.v, true) + ' ' + pc(x.p) + '</span>'; }).join('') + (FM ? '' : '<span class="fc-v plain">normale Farbe ' + pc(F.plain) + '</span>') + '</div>' +
+        (F.color ? '<div class="fc-color">🌈 Farbfutter wirkt – ' + (FM ? 'seltene Zuchtformen 3× so oft' : 'mindestens ' + Math.round(AA.FOOD2.color.min * 100) + ' % auf eine Farbvariante') + '</div>' : '');
       h += '<div class="wk-note">Jede Balz bringt ' + (F.eggs > 1 ? 'gleich ' + F.eggs + ' Eier' : 'ein Ei') + ' – danach ruhen sich die beiden ' + AA.fmtDur(real(AA.mateCooldown(AA.tank(), P.sp, false))) + ' aus, alle anderen Paare dürfen weiter. Die Werte oben gelten für jedes Ei.</div>' +
         '<button class="btn green big" data-act="plan-go">❤ Paaren · ' + fmt(F.cost) + ' ' + coin() + '</button>';
     } else h += '<div class="wk-note">Wähle links einen Vater und eine Mutter – dann siehst du hier, was aus dem Ei wird.</div>';

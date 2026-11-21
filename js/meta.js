@@ -63,7 +63,7 @@
   AA.variantChance = function () { const C = AA.VAR; return Math.min(Math.max(C.pityMax, C.chance), C.chance + C.pity * (S().varDry || 0)); };
   /* Wird für jedes neue Ei gerufen (a, b = Eltern). Gibt die Kennung der Variante zurück oder nichts. */
   AA.rollVariant = function (a, b, t) {              // t = Becken, in dem das Ei liegt (Biotop-Glück)
-    const s = S(), C = AA.VAR, pv = [];
+    const s = S(), C = AA.VAR, pv = []; AA.lastLuck = false;
     if (a && a.v && AA.VAR_BY[a.v]) pv.push(a.v);
     if (b && b.v && AA.VAR_BY[b.v]) pv.push(b.v);
     if (pv.length === 2 && pv[0] === pv[1]) { if (Math.random() < C.inherit2) return pv[0]; }     // beide Eltern gleich: meistens vererbt
@@ -71,12 +71,16 @@
       if (pv.length === 2 && Math.random() < 0.5) pv.reverse();
       for (let i = 0; i < pv.length; i++) if (Math.random() < C.inherit1) return pv[i];
     }
+    const lucky = AA.colorFed ? AA.colorFed(a, b) : false;      // Farbfutter im Bauch (js/life.js) – verbraucht wird es erst hier, beim Würfeln
     if (a && AA.FORMS[a.sp]) {                        // Karpfen, Kaiserbuntbarsch (Runde 20e): jedes Ei würfelt seine Zuchtform (AA.FORMS)
-      const R = AA.FORMS[a.sp].roll; let sum = 0; for (const k in R) sum += R[k];
-      let r = Math.random() * sum; for (const k in R) { r -= R[k]; if (r <= 0) return k || undefined; }
+      const R0 = AA.FORMS[a.sp].roll, R = lucky ? AA.colorForms(R0) : R0; let sum = 0; for (const k in R) sum += R[k];
+      if (lucky) AA.colorUse(a, b);
+      let r = Math.random() * sum; for (const k in R) { r -= R[k]; if (r <= 0) { if (lucky && k && R[k] !== R0[k]) AA.lastLuck = true; return k || undefined; } }
       return undefined;
     }
-    if (Math.random() < AA.variantChance(t)) { s.varDry = 0; return AA.pickVariant(1, null, a && a.sp); }           // spontane Mutation
+    let ch = AA.variantChance(t);
+    if (lucky) { ch = AA.colorChance(ch); AA.colorUse(a, b); }
+    if (Math.random() < ch) { s.varDry = 0; if (lucky) AA.lastLuck = true; return AA.pickVariant(1, null, a && a.sp); }           // spontane Mutation
     s.varDry = (s.varDry || 0) + 1;
     return undefined;
   };

@@ -69,7 +69,7 @@
       daily: { day: 0, chest: false, hunts: 0, gift: false },
       stats: defaultStats(), medals: {}, settings: defaultSettings(),
       lastSeen: Date.now(), created: Date.now(), intro: false,
-      r18: 1, x18: 1, r19: 1, r20e: 1, g20: 1, favs: []      // Runde 18/19/20: ein neues Spiel hat nichts zu erstatten und braucht keine Neuigkeiten (der Reiter steht im Shop vorn)
+      r18: 1, x18: 1, r19: 1, r20e: 1, r21a: 1, g20: 1, favs: []      // Runde 18/19/20: ein neues Spiel hat nichts zu erstatten und braucht keine Neuigkeiten (der Reiter steht im Shop vorn)
     };
     AA.metaFix(AA.state, true);                      // Sammelbuch, Aufträge, Wochenkarte (js/meta.js)
     AA.bizFix(AA.state);                             // Gene, Markt, Kunden, Kassenbuch (js/biz.js)
@@ -292,6 +292,7 @@
       if (!guest && !o.x18 && AA.season().xmas) { o.x18 = 1; o.news = o.news || {}; o.news.xmas18 = 1; }      // Runde 18: einmal Bescheid sagen, was es zu Weihnachten Neues gibt
       if (!guest && !o.r19) { o.r19 = 1; o.news = o.news || {}; o.news.r19 = 1; }      // Runde 19: einmal Bescheid sagen (Reiter „Specials“)
       if (!guest && !o.r20e) { o.r20e = 1; o.news = o.news || {}; o.news.r20e = 1; }      // Runde 20e/20g: einmal Bescheid sagen (Afrika, Komfort)
+      if (!guest && !o.r21a) { o.r21a = 1; o.news = o.news || {}; o.news.r21a = 1; }      // Runde 21a: Farbfutter wirkt jetzt richtig
       const was = Math.max(0, Math.round(+o.level || 0));
       o.level = AA.levelFor(o.xp);
       if (!guest && !o.r16) {                          // Runde 16, einmalig: flachere Level-Kurve ab Level 31 – wer dadurch aufsteigt, bekommt je Level eine Perle wie sonst auch.
@@ -615,7 +616,7 @@
     const egg = { id: AA.uid(), sp: m.sp, x: 640 + AA.rand(-120, 120), z: AA.rand(0.3, 0.8), hatch: def.hatch, total: def.hatch };
     if (AA.eggSpot) AA.eggSpot(t, m.sp, egg);          // Clownfisch: neben die Anemone
     const mut = m.cross ? AA.crossVariant(a, b, t, m.sp) : AA.rollVariant(a, b, t);   // Farbvariante? (vererbt oder spontane Mutation – js/meta.js, Hybride: js/life.js)
-    if (mut && AA.varFits(m.sp, mut)) egg.v = mut;
+    if (mut && AA.varFits(m.sp, mut)) { egg.v = mut; if (AA.lastLuck) egg.lucky = 1; }      // Runde 21a: Farbfutter hat geholfen (Schlüpf-Meldung)
     egg.g = AA.inheritGenes(a, b); egg.bred = 1;     // Gene der Eltern (js/biz.js)
     egg.pa = [a.name, b.name]; if (m.cross) egg.hy = [a.sp, b.sp];       // Runde 12: fürs Info-Fenster des Eis
     t.eggs.push(egg);                                // das Ei zählt sofort als Bewohner

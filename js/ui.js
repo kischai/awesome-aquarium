@@ -620,6 +620,7 @@
       const k = n.themes.list.length;
       li.push('🎉 <b>Schon geschafft:</b> ' + k + (k === 1 ? ' Set-Stufe' : ' Set-Stufen') + ' aus deiner bisherigen Sammlung sind gutgeschrieben' + (n.themes.pearls ? ' – <b>+' + n.themes.pearls + ' Perlen</b>' : '') + '. Was genau, steht im Sammelbuch unter 🗺️ Themen-Sets.');
     }
+    if (n.r21a) li.push('🌈 <b>Farbfutter wirkt jetzt richtig:</b> Eier von Fischen, die davon gefressen haben, werden mit mindestens 15 % eine Farbvariante (sonst rund 1 %). Bei Karpfen und Kaiserbuntbarsch kommen die seltenen Zuchtformen 3× so oft. Erwachsene fressen es auch, wenn sie satt sind.');      // Runde 21a (21.11.2026)
     if (n.r20e) {                                      // Runde 20e/20g (20.11.2026)
       li.push('🌍 <b>Neu: Afrika-Legenden</b> (Shop → Fische, Süßwasser): 14 Arten aus Malawi- und Tanganjikasee, Kongo und Westafrika – vom Prachtbarsch (Lv 8) bis zur Frontosa (Lv 37). Dazu Flowerhorn und Blutpapagei als Gäste, Muschel-Haufen und Kalkfelsen.');
       li.push('👄 <b>Maulbrüter:</b> Bei den meisten trägt die Mama das Ei im Maul. 🤫 Und lebt ein <b>Kuckuckswels</b> im Becken, schmuggelt er manchmal sein Ei dazu – Überraschungs-Baby! 😵 Der <b>Schläfer</b> stellt sich tot, 🧗 der Schlankcichlide klebt am Fels, 💨 Calvus flitzt durch Spalten.');
@@ -833,7 +834,8 @@
       else {
         hint = 'Jede Balz bringt ein Ei – danach ruhen sich die beiden ' + AA.fmtDur(real(AA.mateCooldown(AA.tank(), d.sp, false))) + ' aus. ';
         if (d.v) hint += '✨ ' + AA.VAR_BY[d.v].name + ' vererbt sich an ' + Math.round(AA.VAR.inherit1 * 100) + ' % der Eier – mit gleichfarbigem Partner an ' + Math.round(AA.VAR.inherit2 * 100) + ' %.';
-        else hint += '✨ Chance auf eine Farbvariante im nächsten Ei: ' + String(Math.round(AA.variantChance() * 1000) / 10).replace('.', ',') + ' %.';
+        else if (d.colorN > 0) hint += '🌈 Farbfutter wirkt: Chance auf eine Farbvariante im nächsten Ei ' + String(Math.round(AA.colorChance(AA.variantChance()) * 1000) / 10).replace('.', ',') + ' % (sonst ' + String(Math.round(AA.variantChance() * 1000) / 10).replace('.', ',') + ' %) – noch ' + (d.colorN === 1 ? '1 Ei' : d.colorN + ' Eier') + '.';
+        else hint += '✨ Chance auf eine Farbvariante im nächsten Ei: ' + String(Math.round(AA.variantChance() * 1000) / 10).replace('.', ',') + ' % – mit 🌈 Farbfutter mindestens ' + Math.round(AA.FOOD2.color.min * 100) + ' %.';
       }
       $('#c-hint').textContent = hint;
       if (UI.cardBiz) UI.cardBiz(d);
