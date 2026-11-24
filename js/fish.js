@@ -893,7 +893,7 @@
   /* Runde 18: Weihnachtsmütze und Heiligenschein sind eigene Bilder (prop/santahat, prop/halo) über dem Kopf – darum passen sie zu jeder Farbvariante.
      HAT: [x, y] = Mitte der Krempen-Unterkante im Fischbild (Anteil von Breite/Höhe), Breite (Anteil der Fischbreite), Neigung in Grad (im Uhrzeigersinn).
      HALO: [x, y] = Mitte des Rings, Breite; der Ring schwebt langsam auf und ab (etwa 3,2 Sekunden) und leuchtet nachts stärker. */
-  const HAT = { 'fish/clown_m': [0.835, 0.339, 0.33, 14], 'fish/clown_f': [0.835, 0.339, 0.33, 14], 'fish/clown_b': [0.585, 0.089, 0.37, 8] };
+  const HAT = { 'fish/clown_m': [0.835, 0.319, 0.33, 14], 'fish/clown_f': [0.835, 0.318, 0.33, 14], 'fish/clown_b': [0.585, 0.09, 0.37, 8] };
   const HALO = { 'fish/halofish_m': [0.76, -0.07, 0.33], 'fish/halofish_f': [0.76, -0.07, 0.33], 'fish/halofish_b': [0.62, -0.11, 0.45] };
   AA.HAT = HAT; AA.HALO = HALO;
   function drawHat(ctx, key, w, h) {
