@@ -1245,7 +1245,12 @@
   function drawCrawler(ctx, o, def, img, b) {
     const c = crawlState(o), kind = def.crawl[0], mv = Math.min(1, c.v / (def.crawl[1] * 0.5 + 0.01));
     if (c.lift) ctx.translate(0, -c.lift);                                  // Runde 20f: Tänzerin im freien Wasser
-    if (def.legs) { drawLegged(ctx, o, def, img, b, c); return; }      // 19.11.2026: Riesenkrabbe mit echten Bein-Gelenken
+    if (def.legs && AA.LEGRIG && AA.LEGRIG[def.legs]) {               // 19.11.2026: Riesenkrabbe mit echten Bein-Gelenken; Runde 22: alle Krabbler mit Beinen
+      if (c.hit > 0) ctx.translate(Math.sin((0.35 - c.hit) / 0.35 * Math.PI) * b.w * 0.14, 0);
+      drawLegged(ctx, o, def, img, b, c);
+      if (def.punch && c.eyes) drawMantisEyes(ctx, b, c);
+      return;
+    }
     if (kind === 'clam') { drawClam(ctx, img, b, c); return; }
     if (kind === 'dancer') { drawDancer(ctx, img, b, c, mv); return; }
     if (kind === 'snowman') { drawSnowman(ctx, o, def, img, b, c, mv); return; }
@@ -1271,14 +1276,15 @@
   const LEG = { beta: 0.6, stride: 70, lift: 34, curl: 0.22 };
   function legTick(o, def, c, dt) {
     const R = AA.LEGRIG && AA.LEGRIG[def.legs]; if (!R) return;
-    if (o.flip) o.flip = false;                                   // von vorn gemalt: nie spiegeln (Krabben laufen ohnehin seitwärts)
+    const side = R.view === 'side';                               // Runde 22: seitlich gemalt (Garnelen, Krebse) – wird gespiegelt, läuft immer nach vorn
+    if (o.flip && !side) o.flip = false;                          // von vorn gemalt: nie spiegeln (Krabben laufen ohnehin seitwärts)
     const g = c.lg || (c.lg = { ph: Math.random(), w: 0, x: o.x, z: o.z, dir: Math.random() < 0.5 ? -1 : 1, t: Math.random() * 9, idle: AA.rand(2, 6), tap: null });
     const dx = o.x - g.x, dz = (o.z - g.z) * ZPX; g.x = o.x; g.z = o.z;
     const dist = Math.hypot(dx, dz), sp = dt > 0 ? dist / dt : 0, k = V.decoBox(o).w / R.w;     // k = Bildschirm-Pixel je Rig-Pixel
-    if (Math.abs(dx) > 0.01) g.dir = dx > 0 ? 1 : -1;
+    if (side) g.dir = 1; else if (Math.abs(dx) > 0.01) g.dir = dx > 0 ? 1 : -1;
     const on = sp > 0.8 && dist < 60;                            // (ein Satz beim Laden oder Umsetzen ist kein Schritt)
     g.w += ((on ? 1 : 0) - g.w) * Math.min(1, dt * (on ? 5 : 2.5));
-    if (on && k > 0) g.ph = (g.ph + dist * LEG.beta / (LEG.stride * k)) % 1;
+    if (on && k > 0) g.ph = (g.ph + dist * LEG.beta / ((R.stride || LEG.stride) * k)) % 1;
     g.t += dt;
     if (g.tap) { g.tap.t += dt; if (g.tap.t >= g.tap.T) g.tap = null; }
     else if (g.w < 0.05 && !V.photoMode) {
@@ -1300,16 +1306,16 @@
   }
   /* Pose aller Beine aus dem Gang-Zustand g (Rig-Pixel): je Bein Hüfte H, Knie K, Gelenk J, Spitze T und die Drehwinkel der drei Teile */
   function legPose(R, g) {
-    const w = g.w, ph = g.ph, t = g.t, out = [];
-    const bob = (0.5 - 0.5 * Math.cos(ph * TAU * 2)) * 6 * w + Math.sin(t * 1.7) * 1.4 * (1 - w);      // wippt zweimal je Takt (Gruppenwechsel), im Stand atmet sie
-    const sway = Math.sin(ph * TAU) * 3 * w * g.dir;
+    const w = g.w, ph = g.ph, t = g.t, out = [], ST = R.stride || LEG.stride, LF = R.lift || LEG.lift, q = ST / LEG.stride;      // Runde 22: Schritt/Hub je Rig (kleine Krabbler)
+    const bob = ((0.5 - 0.5 * Math.cos(ph * TAU * 2)) * 6 * w + Math.sin(t * 1.7) * 1.4 * (1 - w)) * q;      // wippt zweimal je Takt (Gruppenwechsel), im Stand atmet sie
+    const sway = Math.sin(ph * TAU) * 3 * w * g.dir * q;
     for (const n in R.legs) {
       const L = R.legs[n], ch = L.c, H0 = ch[0], K0 = ch[1], J0 = ch[2], T0 = ch[3], H = [H0[0] + sway, H0[1] + bob];
       const p = (ph + (L.g === 'B' ? 0.5 : 0)) % 1, inward = T0[0] < H0[0] ? -1 : 1;
       let ox = 0, oy = 0, curl = 0;
       if (!L.air) {
-        if (p < LEG.beta) ox = LEG.stride * (0.5 - p / LEG.beta);                                       // steht: bleibt am Boden, der Körper zieht weiter
-        else { const u = (p - LEG.beta) / (1 - LEG.beta); ox = LEG.stride * (u - 0.5); oy = -LEG.lift * Math.sin(Math.PI * u); curl = Math.sin(Math.PI * u); }      // schwingt im Bogen nach vorn
+        if (p < LEG.beta) ox = ST * (0.5 - p / LEG.beta);                                       // steht: bleibt am Boden, der Körper zieht weiter
+        else { const u = (p - LEG.beta) / (1 - LEG.beta); ox = ST * (u - 0.5); oy = -LF * Math.sin(Math.PI * u); curl = Math.sin(Math.PI * u); }      // schwingt im Bogen nach vorn
         ox *= g.dir * w; oy *= w; curl *= w;
       } else {                                                    // die zwei hohen Beine: wiegen sich, beim Gehen tastet das vordere voraus
         const s1 = Math.sin(p * TAU);
@@ -1317,7 +1323,7 @@
         oy = -Math.max(0, s1) * 12 * w + Math.sin(t * 0.9 + H0[1]) * 4;
         curl = 0.4 * Math.max(0, s1) * w;
       }
-      if (g.tap && g.tap.leg === n) { const e = Math.sin(Math.PI * g.tap.t / g.tap.T); oy -= 24 * e; curl += 0.8 * e; }      // tippt auf
+      if (g.tap && g.tap.leg === n) { const e = Math.sin(Math.PI * g.tap.t / g.tap.T); oy -= 24 * q * e; curl += 0.8 * e; }      // tippt auf
       const T = [T0[0] + ox, T0[1] + oy];
       const L1 = Math.hypot(K0[0] - H0[0], K0[1] - H0[1]), L2 = Math.hypot(T0[0] - K0[0], T0[1] - K0[1]);
       const side = ((T0[0] - H0[0]) * (K0[1] - H0[1]) - (T0[1] - H0[1]) * (K0[0] - H0[0])) > 0 ? 1 : -1;
@@ -1475,7 +1481,7 @@
       let d = e.ta - e.a; d = Math.atan2(Math.sin(d), Math.cos(d)); e.a += AA.clamp(d, -7 * dt, 7 * dt);
     }
   }
-  const MANTIS_EYES = [[0.685, 0.1, 0.044], [0.795, 0.078, 0.048]];      // Mitte (Anteil von Breite/Höhe) und Radius (Anteil der Breite) im Bild deco/mantis
+  const MANTIS_EYES = [[0.728, 0.116, 0.033], [0.812, 0.11, 0.032]];      // Mitte (Anteil von Breite/Höhe) und Radius (Anteil der Breite) im Bild deco/mantis (Runde 22: neues, entspanntes Bild)
   function drawMantisEyes(ctx, b, c) {
     for (let i = 0; i < 2; i++) {
       const E = MANTIS_EYES[i], e = c.eyes[i], ex = -b.w / 2 + E[0] * b.w, ey = -b.h + E[1] * b.h, r = E[2] * b.w;
