@@ -620,6 +620,7 @@
       const k = n.themes.list.length;
       li.push('🎉 <b>Schon geschafft:</b> ' + k + (k === 1 ? ' Set-Stufe' : ' Set-Stufen') + ' aus deiner bisherigen Sammlung sind gutgeschrieben' + (n.themes.pearls ? ' – <b>+' + n.themes.pearls + ' Perlen</b>' : '') + '. Was genau, steht im Sammelbuch unter 🗺️ Themen-Sets.');
     }
+    if (n.r21b) li.push('Bug fixes und paar Grafiken verbessert... nächstes Update kommt bald :)');      // Runde 21b (24.11.2026), Text von Damian
     if (n.r21a) li.push('🌈 <b>Farbfutter wirkt jetzt richtig:</b> Eier von Fischen, die davon gefressen haben, werden mit mindestens 15 % eine Farbvariante (sonst rund 1 %). Bei Karpfen und Kaiserbuntbarsch kommen die seltenen Zuchtformen 3× so oft. Erwachsene fressen es auch, wenn sie satt sind.');      // Runde 21a (21.11.2026)
     if (n.r20e) {                                      // Runde 20e/20g (20.11.2026)
       li.push('🌍 <b>Neu: Afrika-Legenden</b> (Shop → Fische, Süßwasser): 14 Arten aus Malawi- und Tanganjikasee, Kongo und Westafrika – vom Prachtbarsch (Lv 8) bis zur Frontosa (Lv 37). Dazu Flowerhorn und Blutpapagei als Gäste, Muschel-Haufen und Kalkfelsen.');

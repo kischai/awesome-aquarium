@@ -215,21 +215,16 @@
     g.scale(SS, SS);
     const im = wall.img && AA.assets.get(wall.img);
     if (im) {                                          // gemaltes Hintergrundbild
-      /* Runde 12: Die Kulisse sitzt immer auf dem Kies. Maßstab 1 = so, wie sie im normalen Becken liegt (formatfüllend); in großen Becken wird sie
-         kleiner gezeichnet (wirkt weiter weg) – aber die Bildzeile an der Hinterkante des Kieses bleibt dort. Vorher hing die kleinere Kulisse oben
-         und unter ihr stand ein leerer Streifen: Vulkane & Co. schwebten mitten im Wasser. Oben füllt die oberste Bildzeile (offenes Wasser) den Rest. */
-      const tb = Math.pow(T || 1, 0.4);
-      const k1 = Math.max(W / im.width, H / im.height), y1 = (H - im.height * k1) * 0.3;
-      const A = G.fTop + 12, row = (A - y1) / k1;                    // Bildzeile an der Kies-Hinterkante
-      const k = k1 * tb, dw = im.width * k, dh = im.height * k, y0 = A - row * k;
-      const x0 = (W - dw) / 2, n = dw >= W - 0.5 ? 0 : Math.ceil(x0 / dw) + 1;
-      for (let i = -n; i <= n; i++) {                  // schmaler als das Becken: seitlich gespiegelt kacheln
-        g.save(); g.translate(x0 + i * dw + (i % 2 ? dw : 0), 0); g.scale(i % 2 ? -1 : 1, 1);
-        g.drawImage(im, 0, 0, im.width, im.height, 0, y0, dw + 0.5, dh);
-        if (y0 > 0) g.drawImage(im, 0, 0, im.width, 3, 0, 0, dw + 0.5, y0 + 1.5);
-        if (y0 + dh < H) g.drawImage(im, 0, im.height - 2, im.width, 2, 0, y0 + dh - 1, dw + 0.5, H - (y0 + dh) + 2);
-        g.restore();
-      }
+      /* Runde 21 (Damian 24.11.): Die Kulisse beginnt IMMER direkt am Boden und reicht bis ganz oben – in jeder Beckengröße gleich.
+         gy = Anteil der Bildhöhe, an dem die gemalte Landschaft unten endet (tools: bgground.py, von Hand geprüft): diese Bildzeile liegt
+         knapp hinter der Kies-Kante. sy = Unterkante einer gemalten Wasseroberfläche bzw. eines Himmels oben im Bild – die bleibt über dem
+         Becken. Reicht das Bild über gy nicht bis oben, wird es größer gezogen – nie gespiegelt, nie oben mit hochgezogenen Zeilen aufgefüllt.
+         Vorher: in großen Becken kleiner gezeichnet → oben ein Streifen hochgezogener Zeilen („Wasserdecke“), Landschaft erst ab der Mitte,
+         seitlich Spiegelkopien; und wo die Landschaft im Bild höher endet, ein Dunst-Streifen zwischen Boden und Kulisse („Lücke“). */
+      const A = G.fTop + 12, gy = (wall.gy || 0.69) * im.height, sy = (wall.sy || 0) * im.height;
+      const k = Math.max(W / im.width, A / Math.max(1, gy - sy)), dw = im.width * k, dh = im.height * k, y0 = A - gy * k, x0 = (W - dw) / 2;
+      g.drawImage(im, 0, 0, im.width, im.height, x0, y0, dw + 0.5, dh);
+      if (y0 + dh < H) g.drawImage(im, 0, im.height - 2, im.width, 2, x0, y0 + dh - 1, dw + 0.5, H - (y0 + dh) + 2);
     } else AA.paintWater(g, wall, W, H, G.fTop + 14, 11);
     if (wall.gold) goldGrade(g, W, H);
     return c;
