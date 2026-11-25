@@ -69,7 +69,7 @@
       daily: { day: 0, chest: false, hunts: 0, gift: false },
       stats: defaultStats(), medals: {}, settings: defaultSettings(),
       lastSeen: Date.now(), created: Date.now(), intro: false,
-      r18: 1, x18: 1, r19: 1, r20e: 1, r21a: 1, r21b: 1, r22: 1, r22b: 1, g20: 1, favs: []      // Runde 18/19/20: ein neues Spiel hat nichts zu erstatten und braucht keine Neuigkeiten (der Reiter steht im Shop vorn)
+      r18: 1, x18: 1, r19: 1, r20e: 1, r21a: 1, r21b: 1, r22: 1, r22b: 1, r22c: 1, g20: 1, favs: []      // Runde 18/19/20: ein neues Spiel hat nichts zu erstatten und braucht keine Neuigkeiten (der Reiter steht im Shop vorn)
     };
     AA.metaFix(AA.state, true);                      // Sammelbuch, Aufträge, Wochenkarte (js/meta.js)
     AA.bizFix(AA.state);                             // Gene, Markt, Kunden, Kassenbuch (js/biz.js)
@@ -296,6 +296,7 @@
       if (!guest && !o.r21b) { o.r21b = 1; o.news = o.news || {}; o.news.r21b = 1; }      // Runde 21b: Kulissen sitzen am Boden (Damians Text)
       if (!guest && !o.r22) { o.r22 = 1; o.news = o.news || {}; o.news.r22 = 1; }      // Runde 22: Krabbler laufen mit echten Beinen
       if (!guest && !o.r22b) { o.r22b = 1; o.news = o.news || {}; o.news.r22b = 1; }      // Runde 22b: 31 Fische mit neuem Look
+      if (!guest && !o.r22c) { o.r22c = 1; o.news = o.news || {}; o.news.r22c = 1; }      // Runde 22c: 20 Kulissen scharf, Feinschliff an den neuen Fischen
       const was = Math.max(0, Math.round(+o.level || 0));
       o.level = AA.levelFor(o.xp);
       if (!guest && !o.r16) {                          // Runde 16, einmalig: flachere Level-Kurve ab Level 31 – wer dadurch aufsteigt, bekommt je Level eine Perle wie sonst auch.
